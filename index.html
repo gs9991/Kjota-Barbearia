@@ -280,6 +280,32 @@ textarea.form-input{resize:vertical;min-height:65px;}
 #lightbox.open{display:flex;}
 #lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;}
 #lightbox-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;}
+
+/* ── SERVIÇOS AVULSOS ── */
+#svc-select-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:1.5rem;background:var(--k-black);}
+#svc-select-screen.visible{display:flex;}
+.svc-select-box{width:100%;max-width:600px;}
+.svc-select-logo{display:flex;justify-content:center;margin-bottom:1.2rem;}
+.svc-select-logo img{width:80px;height:80px;object-fit:contain;}
+.svc-select-title{font-family:var(--font-display);font-size:26px;letter-spacing:3px;color:var(--k-gold);text-align:center;margin-bottom:.3rem;}
+.svc-select-sub{font-size:13px;color:var(--k-muted);text-align:center;margin-bottom:1.5rem;}
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1rem;}
+.svc-card{background:var(--k-dark);border:1px solid var(--k-border);border-radius:12px;padding:1.2rem 1rem;text-align:center;cursor:pointer;transition:.2s;}
+.svc-card:hover{border-color:var(--k-gold);background:rgba(201,168,76,.06);}
+.svc-card-icon{font-size:32px;color:var(--k-gold);margin-bottom:.6rem;}
+.svc-card-nome{font-family:var(--font-display);font-size:17px;color:var(--k-cream);letter-spacing:1px;margin-bottom:.25rem;}
+.svc-card-preco{font-family:var(--font-display);font-size:22px;color:var(--k-gold);}
+.svc-card-dur{font-size:11px;color:var(--k-muted);margin-top:.2rem;}
+.svc-back-link{display:block;text-align:center;margin-top:.75rem;font-size:12px;color:var(--k-muted);cursor:pointer;text-decoration:underline;}
+.svc-back-link:hover{color:var(--k-cream);}
+/* LISTA SERVIÇOS ADMIN */
+.svc-row{display:flex;align-items:center;justify-content:space-between;padding:.7rem 0;border-bottom:1px solid var(--k-border);}
+.svc-row:last-child{border-bottom:none;}
+.svc-row-info{display:flex;align-items:center;gap:10px;}
+.svc-row-icon{width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;color:var(--k-gold);font-size:18px;}
+.svc-row-nome{font-size:13px;font-weight:500;color:var(--k-cream);}
+.svc-row-dur{font-size:11px;color:var(--k-muted);margin-top:2px;}
+.svc-row-preco{font-family:var(--font-display);font-size:20px;color:var(--k-gold);}
 </style>
 
   <!-- Firebase -->
@@ -401,6 +427,16 @@ textarea.form-input{resize:vertical;min-height:65px;}
     </section>
     <section class="section" id="s-minha-area"><div class="section-title">Minha Área</div><div id="minha-assin-box"></div><div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar" style="margin-right:4px;color:var(--k-gold)"></i>Meus agendamentos</span></div><div class="card-body" id="meus-ags"></div></div></section>
 
+
+    <!-- ADMIN: SERVIÇOS AVULSOS -->
+    <section class="section" id="s-servicos">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div class="section-title" style="margin:0">Serviços</div>
+        <button class="btn btn-outline" style="font-size:12px;" onclick="openModal('m-svc')"><i class="ti ti-plus"></i>Novo</button>
+      </div>
+      <div class="card"><div class="card-body" id="lista-servicos"></div></div>
+    </section>
+
     <!-- ADMIN: CONFIGURAÇÕES -->
     <section class="section" id="s-config">
       <div class="section-title">Configurações</div>
@@ -515,6 +551,17 @@ textarea.form-input{resize:vertical;min-height:65px;}
   </div>
 </div>
 
+<!-- SELEÇÃO DE SERVIÇO AVULSO -->
+<div id="svc-select-screen">
+  <div class="svc-select-box">
+    <div class="svc-select-logo"><img id="svc-logo" src="" alt="KJota"/></div>
+    <div class="svc-select-title">Serviços disponíveis</div>
+    <div class="svc-select-sub">Escolha o serviço desejado</div>
+    <div class="svc-grid" id="svc-grid-avulso"></div>
+    <a class="svc-back-link" onclick="voltarParaPlanos()">← Voltar para planos</a>
+  </div>
+</div>
+
 <!-- CHAT PIX -->
 <div id="chat-screen">
   <div class="chat-header">
@@ -562,6 +609,29 @@ textarea.form-input{resize:vertical;min-height:65px;}
 <input type="file" id="file-input" accept="image/*,.pdf" onchange="handleFileSelect(event)"/>
 
 <!-- MODAIS -->
+
+<div class="modal-overlay" id="m-svc"><div class="modal">
+  <div class="modal-head"><img id="msvc-logo" src="" alt=""/><div class="modal-title">Novo Serviço</div></div>
+  <div class="form-group"><label class="form-label">Nome do serviço</label><input class="form-input" type="text" id="svc-nome" placeholder="Ex: Corte Social"/></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">Preço (R$)</label><input class="form-input" type="number" id="svc-preco" placeholder="0"/></div>
+    <div class="form-group"><label class="form-label">Duração (min)</label><input class="form-input" type="number" id="svc-dur" placeholder="30"/></div>
+  </div>
+  <div class="form-group"><label class="form-label">Ícone</label>
+    <select class="form-input" id="svc-icone">
+      <option value="ti-scissors">✂️ Tesoura (corte)</option>
+      <option value="ti-razor">🪒 Navalha (barba)</option>
+      <option value="ti-droplet">💧 Gota (hidratação)</option>
+      <option value="ti-star">⭐ Estrela (especial)</option>
+      <option value="ti-sparkles">✨ Brilho (acabamento)</option>
+    </select>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="closeModal('m-svc')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvarSvc()"><i class="ti ti-check"></i>Salvar</button>
+  </div>
+</div></div>
+
 <div class="modal-overlay" id="m-ag"><div class="modal">
   <div class="modal-head"><img id="mag-logo" src="" alt=""/><div class="modal-title">Novo Agendamento</div></div>
   <div class="form-group"><label class="form-label">Cliente</label><select class="form-input" id="ag-cli"></select></div>
@@ -627,7 +697,7 @@ function doLogout(){SESSAO=null;document.getElementById('app').classList.remove(
 function setLogoAll(){var fg=document.getElementById('forte-logo');if(fg)fg.src=FORTE_LOGO;var sf=document.getElementById('spl-forte');if(sf)sf.src=FORTE_LOGO;document.getElementById('spl-img').src=LOGO;document.getElementById('login-logo').src=LOGO;document.getElementById('h-logo').src=LOGO;['mag-logo','mcl-logo','mpl-logo','mas-logo','mcx-logo'].forEach(function(id){var el=document.getElementById(id);if(el)el.src=LOGO;});}
 function iniciarApp(){var app=document.getElementById('app');app.classList.add('visible');document.getElementById('h-logo').src=LOGO;document.getElementById('h-avatar').textContent=iniciais(SESSAO.nome);document.getElementById('h-username').textContent=SESSAO.nome;document.getElementById('h-role').textContent=SESSAO.role==='dono'?'Dono':'Cliente';var nav=document.getElementById('main-nav');if(SESSAO.role==='dono'){nav.innerHTML='<button class="nav-btn active" onclick="goTo(\'dashboard\',this)"><i class="ti ti-layout-dashboard"></i>Painel</button><button class="nav-btn" onclick="goTo(\'agenda\',this)"><i class="ti ti-calendar"></i>Agenda</button><button class="nav-btn" onclick="goTo(\'clientes\',this)"><i class="ti ti-users"></i>Clientes</button><button class="nav-btn" onclick="goTo(\'assinaturas\',this)"><i class="ti ti-crown"></i>Assinaturas</button><button class="nav-btn" onclick="goTo(\'caixa\',this)"><i class="ti ti-cash"></i>Caixa</button>';document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.getElementById('s-dashboard').classList.add('active');renderDash();}else{nav.innerHTML='<button class="nav-btn active" onclick="goTo(\'minha-area\',this)"><i class="ti ti-user"></i>Minha Área</button><button class="nav-btn" onclick="goTo(\'planos-cli\',this)"><i class="ti ti-crown"></i>Planos</button>';document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.getElementById('s-minha-area').classList.add('active');renderMinhaArea();}}
 function goTo(id,btn){document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('s-'+id).classList.add('active');btn.classList.add('active');var r={dashboard:renderDash,agenda:renderAgenda,clientes:renderClientes,assinaturas:renderAssinaturas,caixa:renderCaixa,'minha-area':renderMinhaArea,'planos-cli':renderPlanosCli};if(r[id])r[id]();}
-var MODAL_LOGOS={'m-ag':'mag-logo','m-cl':'mcl-logo','m-plano':'mpl-logo','m-assin':'mas-logo','m-cx':'mcx-logo'};
+var MODAL_LOGOS={'m-ag':'mag-logo','m-cl':'mcl-logo','m-plano':'mpl-logo','m-assin':'mas-logo','m-cx':'mcx-logo','m-svc':'msvc-logo'};
 function openModal(id){if(MODAL_LOGOS[id]){var el=document.getElementById(MODAL_LOGOS[id]);if(el)el.src=LOGO;}if(id==='m-ag')prepAg();if(id==='m-assin')prepAssin();document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('open');});});
@@ -703,6 +773,7 @@ var chatVoltarPara = null; // tela de volta
 // Dados de chat (mensagens por clienteId)
 // Cada chat: {clienteId, planoId, meses, status:'pendente'|'confirmado'|'cancelado', msgs:[], unread:0}
 D.chats = [];
+D.servicos = [];
 
 // ── ABAS LOGIN/CADASTRO ──
 function switchTab(tab) {
@@ -1170,6 +1241,7 @@ setLogoAll = function() {
   _setLogoAllOrig();
   var el;
   el = document.getElementById('ps-logo'); if(el) el.src = LOGO;
+  el = document.getElementById('svc-logo'); if(el) el.src = LOGO;
   el = document.getElementById('chat-logo'); if(el) el.src = LOGO;
 };
 
@@ -1726,6 +1798,7 @@ async function carregarDados() {
     // Chats
     var chSnap = await window.fsGetDocs(colRef('chats'));
     D.chats = [];
+D.servicos = [];
     chSnap.forEach(function(d) { D.chats.push({ ...d.data(), id: d.id, msgs: d.data().msgs || [] }); });
 
     // Config
@@ -2185,6 +2258,463 @@ esperarFirebase(function() {
   FB_READY = true;
   console.log('Firebase conectado!');
 });
+
+</script>
+</body>
+</html>
+<script>
+// ═══════════════════════════════════════
+// SERVIÇOS AVULSOS
+// ═══════════════════════════════════════
+
+// ── SKIP PLANO → TELA DE SERVIÇOS ──
+// Override da função skipPlano existente
+skipPlano = function() {
+  document.getElementById('plan-select-screen').classList.remove('visible');
+  abrirSelecaoServico();
+};
+
+function abrirSelecaoServico() {
+  document.getElementById('svc-logo').src = LOGO;
+  document.getElementById('svc-select-screen').classList.add('visible');
+  renderSvcAvulso();
+}
+
+function voltarParaPlanos() {
+  document.getElementById('svc-select-screen').classList.remove('visible');
+  abrirSelecaoPlano();
+}
+
+function renderSvcAvulso() {
+  var el = document.getElementById('svc-grid-avulso');
+  if (!D.servicos || !D.servicos.length) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--k-muted);"><i class="ti ti-scissors" style="font-size:36px;opacity:.3;display:block;margin-bottom:.5rem;"></i><p style="font-size:13px;">Nenhum serviço cadastrado ainda.<br/>Aguarde o dono configurar os serviços.</p></div>';
+    return;
+  }
+  el.innerHTML = D.servicos.map(function(s) {
+    return '<div class="svc-card" onclick="selecionarServico(\'' + s.id + '\')">' +
+      '<div class="svc-card-icon"><i class="ti ' + (s.icone||'ti-scissors') + '"></i></div>' +
+      '<div class="svc-card-nome">' + s.nome + '</div>' +
+      '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
+      '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur||30) + ' min</div>' +
+    '</div>';
+  }).join('');
+}
+
+function selecionarServico(svcId) {
+  var svc = D.servicos.find(function(s) { return s.id === svcId || s.id === String(svcId); });
+  if (!svc) return;
+  document.getElementById('svc-select-screen').classList.remove('visible');
+  // Abrir chat avulso (reutiliza o sistema de chat com flag avulso)
+  abrirChatAvulso(SESSAO.clienteId, svc);
+}
+
+// ── CHAT AVULSO (serviço sem assinatura) ──
+function abrirChatAvulso(clienteId, svc) {
+  // Criar um chat avulso usando o mesmo sistema de chat PIX
+  var chatId = 'avulso_' + clienteId + '_' + svc.id + '_' + Date.now();
+  var chat = {
+    id: chatId,
+    clienteId: String(clienteId),
+    planoId: null,
+    svcId: String(svc.id),
+    svcNome: svc.nome,
+    svcPreco: svc.preco,
+    meses: 1,
+    tipo: 'avulso',
+    status: 'pendente',
+    msgs: [],
+    unread: 0,
+    vencimento: null
+  };
+  D.chats.push(chat);
+  chatAtual = chat;
+  chatVoltarPara = 'svc-avulso';
+
+  // Configurar tela do chat
+  document.getElementById('chat-logo').src = LOGO;
+  document.getElementById('chat-title').textContent = svc.nome;
+  document.getElementById('chat-sub').textContent = 'Serviço avulso · ' + moeda(svc.preco);
+
+  // Mensagem inicial
+  chat.msgs.push({
+    lado: 'kjota',
+    html: 'Olá, ' + getCN(clienteId).split(' ')[0] + '! 👋 Você escolheu <b>' + svc.nome + '</b>.<br/>' +
+          'Valor: <b>' + moeda(svc.preco) + '</b><br/>' +
+          'Realize o pagamento via PIX e envie o comprovante:',
+    hora: agora(),
+    tipo: 'texto'
+  });
+
+  // Mensagem PIX
+  chat.msgs.push({
+    lado: 'kjota',
+    html: '<div class="pix-box">' +
+      '<div style="font-size:11px;color:var(--k-muted);margin-bottom:.3rem;">Chave PIX</div>' +
+      '<div class="pix-key">' + PIX_KEY + '</div>' +
+      '<div style="font-size:12px;color:var(--k-muted);margin-top:.4rem;">Tipo: ' + CONFIG.pixTipo + ' · Favorecido: ' + CONFIG.pixNome + '</div>' +
+      '<button class="pix-copy" onclick="copiarPix()"><i class="ti ti-copy"></i>Copiar chave</button>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--k-muted);margin-top:.4rem;">Após o pagamento, envie o comprovante aqui.</div>',
+    hora: agora(),
+    tipo: 'pix'
+  });
+
+  document.getElementById('chat-screen').classList.add('visible');
+  renderChat();
+  renderQuickActionsAvulso(svc);
+
+  // Salvar no Firebase
+  fbSalvarChatAvulso(chat);
+}
+
+function renderQuickActionsAvulso(svc) {
+  var qa = document.getElementById('chat-quick-actions');
+  if (SESSAO.role === 'dono') {
+    var st = chatAtual ? chatAtual.status : '';
+    qa.innerHTML = st === 'pendente'
+      ? '<button class="chat-action-btn" style="color:#5DBF78;border-color:#2A6B3A;" onclick="confirmarPagamentoAvulso()"><i class="ti ti-check"></i> Confirmar pagamento</button>' +
+        '<button class="chat-action-btn" style="color:#CF6060;border-color:#8B1A1A;" onclick="rejeitarPagamento()"><i class="ti ti-x"></i> Rejeitar</button>'
+      : st === 'confirmado'
+        ? '<span style="font-size:12px;color:#5DBF78;"><i class="ti ti-check"></i> Pagamento confirmado</span>'
+        : '';
+  } else {
+    qa.innerHTML = '<div style="font-size:12px;color:var(--k-muted);padding:.4rem 0;">Envie o comprovante PIX pelo botão 📎 ou pelo campo de texto.</div>';
+  }
+}
+
+async function confirmarPagamentoAvulso() {
+  if (!chatAtual) return;
+  chatAtual.status = 'confirmado';
+  mostrarLoadingApp('Confirmando...');
+
+  // Registrar no caixa
+  var cx = {
+    tipo: 'entrada',
+    desc: (chatAtual.svcNome || 'Serviço') + ' (avulso) — ' + getCN(chatAtual.clienteId),
+    val: chatAtual.svcPreco || 0,
+    hora: agora(),
+    data: today()
+  };
+  var cxId = await fbAdd('caixa', cx);
+  cx.id = cxId;
+  D.caixa.unshift(cx);
+
+  // Incrementar visitas do cliente
+  var cli = D.clientes.find(function(c) { return c.id === chatAtual.clienteId || c.id === String(chatAtual.clienteId); });
+  if (cli) {
+    cli.visitas = (cli.visitas || 0) + 1;
+    await fbUpdate('clientes', String(cli.id), { visitas: cli.visitas });
+  }
+
+  // Mensagem de confirmação no chat
+  chatAtual.msgs.push({
+    lado: 'kjota',
+    html: '✅ Pagamento confirmado! Seu <b>' + (chatAtual.svcNome||'serviço') + '</b> está agendado.<br/>Compareça na barbearia no horário combinado.',
+    hora: agora(),
+    tipo: 'texto'
+  });
+  chatAtual.msgs.push({ lado: 'system', html: 'Pagamento do serviço avulso confirmado', hora: agora(), tipo: 'sistema' });
+
+  await fbSalvarChatAvulso(chatAtual);
+  esconderLoadingApp();
+  renderChat();
+  renderQuickActionsAvulso({});
+  renderCaixa();
+  renderDash();
+  atualizarBadgeChats();
+  toast('Pagamento confirmado!');
+}
+
+async function fbSalvarChatAvulso(chat) {
+  var dados = {
+    clienteId: String(chat.clienteId),
+    planoId: null,
+    svcId: chat.svcId || null,
+    svcNome: chat.svcNome || '',
+    svcPreco: chat.svcPreco || 0,
+    tipo: 'avulso',
+    meses: 1,
+    status: chat.status || 'pendente',
+    vencimento: null,
+    msgs: chat.msgs.map(function(m) {
+      var r = { lado: m.lado, html: m.html || '', hora: m.hora, tipo: m.tipo };
+      if (m.dataUrl) r.dataUrl = m.dataUrl;
+      if (m.fileName) r.fileName = m.fileName;
+      return r;
+    })
+  };
+  try {
+    if (chat.id && !chat.id.startsWith('avulso_') && !chat.id.startsWith('local_')) {
+      await fbUpdate('chats', chat.id, dados);
+    } else {
+      var nid = await fbAdd('chats', dados);
+      if (nid) {
+        var idx = D.chats.findIndex(function(c) { return c === chat; });
+        if (idx >= 0) D.chats[idx].id = nid;
+        chat.id = nid;
+      }
+    }
+  } catch(e) { console.error('fbSalvarChatAvulso', e); }
+}
+
+// ── voltarDoChat: tratar avulso ──
+var _voltarDoChatOrig = voltarDoChat;
+voltarDoChat = function() {
+  document.getElementById('chat-screen').classList.remove('visible');
+  if (chatVoltarPara === 'svc-avulso') {
+    iniciarApp();
+  } else if (chatVoltarPara === 'selecao' || chatVoltarPara === 'minha-area-renovar') {
+    iniciarApp();
+  } else if (chatVoltarPara === 'admin-chats') {
+    chatAtual = null;
+  } else {
+    iniciarApp();
+  }
+  atualizarBadgeChats();
+};
+
+// ── RENDER ADMIN CHAT: suporte avulso na barra de confirmação ──
+var _renderChatV14 = renderChat;
+renderChat = function() {
+  var body = document.getElementById('chat-body');
+  if (!chatAtual) return;
+  body.innerHTML = chatAtual.msgs.map(function(m, idx) {
+    var cls = m.lado === 'system' ? 'system' : m.lado;
+    var bubbleContent = '';
+    if (m.tipo === 'imagem') {
+      bubbleContent = (m.html ? '<div>' + m.html + '</div>' : '') +
+        '<img class="comprovante-img" src="' + m.dataUrl + '" alt="Comprovante" onclick="abrirLightbox(\'' + m.dataUrl + '\')" title="Clique para ampliar"/>';
+    } else if (m.tipo === 'pdf') {
+      bubbleContent = (m.html ? '<div>' + m.html + '</div>' : '') +
+        '<div class="comprovante-pdf"><i class="ti ti-file-type-pdf"></i><span>' + m.fileName + '</span><a onclick="abrirPdf(\'' + idx + '\')">Abrir PDF</a></div>';
+    } else {
+      bubbleContent = m.html || '';
+    }
+
+    // Barra de confirmação para admin
+    var confirmBar = '';
+    if (SESSAO && SESSAO.role === 'dono' && (m.tipo === 'imagem' || m.tipo === 'pdf') && m.lado === 'cliente' && chatAtual.status === 'pendente') {
+      if (chatAtual.tipo === 'avulso') {
+        var svcPreco = moeda(chatAtual.svcPreco || 0);
+        confirmBar = '<div class="confirm-pay-bar">' +
+          '<div class="confirm-pay-bar-info">Comprovante recebido · <b>' + (chatAtual.svcNome||'Serviço') + '</b> · <b>' + svcPreco + '</b></div>' +
+          '<div class="confirm-pay-actions">' +
+            '<button class="btn btn-gold btn-sm" onclick="confirmarPagamentoAvulso()"><i class="ti ti-check"></i>Confirmar</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="rejeitarPagamento()"><i class="ti ti-x"></i>Rejeitar</button>' +
+          '</div></div>';
+      } else {
+        var plano = D.planos.find(function(p){return p.id===chatAtual.planoId||p.id===String(chatAtual.planoId);});
+        var total = plano ? moeda(plano.preco * (chatAtual.meses||1)) : '';
+        confirmBar = '<div class="confirm-pay-bar">' +
+          '<div class="confirm-pay-bar-info">Comprovante recebido · <b>' + (chatAtual.meses||1) + ' mês' + ((chatAtual.meses||1)>1?'es':'') + '</b> · <b>' + total + '</b></div>' +
+          '<div class="confirm-pay-actions">' +
+            '<button class="btn btn-gold btn-sm" onclick="confirmarPagamento()"><i class="ti ti-check"></i>Confirmar</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="rejeitarPagamento()"><i class="ti ti-x"></i>Rejeitar</button>' +
+          '</div></div>';
+      }
+    }
+
+    return '<div class="chat-msg ' + cls + '">' +
+      '<div class="chat-bubble">' + bubbleContent + '</div>' +
+      '<div class="chat-time">' + m.hora + '</div>' +
+      '</div>' + confirmBar;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+};
+
+// ── ADMIN: RENDERIZAR LISTA DE SERVIÇOS ──
+function renderServicos() {
+  var el = document.getElementById('lista-servicos');
+  if (!el) return;
+  if (!D.servicos || !D.servicos.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-scissors"></i><p>Nenhum serviço cadastrado</p></div>';
+    return;
+  }
+  el.innerHTML = D.servicos.map(function(s) {
+    return '<div class="svc-row">' +
+      '<div class="svc-row-info">' +
+        '<div class="svc-row-icon"><i class="ti ' + (s.icone||'ti-scissors') + '"></i></div>' +
+        '<div><div class="svc-row-nome">' + s.nome + '</div><div class="svc-row-dur"><i class="ti ti-clock" style="font-size:10px;"></i> ' + (s.dur||30) + ' min</div></div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<div class="svc-row-preco">' + moeda(s.preco) + '</div>' +
+        '<button class="btn btn-danger btn-sm" onclick="excluirSvc(\'' + s.id + '\')"><i class="ti ti-trash"></i></button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── SALVAR SERVIÇO ──
+salvarSvc = async function() {
+  var nome = document.getElementById('svc-nome').value.trim();
+  if (!nome) { toast('Informe o nome'); return; }
+  var svc = {
+    nome: nome,
+    preco: parseFloat(document.getElementById('svc-preco').value) || 0,
+    dur: parseInt(document.getElementById('svc-dur').value) || 30,
+    icone: document.getElementById('svc-icone').value
+  };
+  mostrarLoadingApp('Salvando serviço...');
+  var nid = Date.now().toString();
+  svc.id = nid;
+  await fbSet('servicos', nid, svc);
+  D.servicos.push(svc);
+  closeModal('m-svc');
+  ['svc-nome','svc-preco','svc-dur'].forEach(function(i){document.getElementById(i).value='';});
+  esconderLoadingApp();
+  toast('Serviço cadastrado!');
+  renderServicos();
+};
+
+async function excluirSvc(id) {
+  mostrarLoadingApp('Removendo...');
+  await fbDelete('servicos', String(id));
+  D.servicos = D.servicos.filter(function(s){return s.id!==id && s.id!==String(id);});
+  esconderLoadingApp();
+  renderServicos();
+  toast('Serviço removido.');
+}
+
+// ── PATCH iniciarApp: adicionar Serviços na nav do dono ──
+var _iniciarAppV14 = iniciarApp;
+iniciarApp = function() {
+  var app = document.getElementById('app');
+  app.classList.add('visible');
+  document.getElementById('h-logo').src = LOGO;
+  document.getElementById('h-avatar').textContent = iniciais(SESSAO.nome);
+  document.getElementById('h-username').textContent = SESSAO.nome;
+  document.getElementById('h-role').textContent = SESSAO.role === 'dono' ? 'Dono' : 'Cliente';
+  var nav = document.getElementById('main-nav');
+  if (SESSAO.role === 'dono') {
+    nav.innerHTML =
+      '<button class="nav-btn active" onclick="goTo(\'dashboard\',this)"><i class="ti ti-layout-dashboard"></i>Painel</button>' +
+      '<button class="nav-btn" onclick="goTo(\'agenda\',this)"><i class="ti ti-calendar"></i>Agenda</button>' +
+      '<button class="nav-btn" onclick="goTo(\'clientes\',this)"><i class="ti ti-users"></i>Clientes</button>' +
+      '<button class="nav-btn" onclick="goTo(\'servicos\',this)"><i class="ti ti-scissors"></i>Serviços</button>' +
+      '<button class="nav-btn" onclick="goTo(\'assinaturas\',this)"><i class="ti ti-crown"></i>Assinaturas</button>' +
+      '<button class="nav-btn" onclick="goTo(\'chats\',this)" id="nav-chats"><i class="ti ti-message-circle"></i>Chats <span id="nav-chat-badge" style="display:none;background:#C9A84C;color:#0D0D0D;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:2px;"></span></button>' +
+      '<button class="nav-btn" onclick="goTo(\'caixa\',this)"><i class="ti ti-cash"></i>Caixa</button>' +
+      '<button class="nav-btn" onclick="goTo(\'config\',this)"><i class="ti ti-settings"></i>Config.</button>';
+    document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+    document.getElementById('s-dashboard').classList.add('active');
+    renderDash();
+  } else {
+    nav.innerHTML =
+      '<button class="nav-btn active" onclick="goTo(\'minha-area\',this)"><i class="ti ti-user"></i>Minha Área</button>' +
+      '<button class="nav-btn" onclick="goTo(\'planos-cli\',this)"><i class="ti ti-crown"></i>Planos</button>';
+    document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+    document.getElementById('s-minha-area').classList.add('active');
+    renderMinhaArea();
+  }
+};
+
+// ── PATCH goTo: incluir servicos ──
+var _goToV14 = goTo;
+goTo = function(id, btn) {
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('s-'+id).classList.add('active');
+  btn.classList.add('active');
+  var r = {
+    dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes,
+    assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa,
+    config: renderConfig, servicos: renderServicos,
+    'minha-area': renderMinhaArea, 'planos-cli': renderPlanosCli
+  };
+  if (r[id]) r[id]();
+};
+
+// ── PATCH carregarDados: incluir serviços ──
+var _carregarDadosOrig = carregarDados;
+carregarDados = async function() {
+  mostrarLoadingApp('Carregando dados...');
+  try {
+    var usersSnap = await window.fsGetDocs(colRef('usuarios'));
+    USERS = { Kjdono: { role: 'dono', nome: 'Dono', clienteId: null, pass: 'Kj123' } };
+    usersSnap.forEach(function(d){var u=d.data();USERS[u.user]={role:'cliente',nome:u.nome,clienteId:d.id,pass:u.pass};});
+    var cliSnap = await window.fsGetDocs(colRef('clientes'));
+    D.clientes = []; cliSnap.forEach(function(d){D.clientes.push({...d.data(),id:d.id});});
+    var plSnap = await window.fsGetDocs(colRef('planos'));
+    D.planos = []; plSnap.forEach(function(d){D.planos.push({...d.data(),id:d.id});});
+    var svSnap = await window.fsGetDocs(colRef('servicos'));
+    D.servicos = []; svSnap.forEach(function(d){D.servicos.push({...d.data(),id:d.id});});
+    var asSnap = await window.fsGetDocs(colRef('assinantes'));
+    D.assinantes = []; asSnap.forEach(function(d){D.assinantes.push({...d.data(),id:d.id});});
+    var agSnap = await window.fsGetDocs(colRef('agendamentos'));
+    D.agendamentos = []; agSnap.forEach(function(d){D.agendamentos.push({...d.data(),id:d.id});});
+    var cxSnap = await window.fsGetDocs(colRef('caixa'));
+    D.caixa = []; cxSnap.forEach(function(d){D.caixa.push({...d.data(),id:d.id});});
+    D.caixa.sort(function(a,b){return (b.data||'').localeCompare(a.data||'')||(b.hora||'').localeCompare(a.hora||'');});
+    var chSnap = await window.fsGetDocs(colRef('chats'));
+    D.chats = []; chSnap.forEach(function(d){D.chats.push({...d.data(),id:d.id,msgs:d.data().msgs||[]});});
+    var cfgDoc = await window.fsGetDoc(docRef('config','geral'));
+    if(cfgDoc.exists()){Object.assign(CONFIG,cfgDoc.data());PIX_KEY=CONFIG.pixKey||PIX_KEY;}
+  } catch(e) { console.error('Erro ao carregar:', e); toast('Erro ao conectar ao banco.'); }
+  esconderLoadingApp();
+};
+
+// ── PATCH abrirChatAdmin: suporte avulso ──
+var _abrirChatAdminOrig = abrirChatAdmin;
+abrirChatAdmin = function(chatId) {
+  var c = D.chats.find(function(x){return x.id===chatId||x.id===String(chatId);});
+  if (!c) return;
+  chatAtual = c;
+  chatAtual.unread = 0;
+  var plano = c.planoId ? D.planos.find(function(p){return p.id===c.planoId||p.id===String(c.planoId);}) : null;
+  chatVoltarPara = 'admin-chats';
+  document.getElementById('chat-logo').src = LOGO;
+  if (c.tipo === 'avulso') {
+    document.getElementById('chat-title').textContent = c.svcNome || 'Serviço avulso';
+    document.getElementById('chat-sub').textContent = getCN(c.clienteId) + ' · ' + moeda(c.svcPreco||0);
+    document.getElementById('chat-screen').classList.add('visible');
+    renderChat();
+    renderQuickActionsAvulso(c);
+  } else {
+    document.getElementById('chat-title').textContent = getCN(c.clienteId);
+    document.getElementById('chat-sub').textContent = (plano?plano.nome:'') + ' · ' + (c.meses||1) + ' mês' + ((c.meses||1)>1?'es':'');
+    document.getElementById('chat-screen').classList.add('visible');
+    renderChat();
+    renderQuickActions(plano||{});
+  }
+  atualizarBadgeChats();
+};
+
+// ── PATCH renderChats: mostrar tipo avulso ──
+var _renderChatsOrig = renderChats;
+renderChats = function() {
+  var el = document.getElementById('lista-chats');
+  if (!el) return;
+  if (!D.chats.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-message-off"></i><p>Nenhum chat ainda</p></div>';
+    return;
+  }
+  el.innerHTML = D.chats.map(function(c) {
+    var titulo = c.tipo==='avulso'
+      ? getCN(c.clienteId) + ' · ' + (c.svcNome||'Serviço')
+      : getCN(c.clienteId) + ' · ' + getPN(c.planoId);
+    var lastMsg = c.msgs && c.msgs.length ? c.msgs[c.msgs.length-1] : null;
+    var preview = lastMsg ? (lastMsg.html||'').replace(/<[^>]+>/g,'').substring(0,40)+'...' : 'Sem mensagens';
+    var badge = c.status==='confirmado'
+      ? '<span class="badge-conf">Confirmado</span>'
+      : '<span class="badge-pend">Pendente</span>';
+    var tipoBadge = c.tipo==='avulso'
+      ? '<span style="font-size:9px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);color:var(--k-gold);padding:1px 6px;border-radius:10px;margin-left:4px;">Avulso</span>'
+      : '';
+    return '<div class="chat-list-item" onclick="abrirChatAdmin(\'' + c.id + '\')">' +
+      '<div class="chat-list-av">' + iniciais(getCN(c.clienteId)) + '</div>' +
+      '<div class="chat-list-info">' +
+        '<div class="chat-list-name">' + titulo + tipoBadge + '</div>' +
+        '<div class="chat-list-preview">' + preview + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+        badge +
+        (c.unread>0?'<span class="chat-unread">'+c.unread+'</span>':'') +
+      '</div>' +
+    '</div>';
+  }).join('');
+  atualizarBadgeChats();
+};
 
 </script>
 </body>
