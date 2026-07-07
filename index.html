@@ -3188,7 +3188,7 @@ renderMinhaArea = function() {
       '<i class="ti ti-scissors" style="color:var(--k-gold);margin-right:5px;"></i>Serviços disponíveis</div>' +
       '<div class="minha-svc-grid">' +
       D.servicos.map(function(s) {
-        return '<div class="minha-svc-card" onclick="abrirAgendaScreen(' + JSON.stringify(s).replace(/"/g,"'") + ",'" + 'avulso' + "')" + '>' +
+        return '<div class="minha-svc-card" onclick="abrirAgendaScreenById('' + s.id + '','avulso')">' +
           '<i class="ti ' + (s.icone||'ti-scissors') + '"></i>' +
           '<div class="minha-svc-card-nome">' + s.nome + '</div>' +
           '<div class="minha-svc-card-preco">' + moeda(s.preco) + '</div>' +
@@ -3329,6 +3329,14 @@ confirmarPagamento = async function() {
   atualizarBadgeChats();
   toast('Pagamento confirmado! Plano ativado.');
 };
+
+
+// Função auxiliar para abrir agendamento por ID (evita problemas com JSON no onclick)
+function abrirAgendaScreenById(svcId, tipo) {
+  var svc = D.servicos.find(function(s){ return s.id===svcId || s.id===String(svcId); });
+  if (!svc) { toast('Serviço não encontrado'); return; }
+  abrirAgendaScreen(svc, tipo);
+}
 
 // Garantir que a tela de agenda está no setLogoAll
 var _setLogoAllV15 = setLogoAll;
