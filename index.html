@@ -306,6 +306,53 @@ textarea.form-input{resize:vertical;min-height:65px;}
 .svc-row-nome{font-size:13px;font-weight:500;color:var(--k-cream);}
 .svc-row-dur{font-size:11px;color:var(--k-muted);margin-top:2px;}
 .svc-row-preco{font-family:var(--font-display);font-size:20px;color:var(--k-gold);}
+
+/* ── AGENDAMENTO VISUAL ── */
+#agenda-screen{display:none;min-height:100vh;flex-direction:column;background:var(--k-black);}
+#agenda-screen.visible{display:flex;}
+.agenda-screen-header{background:var(--k-dark);border-bottom:1px solid var(--k-border);padding:.9rem 1.25rem;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.agenda-screen-header img{width:36px;height:36px;object-fit:contain;}
+.agenda-screen-body{flex:1;padding:1.2rem;max-width:700px;margin:0 auto;width:100%;}
+
+/* CALENDÁRIO */
+.agcal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
+.agcal-title{font-family:var(--font-display);font-size:17px;color:var(--k-cream);letter-spacing:1px;}
+.agcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1rem;}
+.agcal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid transparent;transition:.15s;font-weight:500;}
+.agcal-cell.header{font-size:11px;color:var(--k-muted);cursor:default;font-weight:400;aspect-ratio:auto;padding:.2rem 0;}
+.agcal-cell.vazio{visibility:hidden;}
+.agcal-cell.fechado{color:#555;cursor:not-allowed;background:rgba(139,26,26,.1);}
+.agcal-cell.disponivel{color:var(--k-cream);}
+.agcal-cell.disponivel:hover{border-color:var(--k-gold);background:rgba(201,168,76,.1);color:var(--k-gold);}
+.agcal-cell.selecionado{background:var(--k-gold);color:#0D0D0D;font-weight:700;border-color:var(--k-gold);}
+.agcal-cell.hoje{outline:2px solid var(--k-gold-dim);outline-offset:1px;}
+.agcal-cell.passado{color:#444;cursor:not-allowed;}
+
+/* HORÁRIOS */
+.horarios-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;}
+.hora-slot{background:var(--k-dark);border:1px solid var(--k-border);border-radius:8px;padding:.5rem;text-align:center;cursor:pointer;transition:.15s;}
+.hora-slot:hover{border-color:var(--k-gold);background:rgba(201,168,76,.08);}
+.hora-slot.selecionado{background:var(--k-gold);border-color:var(--k-gold);}
+.hora-slot.selecionado span{color:#0D0D0D!important;}
+.hora-slot.ocupado{background:rgba(139,26,26,.1);border-color:#8B1A1A;cursor:not-allowed;opacity:.6;}
+.hora-slot span{font-family:var(--font-display);font-size:16px;color:var(--k-cream);}
+.hora-slot small{display:block;font-size:9px;color:var(--k-muted);margin-top:1px;}
+.hora-slot.ocupado small{color:#CF6060;}
+
+/* RESUMO AGENDAMENTO */
+.ag-resumo{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1rem;}
+.ag-resumo-title{font-family:var(--font-display);font-size:16px;color:var(--k-gold);margin-bottom:.75rem;letter-spacing:1px;}
+.ag-resumo-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;}
+.ag-resumo-row span:first-child{color:var(--k-muted);}
+.ag-resumo-row span:last-child{color:var(--k-cream);font-weight:500;}
+
+/* SERVIÇOS NA MINHA ÁREA */
+.minha-svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:.75rem;}
+.minha-svc-card{background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:.2s;}
+.minha-svc-card:hover{border-color:var(--k-gold);background:rgba(201,168,76,.06);}
+.minha-svc-card i{font-size:26px;color:var(--k-gold);display:block;margin-bottom:.4rem;}
+.minha-svc-card-nome{font-size:12px;font-weight:500;color:var(--k-cream);}
+.minha-svc-card-preco{font-family:var(--font-display);font-size:18px;color:var(--k-gold);margin-top:.2rem;}
 </style>
 
   <!-- Firebase -->
@@ -548,6 +595,63 @@ textarea.form-input{resize:vertical;min-height:65px;}
     <div class="plan-select-sub">Selecione o plano e a quantidade de meses desejada</div>
     <div class="plan-grid" id="plan-grid-select" style="margin-bottom:0;"></div>
     <a class="skip-link" onclick="skipPlano()">Entrar sem plano por enquanto</a>
+  </div>
+</div>
+
+<!-- TELA DE AGENDAMENTO COM CALENDÁRIO -->
+<div id="agenda-screen">
+  <div class="agenda-screen-header">
+    <button class="chat-back" onclick="fecharAgendaScreen()"><i class="ti ti-arrow-left"></i></button>
+    <img id="ag-screen-logo" src="" alt="KJota"/>
+    <div style="flex:1;">
+      <div style="font-family:var(--font-display);font-size:17px;letter-spacing:2px;color:var(--k-gold);" id="ag-screen-title">Agendar</div>
+      <div style="font-size:11px;color:var(--k-muted);" id="ag-screen-sub"></div>
+    </div>
+  </div>
+  <div class="agenda-screen-body">
+    <!-- PASSO 1: Calendário -->
+    <div id="ag-step-cal">
+      <div style="font-size:13px;font-weight:600;color:var(--k-cream);margin-bottom:.75rem;">Escolha a data</div>
+      <div class="agcal-nav">
+        <button class="btn btn-outline btn-sm" onclick="mudarMesAg(-1)"><i class="ti ti-chevron-left"></i></button>
+        <div class="agcal-title" id="ag-cal-label"></div>
+        <button class="btn btn-outline btn-sm" onclick="mudarMesAg(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="agcal-grid" id="ag-cal-header">
+        <div class="agcal-cell header">Dom</div>
+        <div class="agcal-cell header">Seg</div>
+        <div class="agcal-cell header">Ter</div>
+        <div class="agcal-cell header">Qua</div>
+        <div class="agcal-cell header">Qui</div>
+        <div class="agcal-cell header">Sex</div>
+        <div class="agcal-cell header">Sáb</div>
+      </div>
+      <div class="agcal-grid" id="ag-cal-grid"></div>
+    </div>
+
+    <!-- PASSO 2: Horários -->
+    <div id="ag-step-hora" style="display:none;">
+      <div style="font-size:13px;font-weight:600;color:var(--k-cream);margin-bottom:.5rem;">Horários disponíveis — <span id="ag-hora-data-label" style="color:var(--k-gold);"></span></div>
+      <div style="font-size:11px;color:var(--k-muted);margin-bottom:.75rem;" id="ag-hora-info"></div>
+      <div class="horarios-grid" id="ag-horarios-grid"></div>
+      <button class="btn btn-outline btn-sm" onclick="voltarParaCal()" style="margin-bottom:1rem;"><i class="ti ti-arrow-left"></i>Mudar data</button>
+    </div>
+
+    <!-- PASSO 3: Resumo + Confirmar -->
+    <div id="ag-step-resumo" style="display:none;">
+      <div class="ag-resumo">
+        <div class="ag-resumo-title">Resumo do agendamento</div>
+        <div class="ag-resumo-row"><span>Serviço</span><span id="res-svc"></span></div>
+        <div class="ag-resumo-row"><span>Data</span><span id="res-data"></span></div>
+        <div class="ag-resumo-row"><span>Horário</span><span id="res-hora"></span></div>
+        <div class="ag-resumo-row"><span>Duração</span><span id="res-dur"></span></div>
+        <div class="ag-resumo-row"><span>Valor</span><span id="res-val" style="color:var(--k-gold);font-family:var(--font-display);font-size:18px;"></span></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline" onclick="voltarParaHora()" style="flex:1;justify-content:center;"><i class="ti ti-arrow-left"></i>Mudar horário</button>
+        <button class="btn btn-gold" onclick="confirmarAgendamentoCli()" style="flex:2;justify-content:center;"><i class="ti ti-check"></i>Confirmar e ir ao pagamento</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2714,6 +2818,524 @@ renderChats = function() {
     '</div>';
   }).join('');
   atualizarBadgeChats();
+};
+
+</script>
+</body>
+</html>
+<script>
+// ═══════════════════════════════════════════════
+// AGENDAMENTO VISUAL — CALENDÁRIO + HORÁRIOS
+// ═══════════════════════════════════════════════
+
+var agState = {
+  svc: null,         // serviço ou plano selecionado
+  tipo: null,        // 'avulso' ou 'assinatura'
+  mesAtual: null,    // Date do mês exibido
+  dataSel: null,     // 'YYYY-MM-DD'
+  horaSel: null,     // 'HH:MM'
+  dur: 30,           // duração em minutos
+  preco: 0,
+};
+
+// ── ABRIR TELA DE AGENDAMENTO ──
+function abrirAgendaScreen(svcOuPlano, tipo) {
+  agState.svc = svcOuPlano;
+  agState.tipo = tipo;
+  agState.dur = tipo === 'avulso' ? (svcOuPlano.dur || 30) : 45;
+  agState.preco = tipo === 'avulso' ? (svcOuPlano.preco || 0) : (svcOuPlano.preco || 0);
+  agState.dataSel = null;
+  agState.horaSel = null;
+  agState.mesAtual = new Date();
+  agState.mesAtual.setDate(1);
+
+  document.getElementById('ag-screen-logo').src = LOGO;
+  document.getElementById('ag-screen-title').textContent = svcOuPlano.nome || 'Agendar';
+  document.getElementById('ag-screen-sub').textContent =
+    moeda(agState.preco) + ' · ' + agState.dur + ' min';
+
+  // Mostrar passo 1
+  document.getElementById('ag-step-cal').style.display = '';
+  document.getElementById('ag-step-hora').style.display = 'none';
+  document.getElementById('ag-step-resumo').style.display = 'none';
+
+  document.getElementById('agenda-screen').classList.add('visible');
+  renderCalAg();
+}
+
+function fecharAgendaScreen() {
+  document.getElementById('agenda-screen').classList.remove('visible');
+}
+
+// ── CALENDÁRIO ──
+function mudarMesAg(d) {
+  agState.mesAtual.setMonth(agState.mesAtual.getMonth() + d);
+  renderCalAg();
+}
+
+function renderCalAg() {
+  var meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var ano = agState.mesAtual.getFullYear();
+  var mes = agState.mesAtual.getMonth();
+  document.getElementById('ag-cal-label').textContent = meses[mes] + ' ' + ano;
+
+  var primeiroDia = new Date(ano, mes, 1).getDay();
+  var diasNoMes   = new Date(ano, mes + 1, 0).getDate();
+  var hoje        = today();
+
+  var cells = '';
+  for (var i = 0; i < primeiroDia; i++) cells += '<div class="agcal-cell vazio"></div>';
+
+  for (var dia = 1; dia <= diasNoMes; dia++) {
+    var ds = ano + '-' + String(mes+1).padStart(2,'0') + '-' + String(dia).padStart(2,'0');
+    var diaSem  = new Date(ano, mes, dia).getDay();
+    var passado = ds < hoje;
+    var folga   = CONFIG.folgas.indexOf(ds) >= 0 || !CONFIG.horarios[diaSem].ativo;
+    var isHoje  = ds === hoje;
+    var isSel   = ds === agState.dataSel;
+
+    var cls = 'agcal-cell ';
+    if (passado)   cls += 'passado';
+    else if (folga) cls += 'fechado';
+    else if (isSel) cls += 'selecionado';
+    else            cls += 'disponivel';
+    if (isHoje && !isSel) cls += ' hoje';
+
+    var onclick = (!passado && !folga) ? 'onclick="selecionarDataAg(\'' + ds + '\',' + diaSem + ')"' : '';
+    cells += '<div class="' + cls + '" ' + onclick + '>' + dia + '</div>';
+  }
+  document.getElementById('ag-cal-grid').innerHTML = cells;
+}
+
+function selecionarDataAg(ds, diaSem) {
+  agState.dataSel = ds;
+  agState.horaSel = null;
+  renderCalAg();
+  // Ir para passo 2
+  document.getElementById('ag-step-cal').style.display = 'none';
+  document.getElementById('ag-step-hora').style.display = '';
+  document.getElementById('ag-step-resumo').style.display = 'none';
+  document.getElementById('ag-hora-data-label').textContent = fmt(ds);
+  var h = CONFIG.horarios[diaSem];
+  document.getElementById('ag-hora-info').textContent =
+    'Funcionamento: ' + h.inicio + ' às ' + h.fim + ' · Duração do serviço: ' + agState.dur + ' min';
+  renderHorariosAg(ds, h);
+}
+
+function voltarParaCal() {
+  document.getElementById('ag-step-cal').style.display = '';
+  document.getElementById('ag-step-hora').style.display = 'none';
+  document.getElementById('ag-step-resumo').style.display = 'none';
+}
+
+function voltarParaHora() {
+  document.getElementById('ag-step-hora').style.display = '';
+  document.getElementById('ag-step-resumo').style.display = 'none';
+}
+
+// ── GERAR SLOTS DE HORÁRIO ──
+function gerarSlots(inicio, fim, intervalo) {
+  var slots = [];
+  var partes = inicio.split(':');
+  var cur = parseInt(partes[0]) * 60 + parseInt(partes[1]);
+  var partesF = fim.split(':');
+  var end = parseInt(partesF[0]) * 60 + parseInt(partesF[1]);
+  while (cur + intervalo <= end) {
+    var h = String(Math.floor(cur/60)).padStart(2,'0');
+    var m = String(cur%60).padStart(2,'0');
+    slots.push(h + ':' + m);
+    cur += intervalo;
+  }
+  return slots;
+}
+
+// ── CHECAR SE HORÁRIO ESTÁ OCUPADO (com bloqueio por duração) ──
+function slotOcupado(ds, horaSlot, durMinutos) {
+  // Converter slot para minutos
+  var slotMin = horaToMin(horaSlot);
+  var slotFim = slotMin + durMinutos;
+
+  // Verificar todos os agendamentos daquele dia
+  var agsNoDia = D.agendamentos.filter(function(a) {
+    return a.data === ds && a.status !== 'cancel';
+  });
+
+  for (var i = 0; i < agsNoDia.length; i++) {
+    var ag = agsNoDia[i];
+    var agMin = horaToMin(ag.hora);
+    // Duração do agendamento existente
+    var agDur = getDurAgendamento(ag);
+    var agFim = agMin + agDur;
+
+    // Verificar sobreposição
+    if (slotMin < agFim && slotFim > agMin) {
+      return true; // ocupado
+    }
+  }
+  return false;
+}
+
+function horaToMin(hora) {
+  if (!hora) return 0;
+  var p = hora.split(':');
+  return parseInt(p[0]) * 60 + parseInt(p[1]);
+}
+
+function getDurAgendamento(ag) {
+  // Se tem svcId, buscar duração do serviço
+  if (ag.svcId) {
+    var svc = D.servicos.find(function(s) { return s.id === ag.svcId || s.id === String(ag.svcId); });
+    if (svc) return svc.dur || 30;
+  }
+  // Se tem planoId, usar duração padrão de plano (45 min)
+  if (ag.planoId) return 45;
+  // Default
+  return ag.dur || 30;
+}
+
+function renderHorariosAg(ds, horario) {
+  var slots = gerarSlots(horario.inicio, horario.fim, 30);
+  var grid  = document.getElementById('ag-horarios-grid');
+
+  if (!slots.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--k-muted);font-size:13px;">Nenhum horário disponível</div>';
+    return;
+  }
+
+  grid.innerHTML = slots.map(function(slot) {
+    var ocup = slotOcupado(ds, slot, agState.dur);
+    var isSel = slot === agState.horaSel;
+    var cls = 'hora-slot' + (ocup ? ' ocupado' : '') + (isSel ? ' selecionado' : '');
+    var onclick = !ocup ? 'onclick="selecionarHoraAg(\'' + slot + '\')"' : '';
+    return '<div class="' + cls + '" ' + onclick + '>' +
+      '<span>' + slot + '</span>' +
+      '<small>' + (ocup ? 'Ocupado' : agState.dur + 'min') + '</small>' +
+    '</div>';
+  }).join('');
+}
+
+function selecionarHoraAg(hora) {
+  agState.horaSel = hora;
+  // Atualizar grid
+  document.querySelectorAll('.hora-slot').forEach(function(el) {
+    el.classList.toggle('selecionado', el.querySelector('span').textContent === hora);
+  });
+  // Ir para passo 3
+  setTimeout(function() {
+    document.getElementById('ag-step-hora').style.display = 'none';
+    document.getElementById('ag-step-resumo').style.display = '';
+    // Preencher resumo
+    document.getElementById('res-svc').textContent  = agState.svc ? agState.svc.nome : '';
+    document.getElementById('res-data').textContent = fmt(agState.dataSel);
+    document.getElementById('res-hora').textContent = agState.horaSel;
+    document.getElementById('res-dur').textContent  = agState.dur + ' minutos';
+    document.getElementById('res-val').textContent  = moeda(agState.preco);
+  }, 200);
+}
+
+// ── CONFIRMAR AGENDAMENTO (vai para chat PIX) ──
+function confirmarAgendamentoCli() {
+  if (!agState.dataSel || !agState.horaSel) { toast('Selecione data e horário'); return; }
+  fecharAgendaScreen();
+
+  if (agState.tipo === 'avulso') {
+    // Salvar agendamento provisório (status: aguardando_pag)
+    var ag = {
+      cliente: String(SESSAO.clienteId),
+      svc: agState.svc.nome,
+      svcId: String(agState.svc.id),
+      tipo: 'avulso',
+      data: agState.dataSel,
+      hora: agState.horaSel,
+      preco: agState.preco,
+      dur: agState.dur,
+      obs: '',
+      status: 'aguardando_pag'
+    };
+    D.agendamentos.push({ ...ag, id: 'prov_' + Date.now() });
+    // Abrir chat avulso com data/hora já definidos
+    abrirChatAvulsoAgendado(SESSAO.clienteId, agState.svc, agState.dataSel, agState.horaSel);
+  } else {
+    // Assinatura — abrir chat de plano com data agendada
+    abrirChatPix(SESSAO.clienteId, agState.svc.id, 'minha-area', agState.dataSel, agState.horaSel);
+  }
+}
+
+// ── CHAT AVULSO COM DATA AGENDADA ──
+function abrirChatAvulsoAgendado(clienteId, svc, data, hora) {
+  var chat = {
+    id: 'avulso_' + clienteId + '_' + svc.id + '_' + Date.now(),
+    clienteId: String(clienteId),
+    planoId: null,
+    svcId: String(svc.id),
+    svcNome: svc.nome,
+    svcPreco: svc.preco,
+    svcDur: svc.dur,
+    agData: data,
+    agHora: hora,
+    meses: 1,
+    tipo: 'avulso',
+    status: 'pendente',
+    msgs: [],
+    unread: 0,
+    vencimento: null
+  };
+  D.chats.push(chat);
+  chatAtual = chat;
+  chatVoltarPara = 'minha-area';
+
+  document.getElementById('chat-logo').src = LOGO;
+  document.getElementById('chat-title').textContent = svc.nome;
+  document.getElementById('chat-sub').textContent = fmt(data) + ' às ' + hora + ' · ' + moeda(svc.preco);
+
+  chat.msgs.push({
+    lado: 'kjota',
+    html: 'Olá, ' + getCN(clienteId).split(' ')[0] + '! 👋<br/>' +
+          'Seu agendamento:<br/>' +
+          '📅 <b>' + fmt(data) + '</b> às <b>' + hora + '</b><br/>' +
+          '✂️ <b>' + svc.nome + '</b> · ' + moeda(svc.preco) + ' · ' + svc.dur + 'min<br/><br/>' +
+          'Realize o pagamento via PIX para confirmar:',
+    hora: agora(), tipo: 'texto'
+  });
+  chat.msgs.push({
+    lado: 'kjota',
+    html: '<div class="pix-box">' +
+      '<div style="font-size:11px;color:var(--k-muted);margin-bottom:.3rem;">Chave PIX</div>' +
+      '<div class="pix-key">' + PIX_KEY + '</div>' +
+      '<div style="font-size:12px;color:var(--k-muted);margin-top:.4rem;">Tipo: ' + CONFIG.pixTipo + ' · Favorecido: ' + (CONFIG.pixNome||'KJota Barbearia') + '</div>' +
+      '<button class="pix-copy" onclick="copiarPix()"><i class="ti ti-copy"></i>Copiar chave</button>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--k-muted);margin-top:.4rem;">Envie o comprovante aqui após o pagamento.</div>',
+    hora: agora(), tipo: 'pix'
+  });
+
+  document.getElementById('chat-screen').classList.add('visible');
+  renderChat();
+  renderQuickActionsAvulso(svc);
+  fbSalvarChatAvulso(chat);
+}
+
+// ── CONFIRMAR PAGAMENTO AVULSO COM AGENDAMENTO REAL ──
+var _confirmarPagamentoAvulsoOrig = confirmarPagamentoAvulso;
+confirmarPagamentoAvulso = async function() {
+  if (!chatAtual) return;
+  chatAtual.status = 'confirmado';
+  mostrarLoadingApp('Confirmando...');
+
+  // Criar agendamento real no Firestore
+  var ag = {
+    cliente: String(chatAtual.clienteId),
+    svc: chatAtual.svcNome || '',
+    svcId: String(chatAtual.svcId || ''),
+    tipo: 'avulso',
+    data: chatAtual.agData || today(),
+    hora: chatAtual.agHora || '09:00',
+    preco: chatAtual.svcPreco || 0,
+    dur: chatAtual.svcDur || 30,
+    obs: '',
+    status: 'wait'
+  };
+  var agId = await fbAdd('agendamentos', ag);
+  ag.id = agId;
+  // Remover provisório
+  D.agendamentos = D.agendamentos.filter(function(a){ return !String(a.id).startsWith('prov_'); });
+  D.agendamentos.push(ag);
+
+  // Registrar no caixa
+  var cx = { tipo:'entrada', desc: ag.svc + ' (avulso) — ' + getCN(chatAtual.clienteId), val: ag.preco, hora: agora(), data: today() };
+  var cxId = await fbAdd('caixa', cx);
+  cx.id = cxId;
+  D.caixa.unshift(cx);
+
+  // Incrementar visitas
+  var cli = D.clientes.find(function(c){ return c.id===chatAtual.clienteId||c.id===String(chatAtual.clienteId); });
+  if (cli) { cli.visitas=(cli.visitas||0)+1; await fbUpdate('clientes',String(cli.id),{visitas:cli.visitas}); }
+
+  chatAtual.msgs.push({
+    lado:'kjota',
+    html:'✅ Pagamento confirmado! Seu agendamento está marcado para:<br/>📅 <b>' + fmt(ag.data) + '</b> às <b>' + ag.hora + '</b><br/>✂️ <b>' + ag.svc + '</b><br/>Até lá! 💈',
+    hora:agora(), tipo:'texto'
+  });
+  chatAtual.msgs.push({ lado:'system', html:'Agendamento confirmado — '+fmt(ag.data)+' às '+ag.hora, hora:agora(), tipo:'sistema' });
+
+  await fbSalvarChatAvulso(chatAtual);
+  esconderLoadingApp();
+  renderChat();
+  renderQuickActionsAvulso({});
+  renderCaixa(); renderDash();
+  atualizarBadgeChats();
+  toast('Agendamento confirmado!');
+};
+
+// ── PATCH: Minha Área — mostrar serviços + botão agendar ──
+var _renderMinhaAreaV15 = renderMinhaArea;
+renderMinhaArea = function() {
+  _renderMinhaAreaV15();
+
+  // Injetar seção de serviços se não existir
+  var existente = document.getElementById('svc-minha-area-box');
+  if (existente) existente.remove();
+
+  var box = document.getElementById('minha-assin-box');
+  if (!box) return;
+
+  var div = document.createElement('div');
+  div.id = 'svc-minha-area-box';
+  div.style.marginBottom = '1rem';
+
+  if (D.servicos && D.servicos.length) {
+    div.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--k-cream);margin-bottom:.6rem;">' +
+      '<i class="ti ti-scissors" style="color:var(--k-gold);margin-right:5px;"></i>Serviços disponíveis</div>' +
+      '<div class="minha-svc-grid">' +
+      D.servicos.map(function(s) {
+        return '<div class="minha-svc-card" onclick="abrirAgendaScreen(' + JSON.stringify(s).replace(/"/g,"'") + ",'" + 'avulso' + "')" + '>' +
+          '<i class="ti ' + (s.icone||'ti-scissors') + '"></i>' +
+          '<div class="minha-svc-card-nome">' + s.nome + '</div>' +
+          '<div class="minha-svc-card-preco">' + moeda(s.preco) + '</div>' +
+          '</div>';
+      }).join('') +
+      '</div>';
+  } else {
+    div.innerHTML = '<div style="background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:.85rem 1rem;margin-bottom:0;">' +
+      '<div style="font-size:12px;color:var(--k-muted);"><i class="ti ti-scissors" style="margin-right:5px;"></i>Nenhum serviço disponível no momento.</div></div>';
+  }
+
+  // Inserir após o box de assinatura, antes dos agendamentos
+  var card = box.parentElement.querySelector('.card');
+  if (card) card.parentElement.insertBefore(div, card);
+};
+
+// ── PATCH selecionarServico: abrir calendário em vez de chat direto ──
+selecionarServico = function(svcId) {
+  var svc = D.servicos.find(function(s){ return s.id===svcId||s.id===String(svcId); });
+  if (!svc) return;
+  document.getElementById('svc-select-screen').classList.remove('visible');
+  abrirAgendaScreen(svc, 'avulso');
+};
+
+// ── PATCH selecionarPlano: abrir calendário ──
+var _selecionarPlanoOrig = selecionarPlano;
+selecionarPlano = function(planoId) {
+  var plano = D.planos.find(function(p){ return p.id===planoId||p.id===String(planoId); });
+  if (!plano) return;
+  document.getElementById('plan-select-screen').classList.remove('visible');
+  abrirAgendaScreen(plano, 'assinatura');
+};
+
+// ── PATCH confirmar plano: passar data/hora ──
+var _abrirChatPixOrig2 = abrirChatPix;
+abrirChatPix = function(clienteId, planoId, origem, agData, agHora) {
+  var plano = D.planos.find(function(p){ return p.id===planoId||p.id===String(planoId); });
+  if (!plano) return;
+  var chat = getOuCriarChat(clienteId, planoId);
+  chat.agData = agData || null;
+  chat.agHora = agHora || null;
+  chatAtual = chat;
+  chatVoltarPara = origem;
+  chatAtual.unread = 0;
+  atualizarBadgeChats();
+
+  document.getElementById('chat-logo').src = LOGO;
+  document.getElementById('chat-title').textContent = plano.nome;
+  document.getElementById('chat-sub').textContent = SESSAO.role==='dono'
+    ? getCN(clienteId)+' · '+moeda(plano.preco)+'/mês'
+    : (agData ? fmt(agData)+' às '+agHora+' · ' : '') + 'Pagamento via PIX';
+
+  if (chat.msgs.length === 0) {
+    var agInfo = agData ? '<br/>📅 Data agendada: <b>'+fmt(agData)+'</b> às <b>'+agHora+'</b>' : '';
+    chat.msgs.push({
+      lado:'kjota',
+      html:'Olá, '+getCN(clienteId).split(' ')[0]+'! 👋 Você escolheu o <b>'+plano.nome+'</b>.<br/>' +
+           'Valor: <b>'+moeda(plano.preco)+'/mês</b>' + agInfo + '<br/><br/>Escolha a quantidade de meses e envie o comprovante PIX:',
+      hora:agora(), tipo:'texto'
+    });
+    var chatObj = chat;
+    var planoObj = plano;
+    chatObj.msgs.push({
+      lado:'kjota',
+      html:'<div class="pix-box">' +
+        '<div style="font-size:11px;color:var(--k-muted);margin-bottom:.3rem;">Chave PIX</div>' +
+        '<div class="pix-key">'+PIX_KEY+'</div>' +
+        '<div style="font-size:12px;color:var(--k-muted);margin-top:.4rem;">Tipo: '+CONFIG.pixTipo+' · Favorecido: '+(CONFIG.pixNome||'KJota Barbearia')+'</div>' +
+        '<button class="pix-copy" onclick="copiarPix()"><i class="ti ti-copy"></i>Copiar chave</button>' +
+        '</div><div style="font-size:12px;color:var(--k-muted);margin-top:.4rem;">Após o pagamento, envie o comprovante aqui ou o número do recibo.</div>',
+      hora:agora(), tipo:'pix'
+    });
+  }
+
+  document.getElementById('chat-screen').classList.add('visible');
+  renderChat();
+  renderQuickActions(plano);
+};
+
+// ── PATCH confirmarPagamento (plano): criar agendamento real ──
+var _confirmarPagamentoV15 = confirmarPagamento;
+confirmarPagamento = async function() {
+  if (!chatAtual) return;
+  var plano = D.planos.find(function(p){return p.id===chatAtual.planoId||p.id===String(chatAtual.planoId);});
+  var meses = chatAtual.meses||1;
+  var inicio = new Date();
+  var venc = new Date(inicio);
+  venc.setMonth(venc.getMonth()+meses);
+  chatAtual.vencimento = venc.toISOString().split('T')[0];
+  chatAtual.status = 'confirmado';
+  mostrarLoadingApp('Confirmando pagamento...');
+
+  // Remover assinatura anterior
+  var ant = D.assinantes.find(function(a){return (a.cliente===chatAtual.clienteId||a.cliente===String(chatAtual.clienteId))&&a.status==='ativo';});
+  if(ant) await fbUpdate('assinantes',String(ant.id),{status:'cancelado'});
+
+  // Nova assinatura
+  var novaAssin = { cliente:String(chatAtual.clienteId), plano:String(chatAtual.planoId), inicio:today(), vencimento:chatAtual.vencimento, meses, val:plano?plano.preco:0, status:'ativo' };
+  var assinId = await fbAdd('assinantes', novaAssin);
+  novaAssin.id = assinId;
+  D.assinantes = D.assinantes.filter(function(a){return a.id!==assinId;});
+  D.assinantes.push(novaAssin);
+
+  // Criar agendamento se tiver data selecionada
+  if (chatAtual.agData && chatAtual.agHora) {
+    var ag = {
+      cliente: String(chatAtual.clienteId),
+      svc: plano ? plano.nome : 'Assinatura',
+      planoId: String(chatAtual.planoId),
+      tipo: 'assinatura',
+      data: chatAtual.agData,
+      hora: chatAtual.agHora,
+      preco: 0,
+      dur: 45,
+      obs: '',
+      status: 'wait'
+    };
+    var agId = await fbAdd('agendamentos', ag);
+    ag.id = agId;
+    D.agendamentos.push(ag);
+  }
+
+  // Caixa
+  var cx = { tipo:'entrada', desc:'PIX Assinatura '+(plano?plano.nome:'')+' ('+meses+'x) — '+getCN(chatAtual.clienteId), val:(plano?plano.preco:0)*meses, hora:agora(), data:today() };
+  var cxId = await fbAdd('caixa', cx);
+  cx.id = cxId;
+  D.caixa.unshift(cx);
+
+  var agInfo = chatAtual.agData ? '<br/>📅 Agendado para: <b>'+fmt(chatAtual.agData)+'</b> às <b>'+chatAtual.agHora+'</b>' : '';
+  chatAtual.msgs.push({ lado:'kjota', html:'✅ Pagamento confirmado! Seu <b>'+(plano?plano.nome:'plano')+'</b> está ativo por <b>'+meses+' mês'+(meses>1?'es':'')+'</b>.<br/>Vencimento: <b>'+fmt(chatAtual.vencimento)+'</b>'+agInfo, hora:agora(), tipo:'texto' });
+  chatAtual.msgs.push({ lado:'system', html:'Plano ativado até '+fmt(chatAtual.vencimento), hora:agora(), tipo:'sistema' });
+
+  await fbSalvarChat(chatAtual);
+  esconderLoadingApp();
+  renderChat();
+  renderQuickActions(plano||{});
+  renderAssinaturas(); renderCaixa(); renderDash();
+  atualizarBadgeChats();
+  toast('Pagamento confirmado! Plano ativado.');
+};
+
+// Garantir que a tela de agenda está no setLogoAll
+var _setLogoAllV15 = setLogoAll;
+setLogoAll = function() {
+  _setLogoAllV15();
+  var el = document.getElementById('ag-screen-logo');
+  if (el) el.src = LOGO;
 };
 
 </script>
