@@ -1331,8 +1331,9 @@ iniciarApp = function() {
     renderDash();
   } else {
     nav.innerHTML =
-      '<button class="nav-btn active" onclick="goTo(\'minha-area\',this)"><i class="ti ti-user"></i>Minha Área</button>' +
-      '<button class="nav-btn" onclick="goTo(\'planos-cli\',this)"><i class="ti ti-crown"></i>Planos</button>';
+      '<button class="nav-btn active" onclick="goTo('minha-area',this)"><i class="ti ti-user"></i>Minha Área</button>' +
+      '<button class="nav-btn" onclick="goTo('svc-cli',this)"><i class="ti ti-scissors"></i>Serviços</button>' +
+      '<button class="nav-btn" onclick="goTo('planos-cli',this)"><i class="ti ti-crown"></i>Planos</button>';
     document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
     document.getElementById('s-minha-area').classList.add('active');
     renderMinhaArea();
@@ -1588,8 +1589,9 @@ iniciarApp = function() {
     renderDash();
   } else {
     nav.innerHTML =
-      '<button class="nav-btn active" onclick="goTo(\'minha-area\',this)"><i class="ti ti-user"></i>Minha Área</button>' +
-      '<button class="nav-btn" onclick="goTo(\'planos-cli\',this)"><i class="ti ti-crown"></i>Planos</button>';
+      '<button class="nav-btn active" onclick="goTo('minha-area',this)"><i class="ti ti-user"></i>Minha Área</button>' +
+      '<button class="nav-btn" onclick="goTo('svc-cli',this)"><i class="ti ti-scissors"></i>Serviços</button>' +
+      '<button class="nav-btn" onclick="goTo('planos-cli',this)"><i class="ti ti-crown"></i>Planos</button>';
     document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
     document.getElementById('s-minha-area').classList.add('active');
     renderMinhaArea();
@@ -2705,8 +2707,9 @@ iniciarApp = function() {
     renderDash();
   } else {
     nav.innerHTML =
-      '<button class="nav-btn active" onclick="goTo(\'minha-area\',this)"><i class="ti ti-user"></i>Minha Área</button>' +
-      '<button class="nav-btn" onclick="goTo(\'planos-cli\',this)"><i class="ti ti-crown"></i>Planos</button>';
+      '<button class="nav-btn active" onclick="goTo('minha-area',this)"><i class="ti ti-user"></i>Minha Área</button>' +
+      '<button class="nav-btn" onclick="goTo('svc-cli',this)"><i class="ti ti-scissors"></i>Serviços</button>' +
+      '<button class="nav-btn" onclick="goTo('planos-cli',this)"><i class="ti ti-crown"></i>Planos</button>';
     document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
     document.getElementById('s-minha-area').classList.add('active');
     renderMinhaArea();
@@ -3344,6 +3347,145 @@ setLogoAll = function() {
   _setLogoAllV15();
   var el = document.getElementById('ag-screen-logo');
   if (el) el.src = LOGO;
+};
+
+</script>
+</body>
+</html>
+<script>
+// ── RENDER SERVIÇOS CLIENTE ──
+function renderSvcCli() {
+  var el = document.getElementById('svc-cli-grid');
+  if (!el) return;
+
+  if (!D.servicos || !D.servicos.length) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:var(--k-muted);">' +
+      '<i class="ti ti-scissors" style="font-size:40px;opacity:.3;display:block;margin-bottom:.75rem;"></i>' +
+      '<p style="font-size:13px;">Nenhum serviço disponível no momento.</p></div>';
+    return;
+  }
+
+  el.innerHTML = D.servicos.map(function(s) {
+    return '<div class="svc-card" onclick="abrirAgendaScreenById(\'' + s.id + '\',\'avulso\')">' +
+      '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
+      '<div class="svc-card-nome">' + s.nome + '</div>' +
+      '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
+      '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── PATCH goTo: incluir svc-cli e carregar serviços ──
+var _goToV16 = goTo;
+goTo = function(id, btn) {
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('s-'+id).classList.add('active');
+  btn.classList.add('active');
+  var r = {
+    dashboard: renderDash,
+    agenda: renderAgenda,
+    clientes: renderClientes,
+    servicos: renderServicos,
+    assinaturas: renderAssinaturas,
+    chats: renderChats,
+    caixa: renderCaixa,
+    config: renderConfig,
+    'minha-area': renderMinhaArea,
+    'svc-cli': renderSvcCli,
+    'planos-cli': renderPlanosCli,
+  };
+  if (r[id]) r[id]();
+};
+
+// ── PATCH renderMinhaArea: remover serviços do meio e só mostrar link ──
+// Sobrescreve a injeção de serviços inline para não aparecer na Minha Área
+var _renderMinhaAreaV16 = renderMinhaArea;
+renderMinhaArea = function() {
+  _renderMinhaAreaV16();
+
+  // Remover caixa de serviços da Minha Área se existir (vai para aba própria)
+  var existente = document.getElementById('svc-minha-area-box');
+  if (existente) existente.remove();
+
+  // Adicionar link rápido para aba serviços se não tiver assinatura
+  var box = document.getElementById('minha-assin-box');
+  if (!box) return;
+  var assin = D.assinantes.find(function(a){
+    return (a.cliente===SESSAO.clienteId||a.cliente===String(SESSAO.clienteId)) && a.status==='ativo';
+  });
+  if (!assin && D.servicos && D.servicos.length) {
+    var linkBox = document.getElementById('svc-link-minha-area');
+    if (!linkBox) {
+      var div = document.createElement('div');
+      div.id = 'svc-link-minha-area';
+      div.style.cssText = 'background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:10px;';
+      div.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<i class="ti ti-scissors" style="color:var(--k-gold);font-size:22px;"></i>' +
+          '<div>' +
+            '<div style="font-size:13px;font-weight:500;color:var(--k-cream);">Serviços disponíveis</div>' +
+            '<div style="font-size:12px;color:var(--k-muted);margin-top:2px;">' + D.servicos.length + ' serviço' + (D.servicos.length > 1 ? 's' : '') + ' · agende agora</div>' +
+          '</div>' +
+        '</div>' +
+        '<button class="btn btn-gold btn-sm" onclick="irParaServicos()"><i class="ti ti-arrow-right"></i>Ver</button>';
+      var card = box.parentElement.querySelector('.card');
+      if (card) card.parentElement.insertBefore(div, card);
+      else box.parentElement.appendChild(div);
+    }
+  }
+};
+
+function irParaServicos() {
+  // Navegar para aba serviços clicando no btn da nav
+  var btns = document.querySelectorAll('.nav-btn');
+  btns.forEach(function(b) {
+    if (b.textContent.trim().startsWith('Serviços')) {
+      goTo('svc-cli', b);
+    }
+  });
+}
+
+// ── PATCH carregarDados: garantir que servicos é carregado ──
+var _carregarDadosV16 = carregarDados;
+carregarDados = async function() {
+  mostrarLoadingApp('Carregando dados...');
+  try {
+    // Usuários
+    var usersSnap = await window.fsGetDocs(colRef('usuarios'));
+    USERS = { Kjdono: { role: 'dono', nome: 'Dono', clienteId: null, pass: 'Kj123' } };
+    usersSnap.forEach(function(d){var u=d.data();USERS[u.user]={role:'cliente',nome:u.nome,clienteId:d.id,pass:u.pass};});
+    // Clientes
+    var cliSnap = await window.fsGetDocs(colRef('clientes'));
+    D.clientes = []; cliSnap.forEach(function(d){D.clientes.push({...d.data(),id:d.id});});
+    // Planos
+    var plSnap = await window.fsGetDocs(colRef('planos'));
+    D.planos = []; plSnap.forEach(function(d){D.planos.push({...d.data(),id:d.id});});
+    // Serviços
+    var svSnap = await window.fsGetDocs(colRef('servicos'));
+    D.servicos = []; svSnap.forEach(function(d){D.servicos.push({...d.data(),id:d.id});});
+    console.log('Serviços carregados:', D.servicos.length);
+    // Assinantes
+    var asSnap = await window.fsGetDocs(colRef('assinantes'));
+    D.assinantes = []; asSnap.forEach(function(d){D.assinantes.push({...d.data(),id:d.id});});
+    // Agendamentos
+    var agSnap = await window.fsGetDocs(colRef('agendamentos'));
+    D.agendamentos = []; agSnap.forEach(function(d){D.agendamentos.push({...d.data(),id:d.id});});
+    // Caixa
+    var cxSnap = await window.fsGetDocs(colRef('caixa'));
+    D.caixa = []; cxSnap.forEach(function(d){D.caixa.push({...d.data(),id:d.id});});
+    D.caixa.sort(function(a,b){return (b.data||'').localeCompare(a.data||'')||(b.hora||'').localeCompare(a.hora||'');});
+    // Chats
+    var chSnap = await window.fsGetDocs(colRef('chats'));
+    D.chats = []; chSnap.forEach(function(d){D.chats.push({...d.data(),id:d.id,msgs:d.data().msgs||[]});});
+    // Config
+    var cfgDoc = await window.fsGetDoc(docRef('config','geral'));
+    if(cfgDoc.exists()){Object.assign(CONFIG,cfgDoc.data());PIX_KEY=CONFIG.pixKey||PIX_KEY;}
+  } catch(e) {
+    console.error('Erro ao carregar:', e);
+    toast('Erro ao conectar. Verifique sua conexão.');
+  }
+  esconderLoadingApp();
 };
 
 </script>
