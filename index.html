@@ -13,15 +13,15 @@
 :root{--k-black:#0D0D0D;--k-dark:#1A1A1A;--k-card:#222;--k-border:#333;--k-gold:#C9A84C;--k-gold-dim:#8A6E2E;--k-cream:#F5F0E8;--k-muted:#888;--font-display:'Bebas Neue',sans-serif;--font-ui:'Inter',sans-serif;}
 body{background:var(--k-black);color:var(--k-cream);font-family:var(--font-ui);min-height:100vh;overflow-x:hidden;}
 #splash{position:fixed;inset:0;background:#0D0D0D;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .6s;}
-#splash.hide{opacity:0;pointer-events:none;}
+#splash.hide{opacity:0;pointer-events:none;visibility:hidden;}
 #splash img{width:220px;height:220px;object-fit:contain;animation:pulse 1.8s ease-in-out infinite;}
 #splash-txt{font-family:var(--font-display);font-size:13px;letter-spacing:4px;color:var(--k-gold);margin-top:1.2rem;opacity:.7;}
 #splash-bar{width:150px;height:2px;background:var(--k-border);border-radius:2px;margin-top:.9rem;overflow:hidden;}
 #splash-fill{height:100%;background:var(--k-gold);width:0%;transition:width .1s linear;}
 @keyframes pulse{0%,100%{opacity:.85;transform:scale(1);}50%{opacity:1;transform:scale(1.05);}}
-#login-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:1.5rem;}
+#login-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:1.5rem;position:relative;z-index:100;}
 #login-screen.visible{display:flex;}
-.login-box{width:100%;max-width:360px;background:var(--k-dark);border:1px solid var(--k-border);border-radius:16px;padding:2rem 1.75rem;}
+.login-box{width:100%;max-width:360px;background:var(--k-dark);border:1px solid var(--k-border);border-radius:16px;padding:2rem 1.75rem;position:relative;z-index:10;}
 .login-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:1.75rem;gap:.6rem;}
 .login-logo img{width:140px;height:140px;object-fit:contain;}
 .login-logo-name{font-family:var(--font-display);font-size:28px;letter-spacing:4px;color:var(--k-gold);}
@@ -138,7 +138,7 @@ textarea.form-input{resize:vertical;min-height:65px;}
 
 /* ── CADASTRO ── */
 .tab-row{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--k-border);}
-.tab-btn{flex:1;background:none;border:none;color:var(--k-muted);font-family:var(--font-ui);font-size:13px;font-weight:600;padding:.75rem;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;}
+.tab-btn{flex:1;background:none;border:none;color:var(--k-muted);font-family:var(--font-ui);font-size:13px;font-weight:600;padding:.75rem;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;position:relative;z-index:10;}
 .tab-btn.active{color:var(--k-gold);border-bottom-color:var(--k-gold);}
 
 /* ── PLANO SELEÇÃO PÓS-CADASTRO ── */
@@ -831,6 +831,16 @@ function renderPlanosCli(){document.getElementById('plan-grid-cli').innerHTML=D.
 function initData(){D.agendamentos=[];D.caixa=[];}
 function initSplash(){
   setLogoAll();
+  // Fallback: se algo travar, mostrar login após 6s
+  setTimeout(function(){
+    var spl = document.getElementById('splash');
+    var ls  = document.getElementById('login-screen');
+    if (!ls.classList.contains('visible')) {
+      spl.classList.add('hide');
+      spl.style.display='none';
+      ls.classList.add('visible');
+    }
+  }, 6000);
   // ── FASE 1: KJota ──
   var pct=0;
   var fill=document.getElementById('splash-fill');
@@ -854,8 +864,12 @@ function initSplash(){
       setTimeout(function(){ f2.style.opacity='1'; },30);
       // Após 1.2s: esconder splash e mostrar login
       setTimeout(function(){
-        document.getElementById('splash').classList.add('hide');
-        document.getElementById('login-screen').classList.add('visible');
+        var spl = document.getElementById('splash');
+        var ls  = document.getElementById('login-screen');
+        spl.classList.add('hide');
+        ls.classList.add('visible');
+        // Garantir remoção total do splash após transição
+        setTimeout(function(){ spl.style.display='none'; }, 700);
       },1200);
     },500);
   },3500);
