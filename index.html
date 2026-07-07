@@ -411,179 +411,48 @@ textarea.form-input{resize:vertical;min-height:65px;}
       <div class="login-logo-name">KJOTA</div>
       <div class="login-logo-sub">BARBEARIA</div>
     </div>
-    <div class="tab-row">
-      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Entrar</button>
-      <button class="tab-btn" id="tab-cadastro" onclick="switchTab('cadastro')">Cadastrar</button>
-    </div>
-    <!-- LOGIN -->
-    <div id="form-login">
-    <div class="login-title" style="margin-bottom:1rem;">Entrar na sua conta</div>
-    <div class="form-group"><label class="form-label">Usuário</label><input class="form-input" type="text" id="login-user" placeholder="Usuário"/></div>
-    <div class="form-group"><label class="form-label">Senha</label><div class="pw-wrap"><input class="form-input" type="password" id="login-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"/><button class="pw-eye" onclick="togglePw()" id="pw-eye-btn"><i class="ti ti-eye" id="pw-eye-icon"></i></button></div></div>
-    <button class="btn btn-gold" onclick="doLogin()"><i class="ti ti-login"></i>Entrar</button>
-    <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
 
-    </div><!-- /form-login -->
-    <!-- CADASTRO -->
+    <!-- ABAS -->
+    <div style="display:flex;margin-bottom:1.25rem;border-bottom:1px solid #333;">
+      <button id="tab-login" onclick="switchTab('login')"
+        style="flex:1;background:none;border:none;border-bottom:2px solid #C9A84C;color:#C9A84C;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;padding:.75rem;cursor:pointer;">
+        Entrar
+      </button>
+      <button id="tab-cadastro" onclick="switchTab('cadastro')"
+        style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;padding:.75rem;cursor:pointer;">
+        Cadastrar
+      </button>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <div id="form-login">
+      <div class="form-group"><label class="form-label">Usuário</label><input class="form-input" type="text" id="login-user" placeholder="Usuário"/></div>
+      <div class="form-group"><label class="form-label">Senha</label>
+        <div class="pw-wrap">
+          <input class="form-input" type="password" id="login-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+          <button class="pw-eye" onclick="togglePw()"><i class="ti ti-eye" id="pw-eye-icon"></i></button>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="doLogin()"><i class="ti ti-login"></i>Entrar</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
+
+    <!-- FORM CADASTRO -->
     <div id="form-cadastro" style="display:none;">
-      <div class="login-title" style="margin-bottom:1rem;">Criar conta</div>
       <div class="form-group"><label class="form-label">Nome completo</label><input class="form-input" type="text" id="cad-nome" placeholder="Seu nome"/></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="cad-tel" placeholder="(00) 00000-0000"/></div>
       <div class="form-group"><label class="form-label">Usuário</label><input class="form-input" type="text" id="cad-user" placeholder="Ex: joao123"/></div>
-      <div class="form-group"><label class="form-label">Senha</label><div class="pw-wrap"><input class="form-input" type="password" id="cad-pass" placeholder="••••••"/><button class="pw-eye" onclick="togglePwCad()"><i class="ti ti-eye" id="pw-eye-cad"></i></button></div></div>
+      <div class="form-group"><label class="form-label">Senha</label>
+        <div class="pw-wrap">
+          <input class="form-input" type="password" id="cad-pass" placeholder="••••••"/>
+          <button class="pw-eye" onclick="togglePwCad()"><i class="ti ti-eye" id="pw-eye-cad"></i></button>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">Confirmar senha</label><input class="form-input" type="password" id="cad-pass2" placeholder="••••••"/></div>
       <button class="btn btn-gold" onclick="doCadastro()"><i class="ti ti-user-plus"></i>Criar conta</button>
       <div class="login-error" id="cad-error"></div>
-    </div><!-- /form-cadastro -->
-  </div>
-</div>
-<div id="app">
-  <header class="header">
-    <div class="header-left"><img id="h-logo" src="" alt=""/><div><div class="header-brand">KJOTA</div></div></div>
-    <div class="header-right"><div class="user-chip"><div class="av" id="h-avatar">KJ</div><div><div id="h-username" style="font-size:12px;color:var(--k-cream);font-weight:500;"></div><div class="role" id="h-role"></div></div></div><button class="logout-btn" onclick="doLogout()" title="Sair"><i class="ti ti-logout"></i></button></div>
-  </header>
-  <nav class="nav" id="main-nav"></nav>
-  <div class="content">
-    <section class="section" id="s-dashboard">
-      <div class="kpi-grid" id="kpi-grid"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar-event" style="margin-right:4px;color:var(--k-gold)"></i>Próximos hoje</span></div><div class="card-body" id="dash-agenda"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-cash" style="margin-right:4px;color:var(--k-gold)"></i>Movimentações</span></div><div class="card-body" id="dash-caixa"></div></div>
-      </div>
-    </section>
-    <section class="section" id="s-agenda">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"><div class="section-title" style="margin:0">Agenda</div><button class="btn btn-outline" style="font-size:12px;" onclick="openModal('m-ag')"><i class="ti ti-plus"></i>Agendar</button></div>
-      <div class="card"><div class="card-header"><span class="card-title" id="ag-dia-label"></span><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="mudaDia(-1)"><i class="ti ti-chevron-left"></i></button><button class="btn btn-outline btn-sm" onclick="mudaDia(1)"><i class="ti ti-chevron-right"></i></button></div></div><div class="card-body scroll-list" id="lista-agenda"></div></div>
-    </section>
-    <section class="section" id="s-clientes">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"><div class="section-title" style="margin:0">Clientes</div><button class="btn btn-outline" style="font-size:12px;" onclick="openModal('m-cl')"><i class="ti ti-plus"></i>Novo</button></div>
-      <input class="form-input" type="search" placeholder="Buscar..." oninput="filtrarClientes(this.value)" style="margin-bottom:1rem;"/>
-      <div class="card"><div class="card-body scroll-list" id="lista-clientes"></div></div>
-    </section>
-    <section class="section" id="s-assinaturas">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"><div class="section-title" style="margin:0">Assinaturas</div><button class="btn btn-outline" style="font-size:12px;" onclick="openModal('m-plano')"><i class="ti ti-plus"></i>Novo plano</button></div>
-      <div class="plan-grid" id="plan-grid"></div>
-      <div class="divider"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;"><div style="font-size:13px;font-weight:600;color:var(--k-cream);">Assinantes</div><button class="btn btn-outline btn-sm" onclick="openModal('m-assin')"><i class="ti ti-user-plus"></i>Adicionar</button></div>
-      <div class="card"><div class="card-body scroll-list" id="lista-assinantes"></div></div>
-    </section>
-    <section class="section" id="s-caixa">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"><div class="section-title" style="margin:0">Caixa</div><button class="btn btn-outline" style="font-size:12px;" onclick="openModal('m-cx')"><i class="ti ti-plus"></i>Lançamento</button></div>
-      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);"><div class="kpi"><div class="kpi-label">Entradas</div><div class="kpi-value" id="cx-ent">R$0</div></div><div class="kpi"><div class="kpi-label">Saídas</div><div class="kpi-value" id="cx-sai" style="color:#CF6060;">R$0</div></div><div class="kpi"><div class="kpi-label">Saldo</div><div class="kpi-value" id="cx-sal">R$0</div></div></div>
-      <div class="card" style="margin-top:1rem;"><div class="card-header"><span class="card-title">Movimentações do dia</span></div><div class="card-body scroll-list" id="lista-caixa"></div></div>
-    </section>
-    <section class="section" id="s-minha-area"><div class="section-title">Minha Área</div><div id="minha-assin-box"></div><div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar" style="margin-right:4px;color:var(--k-gold)"></i>Meus agendamentos</span></div><div class="card-body" id="meus-ags"></div></div></section>
+    </div>
 
-
-    <!-- ADMIN: SERVIÇOS AVULSOS -->
-    <section class="section" id="s-servicos">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <div class="section-title" style="margin:0">Serviços</div>
-        <button class="btn btn-outline" style="font-size:12px;" onclick="openModal('m-svc')"><i class="ti ti-plus"></i>Novo</button>
-      </div>
-      <div class="card"><div class="card-body" id="lista-servicos"></div></div>
-    </section>
-
-    <!-- ADMIN: CONFIGURAÇÕES -->
-    <section class="section" id="s-config">
-      <div class="section-title">Configurações</div>
-
-      <!-- INFORMAÇÕES DA BARBEARIA -->
-      <div class="card config-section">
-        <div class="card-header"><span class="card-title"><i class="ti ti-building-store" style="color:var(--k-gold);margin-right:5px;"></i>Informações da barbearia</span></div>
-        <div class="card-body">
-          <div class="form-group"><label class="form-label">Nome da barbearia</label><input class="form-input" type="text" id="cfg-nome" value="KJota Barbearia"/></div>
-          <div class="config-grid">
-            <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input class="form-input" type="tel" id="cfg-tel" placeholder="(31) 99999-0000"/></div>
-            <div class="form-group"><label class="form-label">Instagram</label><input class="form-input" type="text" id="cfg-insta" placeholder="@kjotabarbearia"/></div>
-          </div>
-          <div class="form-group"><label class="form-label">Endereço</label><input class="form-input" type="text" id="cfg-end" placeholder="Rua, número, bairro"/></div>
-          <div class="config-grid">
-            <div class="form-group"><label class="form-label">Cidade</label><input class="form-input" type="text" id="cfg-cidade" placeholder="Belo Horizonte"/></div>
-            <div class="form-group"><label class="form-label">CEP</label><input class="form-input" type="text" id="cfg-cep" placeholder="00000-000"/></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PIX -->
-      <div class="card config-section">
-        <div class="card-header"><span class="card-title"><i class="ti ti-qrcode" style="color:var(--k-gold);margin-right:5px;"></i>Chave PIX</span></div>
-        <div class="card-body">
-          <div class="config-grid">
-            <div class="form-group">
-              <label class="form-label">Tipo de chave</label>
-              <select class="form-input" id="cfg-pix-tipo" onchange="atualizarPreviewPix()">
-                <option value="Telefone">Telefone</option>
-                <option value="CPF">CPF</option>
-                <option value="CNPJ">CNPJ</option>
-                <option value="E-mail">E-mail</option>
-                <option value="Aleatória">Chave aleatória</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Chave PIX</label>
-              <input class="form-input" type="text" id="cfg-pix-key" placeholder="(31) 99999-0000" oninput="atualizarPreviewPix()"/>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Nome do favorecido</label><input class="form-input" type="text" id="cfg-pix-nome" placeholder="KJota Barbearia" oninput="atualizarPreviewPix()"/></div>
-          <div class="pix-preview">
-            <div>
-              <div class="pix-preview-type" id="pix-preview-type">Tipo: Telefone · Favorecido: KJota Barbearia</div>
-              <div class="pix-preview-key" id="pix-preview-key">(31) 99999-0000</div>
-            </div>
-            <i class="ti ti-qrcode" style="font-size:32px;color:var(--k-gold-dim);"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- HORÁRIOS DE FUNCIONAMENTO -->
-      <div class="card config-section">
-        <div class="card-header"><span class="card-title"><i class="ti ti-clock" style="color:var(--k-gold);margin-right:5px;"></i>Horários de funcionamento</span></div>
-        <div class="card-body" id="cfg-horarios"></div>
-      </div>
-
-      <!-- CALENDÁRIO DE FOLGAS -->
-      <div class="card config-section">
-        <div class="card-header">
-          <span class="card-title"><i class="ti ti-calendar-off" style="color:var(--k-gold);margin-right:5px;"></i>Datas especiais / Folgas</span>
-          <button class="btn btn-outline btn-sm" onclick="addFolga()"><i class="ti ti-plus"></i>Adicionar</button>
-        </div>
-        <div class="card-body">
-          <div class="mes-nav">
-            <button class="btn btn-outline btn-sm" onclick="mudarMesCal(-1)"><i class="ti ti-chevron-left"></i></button>
-            <div class="mes-nav-title" id="cal-mes-label"></div>
-            <button class="btn btn-outline btn-sm" onclick="mudarMesCal(1)"><i class="ti ti-chevron-right"></i></button>
-          </div>
-          <div class="datas-grid" id="cal-header">
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Dom</div>
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Seg</div>
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Ter</div>
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Qua</div>
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Qui</div>
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Sex</div>
-            <div class="data-chip" style="cursor:default;border:none;color:var(--k-muted);">Sáb</div>
-          </div>
-          <div class="datas-grid" id="cal-grid"></div>
-          <div style="display:flex;gap:12px;margin-top:.75rem;">
-            <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--k-muted);"><div style="width:12px;height:12px;border-radius:3px;background:rgba(42,107,58,.3);border:1px solid #2A6B3A;"></div>Dia de trabalho</div>
-            <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--k-muted);"><div style="width:12px;height:12px;border-radius:3px;background:rgba(139,26,26,.3);border:1px solid #8B1A1A;"></div>Folga / Fechado</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="config-save-bar">
-        <button class="btn btn-outline" onclick="resetConfig()"><i class="ti ti-refresh"></i>Resetar</button>
-        <button class="btn btn-gold" onclick="salvarConfig()"><i class="ti ti-device-floppy"></i>Salvar configurações</button>
-      </div>
-    </section>
-
-    <section class="section" id="s-planos-cli"><div class="section-title">Planos disponíveis</div><div class="plan-grid" id="plan-grid-cli"></div></section>
-
-  <!-- PATROCINADOR -->
-  <div id="sponsor-bar" style="border-top:1px solid #333;margin-top:1.5rem;padding:1rem 0;text-align:center;">
-    <div style="font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:.5rem;">Patrocinador oficial</div>
-    <img id="forte-logo" src="" alt="Forte Groom" style="height:auto;width:180px;object-fit:contain;opacity:.9;filter:invert(1) brightness(1.2);"/>
-  </div>
   </div>
 </div>
 
@@ -895,10 +764,17 @@ D.servicos = [];
 
 // ── ABAS LOGIN/CADASTRO ──
 function switchTab(tab) {
-  document.getElementById('form-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('form-login').style.display    = tab === 'login'    ? '' : 'none';
   document.getElementById('form-cadastro').style.display = tab === 'cadastro' ? '' : 'none';
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-cadastro').classList.toggle('active', tab === 'cadastro');
+  var tl = document.getElementById('tab-login');
+  var tc = document.getElementById('tab-cadastro');
+  if (tab === 'login') {
+    tl.style.color = '#C9A84C'; tl.style.borderBottom = '2px solid #C9A84C';
+    tc.style.color = '#888';    tc.style.borderBottom = '2px solid transparent';
+  } else {
+    tc.style.color = '#C9A84C'; tc.style.borderBottom = '2px solid #C9A84C';
+    tl.style.color = '#888';    tl.style.borderBottom = '2px solid transparent';
+  }
 }
 
 function togglePwCad() {
