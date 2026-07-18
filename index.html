@@ -553,8 +553,7 @@ textarea.form-input{resize:vertical;min-height:65px;}
     </section>
 
     <section class="section" id="s-svc-cli">
-      <div class="section-title">Serviços</div>
-      <div id="svc-cli-grid" class="svc-grid"></div>
+      <div id="svc-cli-container"></div>
     </section>
     <section class="section" id="s-planos-cli"><div class="section-title">Planos disponíveis</div><div class="plan-grid" id="plan-grid-cli"></div></section>
 
@@ -3128,6 +3127,9 @@ function confirmarAgendamentoCli() {
     D.agendamentos.push({ ...ag, id: 'prov_' + Date.now() });
     // Abrir chat avulso com data/hora já definidos
     abrirChatAvulsoAgendado(SESSAO.clienteId, agState.svc, agState.dataSel, agState.horaSel);
+  } else if (agState.tipo === 'plano-svc') {
+    // Serviço com plano ativo — agendamento direto (não precisa de pagamento)
+    confirmarAgendamentoPlanoSvc(SESSAO.clienteId, agState.svc, agState.dataSel, agState.horaSel, agState.planoId);
   } else {
     // Assinatura — abrir chat de plano com data agendada
     abrirChatPix(SESSAO.clienteId, agState.svc.id, 'minha-area', agState.dataSel, agState.horaSel);
@@ -3190,6 +3192,49 @@ function abrirChatAvulsoAgendado(clienteId, svc, data, hora) {
 
 // ── CONFIRMAR PAGAMENTO AVULSO COM AGENDAMENTO REAL ──
 var _confirmarPagamentoAvulsoOrig = confirmarPagamentoAvulso;
+// ── CONFIRMAR AGENDAMENTO PLANO + SERVIÇO ──
+async function confirmarAgendamentoPlanoSvc(clienteId, svc, data, hora, planoId) {
+  mostrarLoadingApp('Agendando serviço...');
+  try {
+    // Criar agendamento direto
+    var ag = {
+      cliente: String(clienteId),
+      svc: svc.nome,
+      svcId: String(svc.id),
+      planoId: String(planoId),
+      tipo: 'plano-svc',  // novo tipo: serviço dentro de plano ativo
+      data: data,
+      hora: hora,
+      preco: 0,  // Serviço incluído no plano, sem custo adicional
+      dur: svc.dur || 30,
+      obs: 'Serviço agendado via plano ativo',
+      status: 'wait'  // status de espera (como qualquer outro agendamento)
+    };
+    
+    var agId = await fbAdd('agendamentos', ag);
+    ag.id = agId;
+    D.agendamentos.push(ag);
+    
+    esconderLoadingApp();
+    toast('✅ Serviço agendado com sucesso!');
+    
+    // Voltar para a página de serviços e mostrar o agendamento
+    setTimeout(function() {
+      var btns = document.querySelectorAll('.nav-btn');
+      btns.forEach(function(b) {
+        if (b.textContent.trim().startsWith('Minha')) {
+          goTo('minha-area', b);
+        }
+      });
+    }, 500);
+    
+  } catch(e) {
+    console.error('Erro ao agendar:', e);
+    toast('Erro ao agendar serviço');
+    esconderLoadingApp();
+  }
+}
+
 confirmarPagamentoAvulso = async function() {
   if (!chatAtual) return;
   chatAtual.status = 'confirmado';
@@ -3424,24 +3469,111 @@ setLogoAll = function() {
 
 // ── RENDER SERVIÇOS CLIENTE ──
 function renderSvcCli() {
-  var el = document.getElementById('svc-cli-grid');
+  var el = document.getElementById('svc-cli-container');
   if (!el) return;
 
+  // Verificar se cliente tem plano ativo
+  var planoAtivo = D.assinantes.find(function(a){
+    return (a.cliente===SESSAO.clienteId||a.cliente===String(SESSAO.clienteId)) && a.status==='ativo';
+  });
+
+  var planoInfo = null;
+  if (planoAtivo) {
+    planoInfo = D.planos.find(function(p){
+      return p.id===planoAtivo.plano||p.id===String(planoAtivo.plano);
+    });
+  }
+
   if (!D.servicos || !D.servicos.length) {
-    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:var(--k-muted);">' +
+    el.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem;color:var(--k-muted);">' +
       '<i class="ti ti-scissors" style="font-size:40px;opacity:.3;display:block;margin-bottom:.75rem;"></i>' +
       '<p style="font-size:13px;">Nenhum serviço disponível no momento.</p></div>';
     return;
   }
 
-  el.innerHTML = D.servicos.map(function(s) {
-    return '<div class="svc-card" onclick="abrirAgendaScreenById(\'' + s.id + '\',\'avulso\')">' +
-      '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
-      '<div class="svc-card-nome">' + s.nome + '</div>' +
-      '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
-      '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
-    '</div>';
-  }).join('');
+  // Se tem plano ativo: mostrar UI especial
+  if (planoAtivo && planoInfo) {
+    var vencInfo = '';
+    if (planoAtivo.vencimento) {
+      var vencDate = new Date(planoAtivo.vencimento);
+      var hoje = new Date();
+      var diasRestantes = Math.ceil((vencDate - hoje) / (1000 * 60 * 60 * 24));
+      vencInfo = diasRestantes > 0 ? ' • ' + diasRestantes + ' dias' : '';
+    }
+
+    var html = '<div class="section-title">Serviços inclussos</div>' +
+      '<div style="background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:.5rem;">' +
+          '<i class="ti ti-badge-check" style="font-size:24px;color:var(--k-gold);"></i>' +
+          '<div>' +
+            '<div style="font-size:13px;color:var(--k-cream);font-weight:600;">Plano ativo</div>' +
+            '<div style="font-size:13px;color:var(--k-gold);font-weight:700;">' + planoInfo.nome + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--k-muted);">Vencimento: ' + fmt(planoAtivo.vencimento) + vencInfo + '</div>' +
+      '</div>' +
+
+      '<div style="margin-bottom:1.2rem;">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--k-cream);margin-bottom:.75rem;">Escolha um serviço e agende:</div>' +
+        '<div class="svc-grid">' +
+          D.servicos.map(function(s) {
+            return '<div class="svc-card" onclick="abrirAgendaComServicoPlano(\'' + s.id + '\',\'' + planoInfo.id + '\')">' +
+              '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
+              '<div class="svc-card-nome">' + s.nome + '</div>' +
+              '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
+              '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+
+    el.innerHTML = html;
+  } else {
+    // Sem plano ativo: mostrar serviços avulsos
+    var html = '<div class="section-title">Serviços disponíveis</div>' +
+      '<div class="svc-grid">' +
+        D.servicos.map(function(s) {
+          return '<div class="svc-card" onclick="abrirAgendaScreenById(\'' + s.id + '\',\'avulso\')">' +
+            '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
+            '<div class="svc-card-nome">' + s.nome + '</div>' +
+            '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
+            '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    el.innerHTML = html;
+  }
+}
+
+// ── FUNÇÃO: Abrir agenda com serviço escolhido (para plano ativo) ──
+function abrirAgendaComServicoPlano(svcId, planoId) {
+  var svc = D.servicos.find(function(s){ return s.id===svcId||s.id===String(svcId); });
+  var plano = D.planos.find(function(p){ return p.id===planoId||p.id===String(planoId); });
+  if (!svc || !plano) return;
+  
+  // Usar objeto de estado para agendamento
+  agState.svc = svc;
+  agState.tipo = 'plano-svc'; // tipo especial: serviço dentro de plano
+  agState.dur = svc.dur || 30;
+  agState.preco = svc.preco || 0; // Será cobrado à parte ou não, depende da política
+  agState.dataSel = null;
+  agState.horaSel = null;
+  agState.mesAtual = new Date();
+  agState.mesAtual.setDate(1);
+  agState.planoId = planoId;
+
+  document.getElementById('ag-screen-logo').src = LOGO;
+  document.getElementById('ag-screen-title').textContent = svc.nome || 'Agendar';
+  document.getElementById('ag-screen-sub').textContent =
+    moeda(agState.preco) + ' · ' + agState.dur + ' min · Plano: ' + plano.nome;
+
+  // Mostrar passo 1
+  document.getElementById('ag-step-cal').style.display = '';
+  document.getElementById('ag-step-hora').style.display = 'none';
+  document.getElementById('ag-step-resumo').style.display = 'none';
+
+  document.getElementById('agenda-screen').classList.add('visible');
+  renderCalAg();
 }
 
 // ── PATCH goTo: incluir svc-cli e carregar serviços ──
