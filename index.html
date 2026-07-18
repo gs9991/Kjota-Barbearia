@@ -901,9 +901,9 @@ function preencheValAs(){var s=document.getElementById('as-plano');var o=s.optio
 function salvarAssin(){var cid=parseInt(document.getElementById('as-cli').value);var pid=parseInt(document.getElementById('as-plano').value);var ini=document.getElementById('as-ini').value;var val=parseFloat(document.getElementById('as-val').value)||0;D.assinantes.push({id:D.nid++,cliente:cid,plano:pid,inicio:ini,val:val,status:'ativo'});D.caixa.unshift({id:D.nid++,tipo:'entrada',desc:'Assinatura '+getPN(pid)+' — '+getCN(cid),val:val,hora:agora(),data:today()});closeModal('m-assin');toast('Assinante adicionado!');renderAssinaturas();renderCaixa();renderDash();}
 function cancelarAssin(id){var a=D.assinantes.find(function(x){return x.id===id;});if(a)a.status='cancelado';renderAssinaturas();renderDash();toast('Cancelado.');}
 function salvarCx(){var tipo=document.getElementById('cx-tipo').value;var desc=document.getElementById('cx-desc').value.trim();var val=parseFloat(document.getElementById('cx-val').value)||0;if(!desc||!val){toast('Preencha todos');return;}D.caixa.unshift({id:D.nid++,tipo:tipo,desc:desc,val:val,hora:agora(),data:today()});closeModal('m-cx');['cx-desc','cx-val'].forEach(function(i){document.getElementById(i).value='';});toast('Registrado!');renderCaixa();renderDash();}
-function renderDash(){var t=today();var ags=D.agendamentos.filter(function(a){return a.data===t;});var rec=D.caixa.filter(function(c){return c.data===t&&c.tipo==='entrada';}).reduce(function(s,c){return s+c.val;},0);var ativos=D.assinantes.filter(function(a){return a.status==='ativo';}).length;document.getElementById('kpi-grid').innerHTML='<div class="kpi"><div class="kpi-label">Agend. hoje</div><div class="kpi-value">'+ags.length+'</div><div class="kpi-sub">'+ags.filter(function(a){return a.status==='done';}).length+' concluídos</div></div><div class="kpi"><div class="kpi-label">Na fila</div><div class="kpi-value">'+ags.filter(function(a){return a.status==='wait';}).length+'</div></div><div class="kpi"><div class="kpi-label">Receita hoje</div><div class="kpi-value">'+moeda(rec)+'</div></div><div class="kpi"><div class="kpi-label">Assinantes</div><div class="kpi-value">'+ativos+'</div><div class="kpi-sub">'+moeda(D.assinantes.filter(function(a){return a.status==='ativo';}).reduce(function(s,a){return s+a.val;},0))+'/mês</div></div>';var prox=ags.filter(function(a){return a.status==='wait';}).slice(0,4);document.getElementById('dash-agenda').innerHTML=prox.length?prox.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+getCN(a.cliente)+'</div><div class="agenda-svc">'+a.svc+'</div></div><button class="btn btn-outline btn-sm" onclick="alterarStatus('" + a.id + "',\'done\')"><i class="ti ti-check"></i></button></div>';}).join(''):'<div class="empty"><i class="ti ti-calendar-off"></i><p>Sem pendências</p></div>';var uc=D.caixa.filter(function(c){return c.data===t;}).slice(0,4);document.getElementById('dash-caixa').innerHTML=uc.length?uc.map(function(c){return '<div class="fluxo-item"><div><div class="fluxo-desc">'+c.desc+'</div><div class="fluxo-hora">'+c.hora+'</div></div><div class="fluxo-val '+c.tipo+'">'+(c.tipo==='entrada'?'+':'-')+moeda(c.val)+'</div></div>';}).join(''):'<div class="empty"><i class="ti ti-receipt-off"></i><p>Nenhuma</p></div>';}
+function renderDash(){var t=today();var ags=D.agendamentos.filter(function(a){return a.data===t;});var rec=D.caixa.filter(function(c){return c.data===t&&c.tipo==='entrada';}).reduce(function(s,c){return s+c.val;},0);var ativos=D.assinantes.filter(function(a){return a.status==='ativo';}).length;document.getElementById('kpi-grid').innerHTML='<div class="kpi"><div class="kpi-label">Agend. hoje</div><div class="kpi-value">'+ags.length+'</div><div class="kpi-sub">'+ags.filter(function(a){return a.status==='done';}).length+' concluídos</div></div><div class="kpi"><div class="kpi-label">Na fila</div><div class="kpi-value">'+ags.filter(function(a){return a.status==='wait';}).length+'</div></div><div class="kpi"><div class="kpi-label">Receita hoje</div><div class="kpi-value">'+moeda(rec)+'</div></div><div class="kpi"><div class="kpi-label">Assinantes</div><div class="kpi-value">'+ativos+'</div><div class="kpi-sub">'+moeda(D.assinantes.filter(function(a){return a.status==='ativo';}).reduce(function(s,a){return s+a.val;},0))+'/mês</div></div>';var prox=ags.filter(function(a){return a.status==='wait';}).slice(0,4);document.getElementById('dash-agenda').innerHTML=prox.length?prox.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+getCN(a.cliente)+'</div><div class="agenda-svc">'+a.svc+'</div></div><button class="btn btn-outline btn-sm" onclick="alterarStatus('+a.id+',\'done\')"><i class="ti ti-check"></i></button></div>';}).join(''):'<div class="empty"><i class="ti ti-calendar-off"></i><p>Sem pendências</p></div>';var uc=D.caixa.filter(function(c){return c.data===t;}).slice(0,4);document.getElementById('dash-caixa').innerHTML=uc.length?uc.map(function(c){return '<div class="fluxo-item"><div><div class="fluxo-desc">'+c.desc+'</div><div class="fluxo-hora">'+c.hora+'</div></div><div class="fluxo-val '+c.tipo+'">'+(c.tipo==='entrada'?'+':'-')+moeda(c.val)+'</div></div>';}).join(''):'<div class="empty"><i class="ti ti-receipt-off"></i><p>Nenhuma</p></div>';}
 function mudaDia(d){var dt=new Date(agDia+'T12:00:00');dt.setDate(dt.getDate()+d);agDia=dt.toISOString().split('T')[0];renderAgenda();}
-function renderAgenda(){var t=today();document.getElementById('ag-dia-label').textContent=agDia===t?'Hoje — '+fmt(agDia):fmt(agDia);var ags=D.agendamentos.filter(function(a){return a.data===agDia;}).sort(function(a,b){return a.hora.localeCompare(b.hora);});var el=document.getElementById('lista-agenda');if(!ags.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento</p></div>';return;}var lbl={wait:'Aguardando',done:'Concluído',cancel:'Cancelado'};var cls={wait:'badge-wait',done:'badge-done',cancel:'badge-cancel'};el.innerHTML=ags.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+getCN(a.cliente)+(a.tipo==='assinatura'?' <span class="chip"><i class="ti ti-crown"></i>Assin.</span>':'')+'</div><div class="agenda-svc">'+a.svc+(a.obs?' · '+a.obs:'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="badge '+cls[a.status]+'">'+lbl[a.status]+'</span>'+(a.status==='wait'?'<div style="display:flex;gap:3px;"><button class="btn btn-outline btn-sm" onclick="alterarStatus('" + a.id + "',\'done\')"><i class="ti ti-check"></i></button><button class="btn btn-danger btn-sm" onclick="alterarStatus('" + a.id + "',\'cancel\')"><i class="ti ti-x"></i></button></div>':'')+'</div></div>';}).join('');}
+function renderAgenda(){var t=today();document.getElementById('ag-dia-label').textContent=agDia===t?'Hoje — '+fmt(agDia):fmt(agDia);var ags=D.agendamentos.filter(function(a){return a.data===agDia;}).sort(function(a,b){return a.hora.localeCompare(b.hora);});var el=document.getElementById('lista-agenda');if(!ags.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento</p></div>';return;}var lbl={wait:'Aguardando',done:'Concluído',cancel:'Cancelado'};var cls={wait:'badge-wait',done:'badge-done',cancel:'badge-cancel'};el.innerHTML=ags.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+getCN(a.cliente)+(a.tipo==='assinatura'?' <span class="chip"><i class="ti ti-crown"></i>Assin.</span>':'')+'</div><div class="agenda-svc">'+a.svc+(a.obs?' · '+a.obs:'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="badge '+cls[a.status]+'">'+lbl[a.status]+'</span>'+(a.status==='wait'?'<div style="display:flex;gap:3px;"><button class="btn btn-outline btn-sm" onclick="alterarStatus('+a.id+',\'done\')"><i class="ti ti-check"></i></button><button class="btn btn-danger btn-sm" onclick="alterarStatus('+a.id+',\'cancel\')"><i class="ti ti-x"></i></button></div>':'')+'</div></div>';}).join('');}
 function renderClientes(f){f=f||'';var lista=D.clientes.filter(function(c){return c.nome.toLowerCase().includes(f.toLowerCase())||c.tel.includes(f);});var el=document.getElementById('lista-clientes');if(!lista.length){el.innerHTML='<div class="empty"><i class="ti ti-user-off"></i><p>Nenhum</p></div>';return;}el.innerHTML=lista.map(function(c){var as=D.assinantes.find(function(a){return a.cliente===c.id&&a.status==='ativo';});return '<div class="client-row"><div class="av">'+iniciais(c.nome)+'</div><div style="flex:1"><div class="cn">'+c.nome+(as?'<span class="chip" style="margin-left:6px"><i class="ti ti-crown"></i>'+getPN(as.plano)+'</span>':'')+'</div><div class="cm">'+c.tel+(c.user?' · login: <b style="color:var(--k-gold)">'+c.user+'</b>':'')+'</div></div><div style="font-size:11px;color:var(--k-gold)"><i class="ti ti-scissors"></i> '+c.visitas+'</div></div>';}).join('');}
 function renderAssinaturas(){document.getElementById('plan-grid').innerHTML=D.planos.map(function(p){return '<div class="plan-card '+(p.destaque?'featured':'')+'">'+(p.destaque?'<div class="plan-badge">⭐ Mais popular</div>':'')+'<div class="plan-name">'+p.nome+'</div><div class="plan-price">'+moeda(p.preco)+'</div><div class="plan-period">/mês · '+p.cortes+' corte'+(p.cortes>1?'s':'')+'</div><ul class="plan-items">'+p.itens.map(function(i){return '<li><i class="ti ti-check"></i>'+i+'</li>';}).join('')+'</ul><div style="display:flex;gap:5px;flex-wrap:wrap;"><button class="btn btn-outline btn-sm" onclick="openModal(\'m-assin\')"><i class="ti ti-user-plus"></i>Assinar</button><button class="btn btn-danger btn-sm" onclick="excluirPlano('+p.id+')"><i class="ti ti-trash"></i></button></div></div>';}).join('');var ativos=D.assinantes.filter(function(a){return a.status==='ativo';});var el=document.getElementById('lista-assinantes');el.innerHTML=ativos.length?ativos.map(function(a){return '<div class="assin-row"><div class="av">'+iniciais(getCN(a.cliente))+'</div><div style="flex:1"><div class="cn">'+getCN(a.cliente)+'</div><div class="cm">'+getPN(a.plano)+' · desde '+fmt(a.inicio)+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:var(--font-display);font-size:15px;color:var(--k-gold)">'+moeda(a.val)+'/mês</span><button class="btn btn-danger btn-sm" onclick="cancelarAssin(\''+a.id+'\')"><i class="ti ti-x"></i>Cancelar</button></div></div>';}).join(''):'<div class="empty"><i class="ti ti-crown-off"></i><p>Nenhum assinante</p></div>';}
 function renderCaixa(){var t=today();var mov=D.caixa.filter(function(c){return c.data===t;});var ent=mov.filter(function(c){return c.tipo==='entrada';}).reduce(function(s,c){return s+c.val;},0);var sai=mov.filter(function(c){return c.tipo==='saida';}).reduce(function(s,c){return s+c.val;},0);document.getElementById('cx-ent').textContent=moeda(ent);document.getElementById('cx-sai').textContent=moeda(sai);var sld=ent-sai;var sel=document.getElementById('cx-sal');sel.textContent=moeda(sld);sel.style.color=sld>=0?'var(--k-gold)':'#CF6060';var el=document.getElementById('lista-caixa');el.innerHTML=D.caixa.length?D.caixa.slice(0,25).map(function(c){return '<div class="fluxo-item"><div><div class="fluxo-desc">'+c.desc+'</div><div class="fluxo-hora">'+(c.data===t?c.hora:fmt(c.data)+' '+c.hora)+'</div></div><div class="fluxo-val '+c.tipo+'">'+(c.tipo==='entrada'?'+':'-')+moeda(c.val)+'</div></div>';}).join(''):'<div class="empty"><i class="ti ti-receipt-off"></i><p>Sem movimentações</p></div>';}
@@ -2244,58 +2244,21 @@ salvarAg = async function() {
 
 var _alterarStatusOrig = alterarStatus;
 alterarStatus = async function(id, st) {
-  console.log('🔍 Alterando status do agendamento ID:', id, 'para:', st);
-  
-  if (!id) {
-    toast('ID do agendamento inválido');
-    return;
-  }
-  
   mostrarLoadingApp('Atualizando...');
-  try {
-    var a = D.agendamentos.find(function(x){return x.id===id||x.id===String(id);});
-    if (!a) {
-      console.error('❌ Agendamento não encontrado:', id);
-      toast('Agendamento não encontrado');
-      esconderLoadingApp();
-      return;
-    }
-    
-    console.log('✅ Agendamento encontrado:', a.svc, 'Cliente:', getCN(a.cliente));
-    
-    // Atualizar status
+  await fbUpdate('agendamentos', String(id), { status: st });
+  var a = D.agendamentos.find(function(x){return x.id===id||x.id===String(id);});
+  if (a) {
     a.status = st;
-    console.log('✅ Status local atualizado para:', st);
-    
-    // Se foi concluído com preço, adicionar à caixa
     if (st==='done' && a.preco>0) {
-      console.log('💰 Adicionando à caixa:', moeda(a.preco));
       var cx = { tipo:'entrada', desc: a.svc+' — '+getCN(a.cliente), val: a.preco, hora: agora(), data: today() };
       var cxId = await fbAdd('caixa', cx);
       cx.id = cxId;
       D.caixa.unshift(cx);
-      console.log('✅ Adicionado à caixa');
     }
-    
-    // Tentar atualizar no Firestore
-    if (typeof fbUpdate === 'function') {
-      console.log('📡 Atualizando Firestore...');
-      await fbUpdate('agendamentos', String(a.id), { status: st });
-      console.log('✅ Firestore atualizado');
-    }
-    
-    esconderLoadingApp();
-    renderAgenda();
-    renderDash();
-    renderCaixa();
-    toast(st==='done'?'✅ Concluído!':'✅ Cancelado.');
-    console.log('✅ Telas atualizadas');
-    
-  } catch(e) {
-    console.error('❌ Erro ao alterar status:', e);
-    toast('Erro: ' + e.message);
-    esconderLoadingApp();
   }
+  esconderLoadingApp();
+  renderAgenda(); renderDash(); renderCaixa();
+  toast(st==='done'?'Concluído!':'Cancelado.');
 };
 
 // ── ASSINANTES ──
