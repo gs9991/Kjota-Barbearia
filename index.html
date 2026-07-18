@@ -3484,14 +3484,7 @@ function renderSvcCli() {
     });
   }
 
-  if (!D.servicos || !D.servicos.length) {
-    el.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem;color:var(--k-muted);">' +
-      '<i class="ti ti-scissors" style="font-size:40px;opacity:.3;display:block;margin-bottom:.75rem;"></i>' +
-      '<p style="font-size:13px;">Nenhum serviço disponível no momento.</p></div>';
-    return;
-  }
-
-  // Se tem plano ativo: mostrar UI especial
+  // Se tem plano ativo: mostrar card clicável
   if (planoAtivo && planoInfo) {
     var vencInfo = '';
     if (planoAtivo.vencimento) {
@@ -3501,48 +3494,101 @@ function renderSvcCli() {
       vencInfo = diasRestantes > 0 ? ' • ' + diasRestantes + ' dias' : '';
     }
 
-    var html = '<div class="section-title">Serviços inclussos</div>' +
-      '<div style="background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:.5rem;">' +
-          '<i class="ti ti-badge-check" style="font-size:24px;color:var(--k-gold);"></i>' +
-          '<div>' +
-            '<div style="font-size:13px;color:var(--k-cream);font-weight:600;">Plano ativo</div>' +
-            '<div style="font-size:13px;color:var(--k-gold);font-weight:700;">' + planoInfo.nome + '</div>' +
+    var html = '<div class="section-title">Meu plano</div>' +
+      '<div style="background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;cursor:pointer;transition:.2s;" ' +
+        'onclick="mostrarServicosDoPlano(\'' + planoInfo.id + '\',\'' + planoInfo.nome + '\')" ' +
+        'onmouseover="this.style.background=\'linear-gradient(135deg,#2A1E00,#3A2E00)\'" ' +
+        'onmouseout="this.style.background=\'linear-gradient(135deg,#1A1200,#2A1E00)\'">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<i class="ti ti-badge-check" style="font-size:24px;color:var(--k-gold);"></i>' +
+            '<div>' +
+              '<div style="font-size:13px;color:var(--k-cream);font-weight:600;">Plano ativo</div>' +
+              '<div style="font-size:16px;color:var(--k-gold);font-weight:700;">' + planoInfo.nome + '</div>' +
+              '<div style="font-size:11px;color:var(--k-muted);margin-top:3px;">Vencimento: ' + fmt(planoAtivo.vencimento) + vencInfo + '</div>' +
+            '</div>' +
           '</div>' +
+          '<i class="ti ti-chevron-right" style="font-size:20px;color:var(--k-gold);"></i>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--k-muted);">Vencimento: ' + fmt(planoAtivo.vencimento) + vencInfo + '</div>' +
       '</div>' +
-
-      '<div style="margin-bottom:1.2rem;">' +
-        '<div style="font-size:13px;font-weight:600;color:var(--k-cream);margin-bottom:.75rem;">Escolha um serviço e agende:</div>' +
-        '<div class="svc-grid">' +
-          D.servicos.map(function(s) {
-            return '<div class="svc-card" onclick="abrirAgendaComServicoPlano(\'' + s.id + '\',\'' + planoInfo.id + '\')">' +
-              '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
-              '<div class="svc-card-nome">' + s.nome + '</div>' +
-              '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
-              '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
-            '</div>';
-          }).join('') +
-        '</div>' +
-      '</div>';
+      '<div id="svc-plano-container"></div>';
 
     el.innerHTML = html;
   } else {
     // Sem plano ativo: mostrar serviços avulsos
     var html = '<div class="section-title">Serviços disponíveis</div>' +
       '<div class="svc-grid">' +
-        D.servicos.map(function(s) {
+        (D.servicos && D.servicos.length ? D.servicos.map(function(s) {
           return '<div class="svc-card" onclick="abrirAgendaScreenById(\'' + s.id + '\',\'avulso\')">' +
             '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
             '<div class="svc-card-nome">' + s.nome + '</div>' +
             '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
             '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
           '</div>';
-        }).join('') +
+        }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:var(--k-muted);"><i class="ti ti-scissors" style="font-size:40px;opacity:.3;display:block;margin-bottom:.75rem;"></i><p style="font-size:13px;">Nenhum serviço disponível.</p></div>') +
       '</div>';
     el.innerHTML = html;
   }
+}
+
+// ── MOSTRAR SERVIÇOS DO PLANO ──
+function mostrarServicosDoPlano(planoId, planoNome) {
+  console.log('📋 Abrindo serviços do plano:', planoNome);
+  
+  var plano = D.planos.find(function(p){ return p.id===planoId||p.id===String(planoId); });
+  if (!plano) { toast('Plano não encontrado'); return; }
+  
+  // Filtrar serviços: se plano tiver campo 'servicos', usar; senão, mostrar todos
+  var servicosDoPlano = [];
+  if (plano.servicos && plano.servicos.length) {
+    // Se plano tem array de IDs de serviços
+    servicosDoPlano = D.servicos.filter(function(s) {
+      return plano.servicos.indexOf(s.id) >= 0 || plano.servicos.indexOf(String(s.id)) >= 0;
+    });
+  } else {
+    // Se não tem, mostrar todos os serviços
+    servicosDoPlano = D.servicos || [];
+  }
+  
+  var container = document.getElementById('svc-plano-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'svc-plano-container';
+    document.getElementById('svc-cli-container').appendChild(container);
+  }
+  
+  if (!servicosDoPlano.length) {
+    container.innerHTML = '<div style="background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:1.5rem;text-align:center;color:var(--k-muted);margin-bottom:1rem;">' +
+      '<i class="ti ti-info-circle" style="font-size:32px;opacity:.3;display:block;margin-bottom:.5rem;"></i>' +
+      '<p style="font-size:13px;">Este plano ainda não possui serviços configurados.</p>' +
+      '</div>';
+    return;
+  }
+  
+  var html = '<div style="margin-bottom:1rem;">' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">' +
+      '<button class="btn btn-outline btn-sm" onclick="ocultarServicosDoPlano()" style="padding:.4rem .7rem;"><i class="ti ti-arrow-left"></i> Voltar</button>' +
+      '<div style="font-size:13px;font-weight:600;color:var(--k-cream);">Serviços inclusos: ' + servicosDoPlano.length + '</div>' +
+    '</div>' +
+    '<div class="svc-grid">' +
+      servicosDoPlano.map(function(s) {
+        return '<div class="svc-card" onclick="abrirAgendaComServicoPlano(\'' + s.id + '\',\'' + planoId + '\')">' +
+          '<div class="svc-card-icon"><i class="ti ' + (s.icone || 'ti-scissors') + '"></i></div>' +
+          '<div class="svc-card-nome">' + s.nome + '</div>' +
+          '<div class="svc-card-preco">' + moeda(s.preco) + '</div>' +
+          '<div class="svc-card-dur"><i class="ti ti-clock" style="font-size:11px;"></i> ' + (s.dur || 30) + ' min</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+  
+  container.innerHTML = html;
+}
+
+// ── OCULTAR SERVIÇOS DO PLANO ──
+function ocultarServicosDoPlano() {
+  var container = document.getElementById('svc-plano-container');
+  if (container) container.innerHTML = '';
 }
 
 // ── FUNÇÃO: Abrir agenda com serviço escolhido (para plano ativo) ──
