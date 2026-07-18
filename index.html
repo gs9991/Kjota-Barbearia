@@ -738,6 +738,15 @@ textarea.form-input{resize:vertical;min-height:65px;}
   <div class="modal-head"><img id="mpl-logo" src="" alt=""/><div class="modal-title">Novo Plano</div></div>
   <div class="form-group"><label class="form-label">Nome</label><input class="form-input" type="text" id="pl-nome" placeholder="Ex: Plano Prata"/></div>
   <div class="form-row"><div class="form-group"><label class="form-label">Preço/mês (R$)</label><input class="form-input" type="number" id="pl-preco"/></div><div class="form-group"><label class="form-label">Cortes/mês</label><input class="form-input" type="number" id="pl-cortes"/></div></div>
+  
+  <!-- NOVA SEÇÃO: SELEÇÃO DE SERVIÇOS -->
+  <div class="form-group">
+    <label class="form-label">Serviços inclusos</label>
+    <div id="pl-servicos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow-y:auto;padding:8px;background:var(--k-card);border-radius:8px;border:1px solid var(--k-border);">
+      <!-- Preenchido dinamicamente -->
+    </div>
+  </div>
+  
   <div class="form-group"><label class="form-label">Benefícios</label><div class="itens-edit" id="pl-itens"><div class="item-edit-row"><input class="form-input" type="text" placeholder="Ex: Corte social"/><button class="btn btn-danger btn-sm" onclick="remItem(this)"><i class="ti ti-x"></i></button></div></div><button class="btn btn-outline btn-sm" onclick="addItem()" style="margin-top:5px;"><i class="ti ti-plus"></i>Item</button></div>
   <div class="form-group"><label class="form-label">Destaque</label><select class="form-input" id="pl-dest"><option value="0">Sem destaque</option><option value="1">Em destaque</option></select></div>
   <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('m-plano')">Cancelar</button><button class="btn btn-gold" onclick="salvarPlano()"><i class="ti ti-check"></i>Salvar</button></div>
@@ -827,7 +836,7 @@ function setLogoAll(){
 function iniciarApp(){var app=document.getElementById('app');app.classList.add('visible');document.getElementById('h-logo').src=LOGO;document.getElementById('h-avatar').textContent=iniciais(SESSAO.nome);document.getElementById('h-username').textContent=SESSAO.nome;document.getElementById('h-role').textContent=SESSAO.role==='dono'?'Dono':'Cliente';var nav=document.getElementById('main-nav');if(SESSAO.role==='dono'){nav.innerHTML='<button class="nav-btn active" onclick="goTo(\'dashboard\',this)"><i class="ti ti-layout-dashboard"></i>Painel</button><button class="nav-btn" onclick="goTo(\'agenda\',this)"><i class="ti ti-calendar"></i>Agenda</button><button class="nav-btn" onclick="goTo(\'clientes\',this)"><i class="ti ti-users"></i>Clientes</button><button class="nav-btn" onclick="goTo(\'assinaturas\',this)"><i class="ti ti-crown"></i>Assinaturas</button><button class="nav-btn" onclick="goTo(\'caixa\',this)"><i class="ti ti-cash"></i>Caixa</button>';document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.getElementById('s-dashboard').classList.add('active');renderDash();}else{nav.innerHTML='<button class="nav-btn active" onclick="goTo(\'minha-area\',this)"><i class="ti ti-user"></i>Minha Área</button><button class="nav-btn" onclick="goTo(\'planos-cli\',this)"><i class="ti ti-crown"></i>Planos</button>';document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.getElementById('s-minha-area').classList.add('active');renderMinhaArea();}}
 function goTo(id,btn){document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('s-'+id).classList.add('active');btn.classList.add('active');var r={dashboard:renderDash,agenda:renderAgenda,clientes:renderClientes,assinaturas:renderAssinaturas,caixa:renderCaixa,'minha-area':renderMinhaArea,'planos-cli':renderPlanosCli};if(r[id])r[id]();}
 var MODAL_LOGOS={'m-ag':'mag-logo','m-cl':'mcl-logo','m-plano':'mpl-logo','m-assin':'mas-logo','m-cx':'mcx-logo','m-svc':'msvc-logo'};
-function openModal(id){if(MODAL_LOGOS[id]){var el=document.getElementById(MODAL_LOGOS[id]);if(el)el.src=LOGO;}if(id==='m-ag')prepAg();if(id==='m-assin')prepAssin();document.getElementById(id).classList.add('open');}
+function openModal(id){if(MODAL_LOGOS[id]){var el=document.getElementById(MODAL_LOGOS[id]);if(el)el.src=LOGO;}if(id==='m-ag')prepAg();if(id==='m-assin')prepAssin();if(id==='m-plano')renderServicosCheckbox();document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('open');});});
 function prepAg(){document.getElementById('ag-cli').innerHTML=D.clientes.map(function(c){return '<option value="'+c.id+'">'+c.nome+'</option>';}).join('');var horas=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'];document.getElementById('ag-hora').innerHTML=horas.map(function(h){return '<option>'+h+'</option>';}).join('');document.getElementById('ag-data').value=agDia;document.getElementById('ag-plano-sel').innerHTML=D.planos.map(function(p){return '<option value="'+p.id+'" data-p="'+p.preco+'">'+p.nome+'</option>';}).join('');toggleAgTipo();}
@@ -838,7 +847,54 @@ function salvarCli(){var nome=document.getElementById('cl-nome').value.trim();va
 function filtrarClientes(v){renderClientes(v);}
 function addItem(){var c=document.getElementById('pl-itens');var d=document.createElement('div');d.className='item-edit-row';d.innerHTML='<input class="form-input" type="text" placeholder="Benefício"/><button class="btn btn-danger btn-sm" onclick="remItem(this)"><i class="ti ti-x"></i></button>';c.appendChild(d);}
 function remItem(btn){if(document.querySelectorAll('.item-edit-row').length>1)btn.closest('.item-edit-row').remove();}
-function salvarPlano(){var nome=document.getElementById('pl-nome').value.trim();if(!nome){toast('Informe o nome');return;}var itens=Array.from(document.querySelectorAll('#pl-itens .item-edit-row input')).map(function(i){return i.value.trim();}).filter(Boolean);D.planos.push({id:D.nid++,nome:nome,preco:parseFloat(document.getElementById('pl-preco').value)||0,cortes:parseInt(document.getElementById('pl-cortes').value)||1,itens:itens,destaque:parseInt(document.getElementById('pl-dest').value)||0});closeModal('m-plano');['pl-nome','pl-preco','pl-cortes'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('pl-itens').innerHTML='<div class="item-edit-row"><input class="form-input" type="text" placeholder="Benefício"/><button class="btn btn-danger btn-sm" onclick="remItem(this)"><i class="ti ti-x"></i></button></div>';toast('Plano criado!');renderAssinaturas();}
+// ── RENDERIZAR CHECKBOXES DE SERVIÇOS NO MODAL ──
+function renderServicosCheckbox() {
+  var container = document.getElementById('pl-servicos-grid');
+  if (!container) return;
+  
+  if (!D.servicos || !D.servicos.length) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--k-muted);padding:1rem;font-size:13px;"><i class="ti ti-inbox" style="display:block;font-size:32px;opacity:.3;margin-bottom:.5rem;"></i>Nenhum serviço cadastrado</div>';
+    return;
+  }
+  
+  container.innerHTML = D.servicos.map(function(s) {
+    return '<label style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--k-card-dark);border-radius:6px;cursor:pointer;transition:.2s;" onmouseover="this.style.background=\'var(--k-border)\'" onmouseout="this.style.background=\'var(--k-card-dark)\'">' +
+      '<input type="checkbox" value="' + s.id + '" style="width:16px;height:16px;cursor:pointer;"/>' +
+      '<span style="flex:1;font-size:12px;">' +
+        '<div style="font-weight:600;color:var(--k-cream);">' + s.nome + '</div>' +
+        '<div style="font-size:11px;color:var(--k-muted);">' + moeda(s.preco) + ' · ' + (s.dur || 30) + ' min</div>' +
+      '</span>' +
+    '</label>';
+  }).join('');
+}
+
+function salvarPlano(){
+  var nome=document.getElementById('pl-nome').value.trim();
+  if(!nome){toast('Informe o nome');return;}
+  
+  var itens=Array.from(document.querySelectorAll('#pl-itens .item-edit-row input')).map(function(i){return i.value.trim();}).filter(Boolean);
+  
+  // NOVO: Capturar serviços selecionados
+  var servicosSelecionados=Array.from(document.querySelectorAll('#pl-servicos-grid input[type="checkbox"]:checked')).map(function(cb){return cb.value;});
+  
+  D.planos.push({
+    id:D.nid++,
+    nome:nome,
+    preco:parseFloat(document.getElementById('pl-preco').value)||0,
+    cortes:parseInt(document.getElementById('pl-cortes').value)||1,
+    itens:itens,
+    destaque:parseInt(document.getElementById('pl-dest').value)||0,
+    servicos:servicosSelecionados  // NOVO: guardar IDs dos serviços
+  });
+  
+  closeModal('m-plano');
+  ['pl-nome','pl-preco','pl-cortes'].forEach(function(i){document.getElementById(i).value='';});
+  document.getElementById('pl-itens').innerHTML='<div class="item-edit-row"><input class="form-input" type="text" placeholder="Benefício"/><button class="btn btn-danger btn-sm" onclick="remItem(this)"><i class="ti ti-x"></i></button></div>';
+  document.getElementById('pl-servicos-grid').innerHTML='';
+  
+  toast('Plano criado!');
+  renderAssinaturas();
+}
 function excluirPlano(id){D.planos=D.planos.filter(function(p){return p.id!==id;});renderAssinaturas();toast('Plano removido.');}
 function prepAssin(){document.getElementById('as-cli').innerHTML=D.clientes.map(function(c){return '<option value="'+c.id+'">'+c.nome+'</option>';}).join('');document.getElementById('as-plano').innerHTML=D.planos.map(function(p){return '<option value="'+p.id+'" data-p="'+p.preco+'">'+p.nome+' — '+moeda(p.preco)+'/mês</option>';}).join('');document.getElementById('as-ini').value=today();preencheValAs();}
 function preencheValAs(){var s=document.getElementById('as-plano');var o=s.options[s.selectedIndex];if(o)document.getElementById('as-val').value=o.getAttribute('data-p');}
@@ -3533,20 +3589,32 @@ function renderSvcCli() {
 
 // ── MOSTRAR SERVIÇOS DO PLANO ──
 function mostrarServicosDoPlano(planoId, planoNome) {
-  console.log('📋 Abrindo serviços do plano:', planoNome);
+  console.log('📋 Abrindo serviços do plano:', planoNome, 'ID:', planoId);
   
   var plano = D.planos.find(function(p){ return p.id===planoId||p.id===String(planoId); });
   if (!plano) { toast('Plano não encontrado'); return; }
   
+  console.log('✅ Plano encontrado:', plano.nome);
+  console.log('📊 Array servicos do plano:', plano.servicos);
+  
   // Filtrar serviços: se plano tiver campo 'servicos', usar; senão, mostrar todos
   var servicosDoPlano = [];
   if (plano.servicos && plano.servicos.length) {
-    // Se plano tem array de IDs de serviços
+    console.log('🔍 Filtrando serviços...');
+    console.log('Total de serviços no banco:', D.servicos.length);
+    
     servicosDoPlano = D.servicos.filter(function(s) {
-      return plano.servicos.indexOf(s.id) >= 0 || plano.servicos.indexOf(String(s.id)) >= 0;
+      var found = plano.servicos.indexOf(s.id) >= 0 || plano.servicos.indexOf(String(s.id)) >= 0;
+      console.log('  Serviço:', s.nome, '| ID:', s.id, '| Incluido?', found);
+      return found;
+    });
+    
+    console.log('✅ Serviços filtrados:', servicosDoPlano.length);
+    servicosDoPlano.forEach(function(s) {
+      console.log('  ✓', s.nome, '(ID:', s.id + ')');
     });
   } else {
-    // Se não tem, mostrar todos os serviços
+    console.log('⚠️ Plano sem campo servicos, mostrando todos');
     servicosDoPlano = D.servicos || [];
   }
   
