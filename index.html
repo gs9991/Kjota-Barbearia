@@ -853,15 +853,40 @@ function renderClientes(f){f=f||'';var lista=D.clientes.filter(function(c){retur
 function renderAssinaturas(){document.getElementById('plan-grid').innerHTML=D.planos.map(function(p){return '<div class="plan-card '+(p.destaque?'featured':'')+'">'+(p.destaque?'<div class="plan-badge">⭐ Mais popular</div>':'')+'<div class="plan-name">'+p.nome+'</div><div class="plan-price">'+moeda(p.preco)+'</div><div class="plan-period">/mês · '+p.cortes+' corte'+(p.cortes>1?'s':'')+'</div><ul class="plan-items">'+p.itens.map(function(i){return '<li><i class="ti ti-check"></i>'+i+'</li>';}).join('')+'</ul><div style="display:flex;gap:5px;flex-wrap:wrap;"><button class="btn btn-outline btn-sm" onclick="openModal(\'m-assin\')"><i class="ti ti-user-plus"></i>Assinar</button><button class="btn btn-danger btn-sm" onclick="excluirPlano('+p.id+')"><i class="ti ti-trash"></i></button></div></div>';}).join('');var ativos=D.assinantes.filter(function(a){return a.status==='ativo';});var el=document.getElementById('lista-assinantes');el.innerHTML=ativos.length?ativos.map(function(a){return '<div class="assin-row"><div class="av">'+iniciais(getCN(a.cliente))+'</div><div style="flex:1"><div class="cn">'+getCN(a.cliente)+'</div><div class="cm">'+getPN(a.plano)+' · desde '+fmt(a.inicio)+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:var(--font-display);font-size:15px;color:var(--k-gold)">'+moeda(a.val)+'/mês</span><button class="btn btn-danger btn-sm" onclick="cancelarAssin('+a.id+')"><i class="ti ti-x"></i>Cancelar</button></div></div>';}).join(''):'<div class="empty"><i class="ti ti-crown-off"></i><p>Nenhum assinante</p></div>';}
 function renderCaixa(){var t=today();var mov=D.caixa.filter(function(c){return c.data===t;});var ent=mov.filter(function(c){return c.tipo==='entrada';}).reduce(function(s,c){return s+c.val;},0);var sai=mov.filter(function(c){return c.tipo==='saida';}).reduce(function(s,c){return s+c.val;},0);document.getElementById('cx-ent').textContent=moeda(ent);document.getElementById('cx-sai').textContent=moeda(sai);var sld=ent-sai;var sel=document.getElementById('cx-sal');sel.textContent=moeda(sld);sel.style.color=sld>=0?'var(--k-gold)':'#CF6060';var el=document.getElementById('lista-caixa');el.innerHTML=D.caixa.length?D.caixa.slice(0,25).map(function(c){return '<div class="fluxo-item"><div><div class="fluxo-desc">'+c.desc+'</div><div class="fluxo-hora">'+(c.data===t?c.hora:fmt(c.data)+' '+c.hora)+'</div></div><div class="fluxo-val '+c.tipo+'">'+(c.tipo==='entrada'?'+':'-')+moeda(c.val)+'</div></div>';}).join(''):'<div class="empty"><i class="ti ti-receipt-off"></i><p>Sem movimentações</p></div>';}
 function renderMinhaArea(){var cid=SESSAO.clienteId;var assin=D.assinantes.find(function(a){return a.cliente===cid&&a.status==='ativo';});var box=document.getElementById('minha-assin-box');if(assin){var pl=D.planos.find(function(p){return p.id===assin.plano;});box.innerHTML='<div class="minha-assin"><div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem;"><i class="ti ti-crown" style="color:var(--k-gold);font-size:20px;"></i><div class="minha-assin-nome">'+(pl?pl.nome:'Assinatura ativa')+'</div></div><div class="minha-assin-info">Desde '+fmt(assin.inicio)+' · '+moeda(assin.val)+'/mês</div><div style="margin-top:.7rem;">'+(pl?pl.itens.map(function(i){return '<div class="minha-assin-item"><i class="ti ti-check"></i>'+i+'</div>';}).join(''):'')+'</div></div>';}else{box.innerHTML='<div style="background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;"><i class="ti ti-crown-off" style="color:var(--k-muted);font-size:22px;"></i><div><div style="font-size:13px;font-weight:500;color:var(--k-cream);">Você não possui assinatura ativa</div><div style="font-size:12px;color:var(--k-muted);margin-top:3px;">Conheça nossos planos e economize!</div></div></div>';}var meusAgs=D.agendamentos.filter(function(a){return a.cliente===cid;}).sort(function(a,b){return b.data.localeCompare(a.data)||b.hora.localeCompare(a.hora);});var el=document.getElementById('meus-ags');var lbl={wait:'Aguardando',done:'Concluído',cancel:'Cancelado'};var cls={wait:'badge-wait',done:'badge-done',cancel:'badge-cancel'};el.innerHTML=meusAgs.length?meusAgs.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+a.svc+'</div><div class="agenda-svc">'+fmt(a.data)+'</div></div><span class="badge '+cls[a.status]+'">'+lbl[a.status]+'</span></div>';}).join(''):'<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento ainda</p></div>';}
-function renderPlanosCli(){document.getElementById('plan-grid-cli').innerHTML=D.planos.map(function(p){return '<div class="plan-card '+(p.destaque?'featured':'')+'">'+(p.destaque?'<div class="plan-badge">⭐ Mais popular</div>':'')+'<div class="plan-name">'+p.nome+'</div><div class="plan-price">'+moeda(p.preco)+'</div><div class="plan-period">/mês · '+p.cortes+' corte'+(p.cortes>1?'s':'')+'</div><ul class="plan-items">'+p.itens.map(function(i){return '<li><i class="ti ti-check"></i>'+i+'</li>';}).join('')+'</ul><div style="font-size:11px;color:var(--k-muted);margin-top:.5rem;">Fale com seu barbeiro para contratar.</div></div>';}).join('');}
-function initData(){D.agendamentos=[];D.caixa=[];}
+function renderPlanosCli(){
+  var el = document.getElementById('plan-grid-cli');
+  if(!el) return;
+  if(!D.planos||!D.planos.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-crown-off"></i><p>Nenhum plano disponível</p></div>';
+    return;
+  }
+  el.innerHTML=D.planos.map(function(p){
+    return '<div class="plan-card '+(p.destaque?'featured':'')+'">' +
+      (p.destaque?'<div class="plan-badge">⭐ Mais popular</div>':'') +
+      '<div class="plan-name">'+p.nome+'</div>' +
+      '<div class="plan-price">'+moeda(p.preco)+'</div>' +
+      '<div class="plan-period">/mês · '+p.cortes+' corte'+(p.cortes>1?'s':'')+'</div>' +
+      '<ul class="plan-items">'+p.itens.map(function(i){return '<li><i class="ti ti-check"></i>'+i+'</li>';}).join('')+'</ul>' +
+      '<button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:.5rem;" onclick="contratarPlano(\'' + p.id + '\')"><i class="ti ti-crown"></i>Contratar</button>' +
+      '</div>';
+  }).join('');
+}
+
+
+function initData(){
+  D.agendamentos = [];
+  D.caixa = [];
+  D.chats = [];
+  D.servicos = D.servicos || [];
+}
+
 function initSplash(){
-  // Setar logos imediatamente
-  var els = ['spl-img','login-logo','h-logo','ps-logo','svc-logo','ag-screen-logo',
-             'chat-logo','mag-logo','mcl-logo','mpl-logo','mas-logo','mcx-logo','msvc-logo'];
-  els.forEach(function(id){var el=document.getElementById(id);if(el)el.src=LOGO;});
-  var fg=document.getElementById('forte-logo');if(fg)fg.src=FORTE_LOGO;
-  var sf=document.getElementById('spl-forte');if(sf)sf.src=FORTE_LOGO;
+  // Setar logos
+  var _els=['spl-img','login-logo','h-logo','ps-logo','svc-logo','ag-screen-logo',
+    'chat-logo','mag-logo','mcl-logo','mpl-logo','mas-logo','mcx-logo','msvc-logo'];
+  _els.forEach(function(id){var el=document.getElementById(id);if(el)el.src=LOGO;});
+  var _fg=document.getElementById('forte-logo');if(_fg)_fg.src=FORTE_LOGO;
+  var _sf=document.getElementById('spl-forte');if(_sf)_sf.src=FORTE_LOGO;
 
   // Barra de progresso fase 1
   var pct=0, fill=document.getElementById('splash-fill');
@@ -1008,7 +1033,7 @@ function getOuCriarChat(clienteId, planoId) {
 }
 
 function abrirChatPix(clienteId, planoId, origem) {
-  var plano = D.planos.find(function(p) { return p.id === planoId; });
+  var plano = D.planos.find(function(p) { return String(p.id) === String(planoId); });
   if (!plano) return;
   chatAtual = getOuCriarChat(clienteId, planoId);
   chatVoltarPara = origem;
@@ -1102,7 +1127,7 @@ function renderQuickActions(plano) {
 function selecionarMeses(meses, planoId) {
   if (!chatAtual) return;
   chatAtual.meses = meses;
-  var plano = D.planos.find(function(p) { return p.id === planoId; });
+  var plano = D.planos.find(function(p) { return String(p.id) === String(planoId); });
   renderQuickActions(plano);
 
   // Atualizar mensagem de seleção
@@ -1337,6 +1362,11 @@ renderPlanosCli = function() {
 };
 
 function contratarPlano(planoId) {
+  // Garantir que clienteId existe
+  if(!SESSAO||!SESSAO.clienteId){toast('Faça login para contratar');return;}
+  var plano = D.planos.find(function(p){return String(p.id)===String(planoId);});
+  if(!plano){toast('Plano não encontrado');return;}
+  // Ir direto para chat PIX
   abrirChatPix(SESSAO.clienteId, planoId, 'planos-cli');
 }
 
@@ -1830,7 +1860,7 @@ enviarMsg = function() {
 // ── OVERRIDE abrirChatPix: notificar dono em chat novo ──
 var _abrirChatPixOriginal = abrirChatPix;
 abrirChatPix = function(clienteId, planoId, origem) {
-  var plano = D.planos.find(function(p) { return p.id === planoId; });
+  var plano = D.planos.find(function(p) { return String(p.id) === String(planoId); });
   var isNovo = !D.chats.find(function(c) { return c.clienteId === clienteId && c.planoId === planoId && c.status !== 'cancelado'; });
 
   // Chamar original
