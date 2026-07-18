@@ -3547,25 +3547,37 @@ function renderSvcCli() {
 
 // ── FUNÇÃO: Abrir agenda com serviço escolhido (para plano ativo) ──
 function abrirAgendaComServicoPlano(svcId, planoId) {
+  console.log('🔍 Abrindo agenda para serviço:', svcId, 'Plano:', planoId);
+  
   var svc = D.servicos.find(function(s){ return s.id===svcId||s.id===String(svcId); });
   var plano = D.planos.find(function(p){ return p.id===planoId||p.id===String(planoId); });
-  if (!svc || !plano) return;
+  
+  console.log('✅ Serviço encontrado:', svc ? svc.nome : 'NÃO ENCONTRADO');
+  console.log('✅ Plano encontrado:', plano ? plano.nome : 'NÃO ENCONTRADO');
+  
+  if (!svc || !plano) {
+    toast('Erro ao carregar serviço ou plano');
+    return;
+  }
   
   // Usar objeto de estado para agendamento
   agState.svc = svc;
   agState.tipo = 'plano-svc'; // tipo especial: serviço dentro de plano
   agState.dur = svc.dur || 30;
-  agState.preco = svc.preco || 0; // Será cobrado à parte ou não, depende da política
+  agState.preco = svc.preco || 0;
   agState.dataSel = null;
   agState.horaSel = null;
   agState.mesAtual = new Date();
   agState.mesAtual.setDate(1);
   agState.planoId = planoId;
 
-  document.getElementById('ag-screen-logo').src = LOGO;
-  document.getElementById('ag-screen-title').textContent = svc.nome || 'Agendar';
-  document.getElementById('ag-screen-sub').textContent =
-    moeda(agState.preco) + ' · ' + agState.dur + ' min · Plano: ' + plano.nome;
+  var logoEl = document.getElementById('ag-screen-logo');
+  var titleEl = document.getElementById('ag-screen-title');
+  var subEl = document.getElementById('ag-screen-sub');
+  
+  if (logoEl) logoEl.src = LOGO;
+  if (titleEl) titleEl.textContent = svc.nome || 'Agendar';
+  if (subEl) subEl.textContent = moeda(agState.preco) + ' · ' + agState.dur + ' min · Plano: ' + plano.nome;
 
   // Mostrar passo 1
   document.getElementById('ag-step-cal').style.display = '';
@@ -3574,6 +3586,8 @@ function abrirAgendaComServicoPlano(svcId, planoId) {
 
   document.getElementById('agenda-screen').classList.add('visible');
   renderCalAg();
+  
+  console.log('✅ Tela de agendamento aberta');
 }
 
 // ── PATCH goTo: incluir svc-cli e carregar serviços ──
