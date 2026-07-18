@@ -905,7 +905,7 @@ function renderDash(){var t=today();var ags=D.agendamentos.filter(function(a){re
 function mudaDia(d){var dt=new Date(agDia+'T12:00:00');dt.setDate(dt.getDate()+d);agDia=dt.toISOString().split('T')[0];renderAgenda();}
 function renderAgenda(){var t=today();document.getElementById('ag-dia-label').textContent=agDia===t?'Hoje — '+fmt(agDia):fmt(agDia);var ags=D.agendamentos.filter(function(a){return a.data===agDia;}).sort(function(a,b){return a.hora.localeCompare(b.hora);});var el=document.getElementById('lista-agenda');if(!ags.length){el.innerHTML='<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento</p></div>';return;}var lbl={wait:'Aguardando',done:'Concluído',cancel:'Cancelado'};var cls={wait:'badge-wait',done:'badge-done',cancel:'badge-cancel'};el.innerHTML=ags.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+getCN(a.cliente)+(a.tipo==='assinatura'?' <span class="chip"><i class="ti ti-crown"></i>Assin.</span>':'')+'</div><div class="agenda-svc">'+a.svc+(a.obs?' · '+a.obs:'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="badge '+cls[a.status]+'">'+lbl[a.status]+'</span>'+(a.status==='wait'?'<div style="display:flex;gap:3px;"><button class="btn btn-outline btn-sm" onclick="alterarStatus('+a.id+',\'done\')"><i class="ti ti-check"></i></button><button class="btn btn-danger btn-sm" onclick="alterarStatus('+a.id+',\'cancel\')"><i class="ti ti-x"></i></button></div>':'')+'</div></div>';}).join('');}
 function renderClientes(f){f=f||'';var lista=D.clientes.filter(function(c){return c.nome.toLowerCase().includes(f.toLowerCase())||c.tel.includes(f);});var el=document.getElementById('lista-clientes');if(!lista.length){el.innerHTML='<div class="empty"><i class="ti ti-user-off"></i><p>Nenhum</p></div>';return;}el.innerHTML=lista.map(function(c){var as=D.assinantes.find(function(a){return a.cliente===c.id&&a.status==='ativo';});return '<div class="client-row"><div class="av">'+iniciais(c.nome)+'</div><div style="flex:1"><div class="cn">'+c.nome+(as?'<span class="chip" style="margin-left:6px"><i class="ti ti-crown"></i>'+getPN(as.plano)+'</span>':'')+'</div><div class="cm">'+c.tel+(c.user?' · login: <b style="color:var(--k-gold)">'+c.user+'</b>':'')+'</div></div><div style="font-size:11px;color:var(--k-gold)"><i class="ti ti-scissors"></i> '+c.visitas+'</div></div>';}).join('');}
-function renderAssinaturas(){document.getElementById('plan-grid').innerHTML=D.planos.map(function(p){return '<div class="plan-card '+(p.destaque?'featured':'')+'">'+(p.destaque?'<div class="plan-badge">⭐ Mais popular</div>':'')+'<div class="plan-name">'+p.nome+'</div><div class="plan-price">'+moeda(p.preco)+'</div><div class="plan-period">/mês · '+p.cortes+' corte'+(p.cortes>1?'s':'')+'</div><ul class="plan-items">'+p.itens.map(function(i){return '<li><i class="ti ti-check"></i>'+i+'</li>';}).join('')+'</ul><div style="display:flex;gap:5px;flex-wrap:wrap;"><button class="btn btn-outline btn-sm" onclick="openModal(\'m-assin\')"><i class="ti ti-user-plus"></i>Assinar</button><button class="btn btn-danger btn-sm" onclick="excluirPlano('+p.id+')"><i class="ti ti-trash"></i></button></div></div>';}).join('');var ativos=D.assinantes.filter(function(a){return a.status==='ativo';});var el=document.getElementById('lista-assinantes');el.innerHTML=ativos.length?ativos.map(function(a){return '<div class="assin-row"><div class="av">'+iniciais(getCN(a.cliente))+'</div><div style="flex:1"><div class="cn">'+getCN(a.cliente)+'</div><div class="cm">'+getPN(a.plano)+' · desde '+fmt(a.inicio)+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:var(--font-display);font-size:15px;color:var(--k-gold)">'+moeda(a.val)+'/mês</span><button class="btn btn-danger btn-sm" onclick="cancelarAssin('+a.id+')"><i class="ti ti-x"></i>Cancelar</button></div></div>';}).join(''):'<div class="empty"><i class="ti ti-crown-off"></i><p>Nenhum assinante</p></div>';}
+function renderAssinaturas(){document.getElementById('plan-grid').innerHTML=D.planos.map(function(p){return '<div class="plan-card '+(p.destaque?'featured':'')+'">'+(p.destaque?'<div class="plan-badge">⭐ Mais popular</div>':'')+'<div class="plan-name">'+p.nome+'</div><div class="plan-price">'+moeda(p.preco)+'</div><div class="plan-period">/mês · '+p.cortes+' corte'+(p.cortes>1?'s':'')+'</div><ul class="plan-items">'+p.itens.map(function(i){return '<li><i class="ti ti-check"></i>'+i+'</li>';}).join('')+'</ul><div style="display:flex;gap:5px;flex-wrap:wrap;"><button class="btn btn-outline btn-sm" onclick="openModal(\'m-assin\')"><i class="ti ti-user-plus"></i>Assinar</button><button class="btn btn-danger btn-sm" onclick="excluirPlano('+p.id+')"><i class="ti ti-trash"></i></button></div></div>';}).join('');var ativos=D.assinantes.filter(function(a){return a.status==='ativo';});var el=document.getElementById('lista-assinantes');el.innerHTML=ativos.length?ativos.map(function(a){return '<div class="assin-row"><div class="av">'+iniciais(getCN(a.cliente))+'</div><div style="flex:1"><div class="cn">'+getCN(a.cliente)+'</div><div class="cm">'+getPN(a.plano)+' · desde '+fmt(a.inicio)+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span style="font-family:var(--font-display);font-size:15px;color:var(--k-gold)">'+moeda(a.val)+'/mês</span><button class="btn btn-danger btn-sm" onclick="cancelarAssin(String(a.id))"><i class="ti ti-x"></i>Cancelar</button></div></div>';}).join(''):'<div class="empty"><i class="ti ti-crown-off"></i><p>Nenhum assinante</p></div>';}
 function renderCaixa(){var t=today();var mov=D.caixa.filter(function(c){return c.data===t;});var ent=mov.filter(function(c){return c.tipo==='entrada';}).reduce(function(s,c){return s+c.val;},0);var sai=mov.filter(function(c){return c.tipo==='saida';}).reduce(function(s,c){return s+c.val;},0);document.getElementById('cx-ent').textContent=moeda(ent);document.getElementById('cx-sai').textContent=moeda(sai);var sld=ent-sai;var sel=document.getElementById('cx-sal');sel.textContent=moeda(sld);sel.style.color=sld>=0?'var(--k-gold)':'#CF6060';var el=document.getElementById('lista-caixa');el.innerHTML=D.caixa.length?D.caixa.slice(0,25).map(function(c){return '<div class="fluxo-item"><div><div class="fluxo-desc">'+c.desc+'</div><div class="fluxo-hora">'+(c.data===t?c.hora:fmt(c.data)+' '+c.hora)+'</div></div><div class="fluxo-val '+c.tipo+'">'+(c.tipo==='entrada'?'+':'-')+moeda(c.val)+'</div></div>';}).join(''):'<div class="empty"><i class="ti ti-receipt-off"></i><p>Sem movimentações</p></div>';}
 function renderMinhaArea(){var cid=SESSAO.clienteId;var assin=D.assinantes.find(function(a){return a.cliente===cid&&a.status==='ativo';});var box=document.getElementById('minha-assin-box');if(assin){var pl=D.planos.find(function(p){return p.id===assin.plano;});box.innerHTML='<div class="minha-assin"><div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem;"><i class="ti ti-crown" style="color:var(--k-gold);font-size:20px;"></i><div class="minha-assin-nome">'+(pl?pl.nome:'Assinatura ativa')+'</div></div><div class="minha-assin-info">Desde '+fmt(assin.inicio)+' · '+moeda(assin.val)+'/mês</div><div style="margin-top:.7rem;">'+(pl?pl.itens.map(function(i){return '<div class="minha-assin-item"><i class="ti ti-check"></i>'+i+'</div>';}).join(''):'')+'</div></div>';}else{box.innerHTML='<div style="background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;"><i class="ti ti-crown-off" style="color:var(--k-muted);font-size:22px;"></i><div><div style="font-size:13px;font-weight:500;color:var(--k-cream);">Você não possui assinatura ativa</div><div style="font-size:12px;color:var(--k-muted);margin-top:3px;">Conheça nossos planos e economize!</div></div></div>';}var meusAgs=D.agendamentos.filter(function(a){return a.cliente===cid;}).sort(function(a,b){return b.data.localeCompare(a.data)||b.hora.localeCompare(a.hora);});var el=document.getElementById('meus-ags');var lbl={wait:'Aguardando',done:'Concluído',cancel:'Cancelado'};var cls={wait:'badge-wait',done:'badge-done',cancel:'badge-cancel'};el.innerHTML=meusAgs.length?meusAgs.map(function(a){return '<div class="agenda-item"><div class="agenda-time">'+a.hora+'</div><div style="flex:1"><div class="agenda-name">'+a.svc+'</div><div class="agenda-svc">'+fmt(a.data)+'</div></div><span class="badge '+cls[a.status]+'">'+lbl[a.status]+'</span></div>';}).join(''):'<div class="empty"><i class="ti ti-calendar-off"></i><p>Nenhum agendamento ainda</p></div>';}
 function renderPlanosCli(){
@@ -2285,13 +2285,46 @@ salvarAssin = async function() {
 
 var _cancelarAssinOrig = cancelarAssin;
 cancelarAssin = async function(id) {
+  console.log('🔍 Cancelando assinatura ID:', id, 'Tipo:', typeof id);
+  
+  if (!id) {
+    toast('ID da assinatura inválido');
+    return;
+  }
+  
   mostrarLoadingApp('Cancelando...');
-  await fbUpdate('assinantes', String(id), { status: 'cancelado' });
-  var a = D.assinantes.find(function(x){return x.id===id||x.id===String(id);});
-  if (a) a.status = 'cancelado';
-  esconderLoadingApp();
-  renderAssinaturas(); renderDash();
-  toast('Cancelado.');
+  try {
+    var a = D.assinantes.find(function(x){return x.id===id||x.id===String(id);});
+    if (!a) {
+      console.error('❌ Assinatura não encontrada:', id);
+      toast('Assinatura não encontrada');
+      esconderLoadingApp();
+      return;
+    }
+    
+    console.log('✅ Assinatura encontrada:', a.cliente, a.plano);
+    
+    // Tentar atualizar no Firestore
+    if (typeof fbUpdate === 'function') {
+      console.log('📡 Atualizando Firestore...');
+      await fbUpdate('assinantes', String(a.id), { status: 'cancelado' });
+      console.log('✅ Firestore atualizado');
+    }
+    
+    // Atualizar no D.assinantes
+    a.status = 'cancelado';
+    console.log('✅ Status local atualizado');
+    
+    esconderLoadingApp();
+    renderAssinaturas();
+    renderDash();
+    toast('✅ Assinatura cancelada!');
+    
+  } catch(e) {
+    console.error('❌ Erro ao cancelar:', e);
+    toast('Erro ao cancelar: ' + e.message);
+    esconderLoadingApp();
+  }
 };
 
 // ── CAIXA ──
