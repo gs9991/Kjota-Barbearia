@@ -1,5 +1,5 @@
 // KJota Barbearia — service worker (app instalável + abre rápido)
-const CACHE = 'kjota-v2.3';
+const CACHE = 'kjota-v2.4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './img/logo.webp', './img/icon-192.png', './img/icon-512.png'];
 const CDN = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'www.gstatic.com'];
 
@@ -32,10 +32,10 @@ self.addEventListener('fetch', e => {
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  const chatId = e.notification.data && e.notification.data.chatId;
+  const alvo = e.notification.data || null;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
     const c = cs[0];
-    if (c) { c.focus(); if (chatId) c.postMessage({ abrirChat: chatId }); return; }
+    if (c) { c.focus(); if (alvo) c.postMessage({ alvo }); return; }
     return self.clients.openWindow('./');
   }));
 });
