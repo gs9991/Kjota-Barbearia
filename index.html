@@ -287,6 +287,8 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .chat-msg.system .chat-bubble{background:rgba(42,107,58,.2);border:1px solid var(--k-green-bd);color:var(--k-green);font-size:12px;font-weight:600;border-radius:8px;}
 .chat-time{font-size:10px;color:var(--k-muted);margin-top:3px;padding:0 4px;}
 .chat-msg.cliente .chat-time{text-align:right;}
+.msg-del{background:none;border:none;color:var(--k-muted);cursor:pointer;font-size:13px;padding:2px 5px;margin-left:4px;opacity:.55;vertical-align:middle;border-radius:4px;}
+.msg-del:hover,.msg-del:focus-visible{opacity:1;color:var(--k-red);}
 .pix-box{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:10px;padding:.9rem;margin:.2rem 0;}
 .pix-qr{background:#fff;border-radius:8px;padding:8px;width:184px;height:184px;margin:.2rem auto .6rem;display:flex;align-items:center;justify-content:center;}
 .pix-qr svg,.pix-qr img{width:100%;height:100%;}
@@ -797,7 +799,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
 <div class="notif-toast" id="notif-toast" role="status">
   <div class="notif-icon"><i class="ti ti-message-circle"></i></div>
   <div><div class="notif-title" id="notif-title"></div><div class="notif-desc" id="notif-desc"></div>
-    <div class="notif-actions"><button class="btn btn-gold btn-sm" data-act="notif-abrir">Ver chat</button><button class="btn btn-ghost btn-sm" data-act="notif-fechar">Ignorar</button></div></div>
+    <div class="notif-actions"><button class="btn btn-gold btn-sm" data-act="notif-abrir" id="notif-btn">Ver</button><button class="btn btn-ghost btn-sm" data-act="notif-fechar">Ignorar</button></div></div>
   <button class="icon-btn notif-close" data-act="notif-fechar" aria-label="Fechar aviso"><i class="ti ti-x"></i></button>
 </div>
 <div id="loading" role="status" aria-live="polite"><img data-img="logo" alt=""/><div id="loading-msg">Carregando</div></div>
@@ -1154,6 +1156,7 @@ function mostrarLogin() {
 function pararOuvintes() {
   unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = [];
   chatsIniciais = true; for (const k of Object.keys(ultimoNaoLido)) delete ultimoNaoLido[k];
+  agsAntes = null;
 }
 
 function iniciarOuvintes() {
@@ -1178,14 +1181,14 @@ function iniciarOuvintes() {
   if (S.role === 'dono') {
     lista('clientes', 'clientes', collection(db, 'clientes'), (a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
     lista('assinantes', 'assinantes', collection(db, 'assinantes'));
-    lista('agendamentos', 'agendamentos', collection(db, 'agendamentos'));
+    ouvir('agendamentos', collection(db, 'agendamentos'), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     lista('caixa', 'caixa', collection(db, 'caixa'), (a, b) => (b.data || '').localeCompare(a.data || '') || (b.hora || '').localeCompare(a.hora || ''));
     ouvir('chats', collection(db, 'chats'), snap => tratarChats(snap, 'naoLidasDono'));
   } else {
     const cid = S.cid;
     ouvir('cliente', doc(db, 'clientes', cid), snap => { if (snap.exists()) { D.clientes = [{ ...snap.data(), id: snap.id }]; S.nome = snap.data().nome || S.nome; } });
     lista('assinantes', 'assinantes', query(collection(db, 'assinantes'), where('cliente', '==', cid)));
-    lista('agendamentos', 'agendamentos', query(collection(db, 'agendamentos'), where('cliente', '==', cid)));
+    ouvir('agendamentos', query(collection(db, 'agendamentos'), where('cliente', '==', cid)), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     ouvir('chats', query(collection(db, 'chats'), where('clienteId', '==', cid)), snap => tratarChats(snap, 'naoLidasCliente'));
   }
 }
@@ -1204,7 +1207,7 @@ function tratarChats(snap, campo) {
     const ult = c.msgs[c.msgs.length - 1];
     const titulo = S.role === 'dono' ? (c.clienteNome || nomeCli(c.clienteId)) : 'KJota Barbearia';
     const desc = ult ? previewMsg(ult) : 'Nova mensagem';
-    avisar(titulo, desc, c.id);
+    avisar('💬 ' + titulo, desc, { chatId: c.id });
   }
   chatsIniciais = false;
 }
@@ -1269,15 +1272,64 @@ function atualizarBadges() {
 }
 
 /* ════════ AVISOS (na tela e do sistema) ════════ */
-let notifChatId = null, notifT;
-function avisar(titulo, desc, chatId) {
-  notifChatId = chatId;
+let notifAlvo = null, notifT;
+/* alvo: { chatId } abre o chat; { sec } abre uma tela */
+function avisar(titulo, desc, alvo) {
+  if (typeof alvo === 'string') alvo = { chatId: alvo };
+  notifAlvo = alvo || null;
   $('notif-title').textContent = titulo; $('notif-desc').textContent = desc;
+  $('notif-btn').textContent = alvo && alvo.chatId ? 'Ver chat' : 'Ver';
   $('notif-toast').classList.add('show');
-  clearTimeout(notifT); notifT = setTimeout(() => $('notif-toast').classList.remove('show'), 7000);
-  if (document.hidden && 'Notification' in window && Notification.permission === 'granted' && swReg) {
-    swReg.showNotification(titulo, { body: desc, icon: 'img/icon-192.png', badge: 'img/icon-192.png', tag: 'chat-' + chatId, data: { chatId } }).catch(() => {});
+  clearTimeout(notifT); notifT = setTimeout(() => $('notif-toast').classList.remove('show'), 8000);
+  try { if (navigator.vibrate) navigator.vibrate([80, 40, 80]); } catch (e) {}
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    const opts = { body: desc, icon: 'img/icon-192.png', badge: 'img/icon-192.png', tag: 'kj-' + (alvo && (alvo.chatId || alvo.sec) || Date.now()), renotify: true, data: alvo || {} };
+    if (swReg) swReg.showNotification(titulo, opts).catch(() => {});
+    else try { new Notification(titulo, opts); } catch (e) {}
   }
+}
+function abrirAlvo(alvo) {
+  if (!alvo) return;
+  if (alvo.chatId && getChat(alvo.chatId)) return abrirChat(alvo.chatId);
+  if (alvo.sec) { document.querySelectorAll('.overlay-screen.visible').forEach(s => esconderTela(s.id)); S.chatId = null; if (alvo.dia) agDia = alvo.dia; goTo(alvo.sec); }
+}
+
+/* Mudanças em agendamentos que merecem aviso (não avisa o que o próprio usuário fez) */
+let agsAntes = null;
+function tratarAgs() {
+  const atual = {};
+  for (const a of D.agendamentos) atual[a.id] = { st: a.status, d: a.data, h: a.hora };
+  if (agsAntes) {
+    for (const a of D.agendamentos) {
+      const ant = agsAntes[a.id], quando = `${fmtCurto(a.data)} às ${a.hora}`;
+      if (S.role === 'dono') {
+        if (!ant && a.origem !== 'balcao' && a.status !== 'cancel')
+          avisar(a.status === 'aguardando_pag' ? '📅 Nova reserva (aguardando PIX)' : '📅 Novo agendamento', `${nomeCli(a.cliente, a.clienteNome)} · ${a.svc} · ${quando}`, a.chatId ? { chatId: a.chatId } : { sec: 'agenda', dia: a.data });
+        else if (ant && ant.st !== 'cancel' && a.status === 'cancel' && a.canceladoPor === 'cliente')
+          avisar('❌ Cliente cancelou', `${nomeCli(a.cliente, a.clienteNome)} · ${a.svc} · ${fmtCurto(ant.d)} às ${ant.h}`, { sec: 'agenda', dia: ant.d });
+        else if (ant && (ant.d !== a.data || ant.h !== a.hora) && a.remarcadoPor === 'cliente')
+          avisar('🔁 Cliente remarcou', `${nomeCli(a.cliente, a.clienteNome)} · agora ${quando}`, { sec: 'agenda', dia: a.data });
+      } else {
+        if (!ant && a.origem === 'balcao')
+          avisar('📅 Horário marcado para você', `${a.svc} · ${quando}`, { sec: 'minha-area' });
+        else if (ant && ant.st !== 'cancel' && a.status === 'cancel' && a.canceladoPor !== 'cliente')
+          avisar('❌ Seu horário foi cancelado', `${a.svc} · ${fmtCurto(ant.d)} às ${ant.h}. Fale com a barbearia ou agende outro.`, { sec: 'minha-area' });
+        else if (ant && ant.st === 'aguardando_pag' && a.status === 'wait')
+          avisar('✅ Horário confirmado', `${a.svc} · ${quando}`, { sec: 'minha-area' });
+        else if (ant && ant.st !== 'done' && a.status === 'done')
+          avisar('💈 Obrigado pela visita!', `${a.svc} concluído. Até a próxima!`, { sec: 'minha-area' });
+      }
+    }
+  }
+  agsAntes = atual;
+}
+
+/* Convite para ativar avisos do sistema */
+function blocoAvisos() {
+  if (!('Notification' in window) || Notification.permission !== 'default') return '';
+  try { if (localStorage.getItem('kj-avisos-dispensado')) return ''; } catch (e) {}
+  return `<div class="note" id="convite-avisos"><i class="ti ti-bell-ringing"></i><div><b>Ative as notificações</b> para saber na hora de ${S.role === 'dono' ? 'novos agendamentos, comprovantes e mensagens' : 'confirmações, lembretes e mensagens da barbearia'}.` +
+    `<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="ativar-notif"><i class="ti ti-bell"></i>Ativar</button><button class="btn btn-ghost btn-sm" data-act="dispensar-avisos">Agora não</button></div></div></div>`;
 }
 
 /* ════════ RÓTULOS ════════ */
@@ -1305,7 +1357,7 @@ function renderDash() {
   let alertas = '';
   if (pendPag.length) alertas += `<button class="note warn" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="chats"><i class="ti ti-receipt"></i><div><b>${pendPag.length} comprovante${pendPag.length > 1 ? 's' : ''} para conferir.</b> Toque para abrir os chats e confirmar os pagamentos.</div></button>`;
   if (vencendo.length) alertas += `<div class="note"><i class="ti ti-calendar-due"></i><div><b>${vencendo.length} assinatura${vencendo.length > 1 ? 's vencem' : ' vence'} nos próximos 7 dias:</b> ${vencendo.map(a => esc(nomeCli(a.cliente)) + ' (' + fmtCurto(a.vencimento) + ')').join(', ')}.</div></div>`;
-  $('dash-alertas').innerHTML = alertas;
+  $('dash-alertas').innerHTML = blocoAvisos() + alertas;
 
   const prox = ags.filter(a => a.status === 'wait' || a.status === 'aguardando_pag').sort((a, b) => a.hora.localeCompare(b.hora)).slice(0, 6);
   $('dash-agenda').innerHTML = prox.length ? prox.map(a =>
@@ -1705,7 +1757,7 @@ async function cancelarAg(ag) {
   await runTransaction(db, async tx => {
     const snap = await tx.get(diaRef(ag.data));
     if (snap.exists()) tx.set(diaRef(ag.data), { itens: (snap.data().itens || []).filter(i => i.id !== ag.id) });
-    tx.update(doc(db, 'agendamentos', ag.id), { status: 'cancel', canceladoEm: serverTimestamp() });
+    tx.update(doc(db, 'agendamentos', ag.id), { status: 'cancel', canceladoEm: serverTimestamp(), canceladoPor: S.role === 'dono' ? 'dono' : 'cliente' });
   });
 }
 async function remarcarAg(ag, data, hora) {
@@ -1719,7 +1771,7 @@ async function remarcarAg(ag, data, hora) {
     novos.push({ id: ag.id, hora, dur: Number(ag.dur) || 30, st: ag.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
     if (!mesmoDia) tx.set(diaRef(ag.data), { itens: velhos });
     tx.set(diaRef(data), { itens: novos });
-    tx.update(doc(db, 'agendamentos', ag.id), { data, hora, remarcadoEm: serverTimestamp() });
+    tx.update(doc(db, 'agendamentos', ag.id), { data, hora, remarcadoEm: serverTimestamp(), remarcadoPor: S.role === 'dono' ? 'dono' : 'cliente' });
   });
 }
 async function confirmarNoDia(agId, data, hora, dur) {
@@ -1900,7 +1952,7 @@ function renderMinhaArea() {
   } else {
     h += `<div class="note"><i class="ti ti-crown-off"></i><div><b>Você não tem plano ativo.</b> Agende um serviço avulso ou conheça os planos.<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="nav" data-sec="svc-cli"><i class="ti ti-scissors"></i>Agendar serviço</button><button class="btn btn-outline btn-sm" data-act="nav" data-sec="planos-cli"><i class="ti ti-crown"></i>Ver planos</button></div></div></div>`;
   }
-  $('ma-assin').innerHTML = h;
+  $('ma-assin').innerHTML = blocoAvisos() + h;
 
   const abertos = D.chats.filter(c => c.status === 'pendente' || (Number(c.naoLidasCliente) || 0) > 0);
   $('ma-pagamentos').innerHTML = abertos.length ? `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-message-circle"></i>Pagamentos e mensagens</span></div><div class="card-body">` +
@@ -2089,7 +2141,9 @@ function renderChat(forcarRolagem) {
     let barra = '';
     if (S.role === 'dono' && i === idxUltComp && c.status === 'pendente')
       barra = `<div class="confirm-pay-bar"><div class="confirm-pay-bar-info">Comprovante recebido · <b>${moeda(totalChat(c))}</b>${avulso ? '' : ` · <b>${Number(c.meses) || 1} mês(es)</b>`}</div><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="confirmar-pag"><i class="ti ti-check"></i>Confirmar</button><button class="btn btn-danger btn-sm" data-act="rejeitar-pag"><i class="ti ti-x"></i>Rejeitar</button></div></div>`;
-    return `<div class="chat-msg ${cls}"><div class="chat-bubble">${conteudo}</div><div class="chat-time">${esc(m.hora || '')}</div></div>${barra}`;
+    const podeApagar = m.tipo !== 'pix' && m.lado !== 'system' && (S.role === 'dono' || m.lado === 'cliente');
+    const apagar = podeApagar ? `<button class="msg-del" data-act="apagar-msg" data-i="${i}" aria-label="Apagar mensagem" title="Apagar"><i class="ti ti-trash"></i></button>` : '';
+    return `<div class="chat-msg ${cls}"><div class="chat-bubble">${conteudo}</div><div class="chat-time">${esc(m.hora || '')}${apagar}</div></div>${barra}`;
   }).join('');
 
   // Ações rápidas
@@ -2098,6 +2152,7 @@ function renderChat(forcarRolagem) {
     qa = c.status === 'pendente'
       ? `<button class="btn btn-outline btn-sm" style="color:var(--k-green);border-color:var(--k-green-bd)" data-act="confirmar-pag"><i class="ti ti-check"></i>Confirmar pagamento (${moeda(totalChat(c))})</button><button class="btn btn-danger btn-sm" data-act="rejeitar-pag"><i class="ti ti-x"></i>Rejeitar</button>`
       : `<span class="cm" style="color:var(--k-green)"><i class="ti ti-check"></i> Pagamento confirmado${c.vencimento ? ' · plano até ' + fmt(c.vencimento) : ''}</span>`;
+    qa += `<button class="btn btn-ghost btn-sm" data-act="excluir-conversa" style="margin-left:auto"><i class="ti ti-trash"></i>Excluir conversa</button>`;
   } else if (c.status === 'pendente' && !avulso) {
     const p = getPlano(c.planoId) || { preco: 0 };
     qa = `<div class="chat-actions-lbl">Quantos meses?</div><div class="meses-grid" style="width:100%">` + [1, 2, 3, 6].map(n =>
@@ -2230,6 +2285,39 @@ async function confirmarPagamento() {
     }
   } catch (e) { toast(erroAmigavel(e), true); }
   finally { unloading(); }
+}
+async function apagarMsg(i) {
+  const c = getChat(S.chatId); if (!c) return;
+  const alvo = c.msgs[i]; if (!alvo) return;
+  const ehComp = alvo.tipo === 'imagem' || alvo.tipo === 'pdf';
+  if (!confirmar(ehComp && c.status === 'pendente' && S.role !== 'dono' ? 'Apagar este comprovante? A barbearia não vai mais conseguir vê-lo.' : 'Apagar esta mensagem para todos?')) return;
+  const mesma = (a, b) => a && b && (a.em != null && b.em != null ? a.em === b.em : (a.lado === b.lado && a.hora === b.hora && a.tipo === b.tipo && (a.texto ?? a.html) === (b.texto ?? b.html) && (a.url || a.dataUrl || '') === (b.url || b.dataUrl || '')));
+  try {
+    await runTransaction(db, async tx => {
+      const ref = doc(db, 'chats', c.id), snap = await tx.get(ref);
+      if (!snap.exists()) return;
+      const msgs = snap.data().msgs || [];
+      let idx = mesma(msgs[i], alvo) ? i : msgs.findIndex(m => mesma(m, alvo));
+      if (idx < 0) return;
+      msgs.splice(idx, 1);
+      const ult = msgs[msgs.length - 1];
+      tx.update(ref, { msgs, ultimaMsg: ult ? previewMsg(ult) : '', atualizadoEm: serverTimestamp() });
+    });
+    toast('Mensagem apagada.');
+  } catch (e) { toast(erroAmigavel(e, 'Não foi possível apagar.'), true); }
+}
+async function excluirConversa() {
+  const c = getChat(S.chatId); if (!c || S.role !== 'dono') return;
+  const ag = c.agId && getAg(c.agId);
+  const aviso = ag && ag.status === 'aguardando_pag' ? '\n\nA reserva de horário ligada a esta conversa também será cancelada.' : '';
+  if (!confirmar(`Excluir a conversa inteira com ${c.clienteNome || nomeCli(c.clienteId)}? Isso não pode ser desfeito.${aviso}`)) return;
+  await comLoading('Excluindo', async () => {
+    try {
+      if (ag && ag.status === 'aguardando_pag') await cancelarAg(ag);
+      await deleteDoc(doc(db, 'chats', c.id));
+      fecharChat(); toast('Conversa excluída.');
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
 }
 async function rejeitarPagamento() {
   const c = getChat(S.chatId); if (!c) return;
@@ -2366,7 +2454,7 @@ async function migrar() {
 let swReg = null, promptInstalar = null;
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(e => console.warn('SW', e));
-  navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.abrirChat && getChat(e.data.abrirChat)) abrirChat(e.data.abrirChat); });
+  navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.alvo) abrirAlvo(e.data.alvo); });
 }
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); promptInstalar = e; $('install-btn').classList.add('show'); });
 window.addEventListener('appinstalled', () => { $('install-btn').classList.remove('show'); promptInstalar = null; toast('App instalado!'); });
@@ -2381,7 +2469,17 @@ function estadoBotaoNotif() {
   if (Notification.permission === 'granted') { b.disabled = true; b.innerHTML = '<i class="ti ti-bell-check"></i>Avisos ativados'; }
   else if (Notification.permission === 'denied') { b.disabled = true; b.innerHTML = '<i class="ti ti-bell-off"></i>Avisos bloqueados no navegador'; }
 }
-async function ativarNotif() { if (!('Notification' in window)) return; await Notification.requestPermission(); estadoBotaoNotif(); }
+async function ativarNotif() {
+  if (!('Notification' in window)) return toast('Este navegador não suporta notificações. No iPhone, instale o app na tela inicial primeiro.', true);
+  const r = await Notification.requestPermission();
+  estadoBotaoNotif();
+  document.querySelectorAll('#convite-avisos').forEach(n => n.remove());
+  if (r === 'granted') {
+    toast('Notificações ativadas!');
+    const opts = { body: 'Você vai receber os avisos da KJota por aqui.', icon: 'img/icon-192.png', tag: 'kj-teste' };
+    if (swReg) swReg.showNotification('KJota Barbearia', opts).catch(() => {}); else try { new Notification('KJota Barbearia', opts); } catch (e) {}
+  } else toast('Notificações bloqueadas. Libere nas configurações do navegador.', true);
+}
 
 /* ════════ EVENTOS ════════ */
 const RENDER = { dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
@@ -2443,7 +2541,10 @@ const ACT = {
   'lightbox': el => { $('lightbox-img').src = el.dataset.src; $('lightbox').classList.add('open'); },
   'fechar-lightbox': () => $('lightbox').classList.remove('open'),
   'notif-fechar': () => $('notif-toast').classList.remove('show'),
-  'notif-abrir': () => { $('notif-toast').classList.remove('show'); if (notifChatId && getChat(notifChatId)) abrirChat(notifChatId); }
+  'notif-abrir': () => { $('notif-toast').classList.remove('show'); abrirAlvo(notifAlvo); },
+  'apagar-msg': el => apagarMsg(Number(el.dataset.i)),
+  'excluir-conversa': excluirConversa,
+  'dispensar-avisos': () => { try { localStorage.setItem('kj-avisos-dispensado', '1'); } catch (e) {} document.querySelectorAll('#convite-avisos').forEach(n => n.remove()); }
 };
 const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
