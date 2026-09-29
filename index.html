@@ -217,6 +217,15 @@ textarea.form-input{resize:vertical;min-height:65px;}
 .svc-card-preco{font-family:var(--font-display);font-size:22px;color:var(--k-gold);}
 .svc-card-dur{font-size:11px;color:var(--k-muted);margin-top:.2rem;}
 .svc-row-icon{width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;color:var(--k-gold);font-size:18px;flex-shrink:0;}
+.svc-card{position:relative;}
+.svc-check{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--k-border);display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;}
+.svc-card[aria-pressed="true"]{border-color:var(--k-gold);background:rgba(201,168,76,.12);}
+.svc-card[aria-pressed="true"] .svc-check{background:var(--k-gold);border-color:var(--k-gold);color:#0D0D0D;}
+.sel-bar{position:fixed;left:0;right:0;bottom:0;z-index:160;background:var(--k-dark);border-top:1px solid var(--k-gold-dim);padding:.7rem 1rem calc(.7rem + var(--safe-bottom));box-shadow:0 -6px 20px rgba(0,0,0,.45);}
+.sel-bar-in{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:8px;}
+.sel-bar .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.com-selbar .content,body.com-selbar .center-box{padding-bottom:calc(6rem + var(--safe-bottom));}
+body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -792,6 +801,11 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <button class="icon-btn notif-close" data-act="notif-fechar" aria-label="Fechar aviso"><i class="ti ti-x"></i></button>
 </div>
 <div id="loading" role="status" aria-live="polite"><img data-img="logo" alt=""/><div id="loading-msg">Carregando</div></div>
+<div class="sel-bar" id="sel-bar" hidden><div class="sel-bar-in">
+  <div class="row-main"><div class="cn" id="sel-nomes"></div><div class="cm" id="sel-info"></div></div>
+  <button class="icon-btn" data-act="sel-limpar" aria-label="Limpar seleção"><i class="ti ti-x"></i></button>
+  <button class="btn btn-gold" data-act="sel-agendar"><i class="ti ti-calendar-plus"></i>Escolher horário</button>
+</div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>kjImgs();</script>
 
@@ -921,7 +935,7 @@ function assinAtiva(cid) {
 }
 const vencida = a => !!(a && a.vencimento && a.vencimento < hoje());
 function usoPlano(cid, mes) {
-  return D.agendamentos.filter(a => String(a.cliente) === String(cid) && (a.tipo === 'plano-svc' || a.tipo === 'assinatura')
+  return D.agendamentos.filter(a => String(a.cliente) === String(cid) && (a.tipo === 'plano-svc' || a.tipo === 'assinatura' || a.usaPlano)
     && a.status !== 'cancel' && String(a.data || '').slice(0, 7) === mes).length;
 }
 function diaAberto(ds, cfg = CONFIG) {
@@ -952,10 +966,11 @@ function openModal(id) { modalAberto = id; $(id).classList.add('open'); const f 
 function closeModal(id) { const m = $(id || modalAberto); if (m) m.classList.remove('open'); modalAberto = null; }
 document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
 
-function mostrarTela(id) { $(id).classList.add('visible'); $(id).scrollTop = 0; document.body.style.overflow = 'hidden'; }
+function mostrarTela(id) { $(id).classList.add('visible'); $(id).scrollTop = 0; document.body.style.overflow = 'hidden'; if (S.role) renderSelBar(); }
 function esconderTela(id) {
   $(id).classList.remove('visible');
   if (!document.querySelector('.overlay-screen.visible')) document.body.style.overflow = '';
+  if (S.role) renderSelBar();
 }
 
 function confirmar(msg) { return window.confirm(msg); }
@@ -1122,6 +1137,7 @@ function sairLocal() {
   pararOuvintes();
   Object.assign(S, { uid: null, role: null, cid: null, nome: '', user: '', secao: null, chatId: null });
   for (const k of Object.keys(D)) D[k] = [];
+  selSvc.clear();
   document.querySelectorAll('.overlay-screen.visible').forEach(el => esconderTela(el.id));
   document.querySelectorAll('.modal-overlay.open').forEach(el => el.classList.remove('open'));
   $('app').classList.remove('visible');
@@ -1238,6 +1254,7 @@ function goTo(sec) {
   document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 's-' + sec));
   document.querySelectorAll('.nav-btn').forEach(b => { if (b.dataset.sec === sec) { b.setAttribute('aria-current', 'page'); b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } else b.removeAttribute('aria-current'); });
   if (RENDER[sec]) RENDER[sec]();
+  renderSelBar();
   window.scrollTo(0, 0);
 }
 
@@ -1317,7 +1334,7 @@ function renderAgenda() {
   el.innerHTML = ags.map(a => {
     const cli = getCliente(a.cliente);
     const wa = cli && linkWhats(cli.tel);
-    const chips = (a.tipo === 'plano-svc' || a.tipo === 'assinatura' ? '<span class="chip"><i class="ti ti-crown"></i>Plano</span>' : '') +
+    const chips = (a.tipo === 'plano-svc' || a.tipo === 'assinatura' || a.usaPlano ? '<span class="chip"><i class="ti ti-crown"></i>Plano</span>' : '') +
       (a.pago ? '<span class="chip"><i class="ti ti-check"></i>Pago</span>' : '') +
       (reservaExpirada(a) ? '<span class="chip red">Reserva expirada</span>' : '');
     let acoes = '';
@@ -1546,7 +1563,7 @@ function renderCaixa() {
   movs.filter(c => c.tipo === 'entrada').forEach(c => { const o = origemDe(c); porOrigem[o] = (porOrigem[o] || 0) + (Number(c.val) || 0); });
   $('cx-origem').innerHTML = barras(Object.entries(porOrigem).map(([k, v]) => ({ k: ORIGEM_LBL[k] || k, v })).sort((a, b) => b.v - a.v), i => moeda(i.v));
   const porSvc = {};
-  feitos.forEach(a => { const k = a.svc || 'Serviço'; porSvc[k] = porSvc[k] || { k, v: 0, r: 0 }; porSvc[k].v++; porSvc[k].r += Number(a.preco) || 0; });
+  feitos.forEach(a => (a.itens && a.itens.length ? a.itens : [{ nome: a.svc || 'Serviço', preco: a.preco }]).forEach(i => { const k = i.nome || 'Serviço'; porSvc[k] = porSvc[k] || { k, v: 0, r: 0 }; porSvc[k].v++; porSvc[k].r += Number(i.preco) || 0; }));
   $('cx-servicos').innerHTML = barras(Object.values(porSvc).sort((a, b) => b.v - a.v).slice(0, 8), i => i.v + 'x');
   $('cx-count').textContent = movs.length + ' lançamento' + (movs.length !== 1 ? 's' : '');
   $('lista-caixa').innerHTML = movs.length ? movs.map(c => linhaCaixa(c, true)).join('') : vazio('ti-receipt-off', 'Sem movimentações no período');
@@ -1789,9 +1806,12 @@ function escolherHoraAg(hh) {
   $('res-hora').textContent = hh;
   $('res-dur').textContent = agS.dur + ' minutos';
   $('res-val').textContent = agS.modo === 'plano-svc' ? 'Incluso no plano' : moeda(agS.preco);
+  const its = agS.modo !== 'remarcar' && agS.svc.itens && agS.svc.itens.length > 1 ? agS.svc.itens : null;
+  $('res-svc').innerHTML = its ? its.map(i => `${esc(i.nome)} <span class="cm">${i.plano ? 'plano' : moeda(i.preco)}</span>`).join('<br/>') : esc($('res-svc').textContent);
   let nota = '', botao = 'Confirmar';
   if (agS.modo === 'avulso') {
-    nota = `<i class="ti ti-clock-dollar"></i><div>O horário fica reservado por <b>${CONFIG.reservaMin >= 60 ? (CONFIG.reservaMin / 60) + ' h' : CONFIG.reservaMin + ' min'}</b>. Pague o PIX e envie o comprovante no chat para confirmar.</div>`;
+    const temPlano = (agS.svc.itens || []).some(i => i.plano);
+    nota = `<i class="ti ti-clock-dollar"></i><div>${temPlano ? 'Os itens do plano não são cobrados; você paga só o restante. ' : ''}O horário fica reservado por <b>${CONFIG.reservaMin >= 60 ? (CONFIG.reservaMin / 60) + ' h' : CONFIG.reservaMin + ' min'}</b>. Pague o PIX e envie o comprovante no chat para confirmar.</div>`;
     botao = 'Reservar e pagar';
   } else if (agS.modo === 'plano-svc') {
     const p = getPlano(agS.planoId), usado = usoPlano(S.cid, agS.data.slice(0, 7)), lim = Number(p && p.cortes) || 0;
@@ -1814,27 +1834,33 @@ async function confirmarAgendaCli() {
       esconderTela('agenda-screen'); toast('Horário remarcado!'); goTo('minha-area');
       return;
     }
-    if (agS.modo === 'plano-svc') {
+    const itens = agS.svc.itens || [{ id: String(agS.svc.id), nome: agS.svc.nome, preco: Number(agS.svc.preco) || 0, dur: agS.dur, plano: agS.modo === 'plano-svc' }];
+    const extra = { itens, svcId: String(itens[0].id) };
+    if (agS.planoId) { // combo com itens do plano: confere plano ativo e limite do mês
       const as = assinAtiva(S.cid), p = getPlano(agS.planoId);
       if (!as || vencida(as) || String(as.plano) !== String(agS.planoId)) throw Object.assign(new Error('PLANO'), { amigavel: 'Seu plano não está ativo. Renove para agendar.' });
       if (as.vencimento && agS.data > as.vencimento) throw Object.assign(new Error('PLANO'), { amigavel: `Seu plano vence em ${fmt(as.vencimento)}. Escolha uma data até lá ou renove.` });
       const lim = Number(p && p.cortes) || 0;
-      if (lim && usoPlano(S.cid, agS.data.slice(0, 7)) >= lim) throw Object.assign(new Error('LIMITE'), { amigavel: `Você já usou os ${lim} atendimentos do plano neste mês. Escolha outro mês ou agende como avulso.` });
-      await reservar({ cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, svcId: String(agS.svc.id), planoId: String(agS.planoId), tipo: 'plano-svc', data: agS.data, hora: agS.hora, dur: agS.dur, preco: 0, obs: '', status: 'wait', pago: false });
-      esconderTela('agenda-screen'); toast('Agendado! Te esperamos.'); goTo('minha-area');
+      if (lim && usoPlano(S.cid, agS.data.slice(0, 7)) >= lim) throw Object.assign(new Error('LIMITE'), { amigavel: `Você já usou os ${lim} atendimentos do plano neste mês. Escolha outro mês ou tire os itens do plano da seleção.` });
+      Object.assign(extra, { planoId: String(agS.planoId), usaPlano: true });
+    }
+    if (agS.modo === 'plano-svc') {
+      await reservar({ cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'plano-svc', data: agS.data, hora: agS.hora, dur: agS.dur, preco: 0, obs: '', status: 'wait', pago: false });
+      limparSelecao(); esconderTela('agenda-screen'); toast('Agendado! Te esperamos.'); goTo('minha-area');
       return;
     }
-    // avulso: reserva o horário e abre o chat de pagamento
-    const ag = { cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, svcId: String(agS.svc.id), tipo: 'avulso', data: agS.data, hora: agS.hora, dur: agS.dur, preco: agS.preco, obs: '', status: 'aguardando_pag', pago: false };
+    // avulso (ou combo com parte paga): reserva o horário e abre o chat de pagamento
+    const ag = { cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'avulso', data: agS.data, hora: agS.hora, dur: agS.dur, preco: agS.preco, obs: '', status: 'aguardando_pag', pago: false };
     const agId = await reservar(ag);
+    const lista = itens.map(i => `• ${i.nome}${i.plano ? ' (incluso no plano)' : ' · ' + moeda(i.preco)}`).join('\n');
     const chatRef = await addDoc(collection(db, 'chats'), {
-      clienteId: S.cid, clienteNome: S.nome, tipo: 'avulso', planoId: null, svcId: String(agS.svc.id), svcNome: agS.svc.nome, svcPreco: agS.preco, svcDur: agS.dur,
+      clienteId: S.cid, clienteNome: S.nome, tipo: 'avulso', planoId: extra.planoId || null, svcId: extra.svcId, svcNome: agS.svc.nome, svcPreco: agS.preco, svcDur: agS.dur, itens,
       agId, agData: agS.data, agHora: agS.hora, meses: 1, status: 'pendente', vencimento: null,
-      msgs: [msgInfo('kjota', `Olá, ${primeiroNome(S.nome)}! Seu horário está reservado:\n📅 **${fmt(agS.data)}** às **${agS.hora}**\n✂️ **${agS.svc.nome}** · ${moeda(agS.preco)}\n\nPague pelo PIX abaixo e envie o comprovante aqui para confirmar.`), msgPix()],
+      msgs: [msgInfo('kjota', `Olá, ${primeiroNome(S.nome)}! Seu horário está reservado:\n📅 **${fmt(agS.data)}** às **${agS.hora}**\n✂️ ${itens.length > 1 ? '**Serviços:**\n' + lista : '**' + agS.svc.nome + '**'}\n💰 Total: **${moeda(agS.preco)}**\n\nPague pelo PIX abaixo e envie o comprovante aqui para confirmar.`), msgPix()],
       naoLidasDono: 1, naoLidasCliente: 0, ultimaMsg: 'Nova reserva', criadoEm: serverTimestamp(), atualizadoEm: serverTimestamp()
     });
     await updateDoc(doc(db, 'agendamentos', agId), { chatId: chatRef.id }).catch(() => {});
-    esconderTela('agenda-screen');
+    limparSelecao(); esconderTela('agenda-screen');
     await esperarChat(chatRef.id);
     abrirChat(chatRef.id);
   } catch (e) {
@@ -1904,9 +1930,51 @@ function renderMinhaArea() {
     `<div class="row-actions" style="justify-content:flex-start;margin-top:.7rem;">${wa ? `<a class="btn btn-outline btn-sm" href="${wa}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>WhatsApp</a>` : ''}${CONFIG.insta ? `<a class="btn btn-ghost btn-sm" href="https://instagram.com/${esc(CONFIG.insta.replace('@', ''))}" target="_blank" rel="noopener"><i class="ti ti-brand-instagram"></i>${esc(CONFIG.insta)}</a>` : ''}</div></div></div>`;
 }
 
-function cardSvc(s, act, extra) {
-  return `<button class="svc-card" data-act="${act}" data-id="${s.id}"${extra || ''}><div class="svc-card-icon"><i class="ti ${esc(s.icone || 'ti-scissors')}"></i></div><div class="svc-card-nome">${esc(s.nome)}</div>` +
-    `<div class="svc-card-preco">${act === 'agendar-plano' ? 'Incluso' : moeda(s.preco)}</div><div class="svc-card-dur"><i class="ti ti-clock"></i> ${Number(s.dur) || 30} min</div></button>`;
+function cardSvc(s, incluso) {
+  const sel = selSvc.has(String(s.id));
+  return `<button class="svc-card" data-act="sel-svc" data-id="${s.id}" aria-pressed="${sel}"><span class="svc-check" aria-hidden="true"><i class="ti ti-check"></i></span><div class="svc-card-icon"><i class="ti ${esc(s.icone || 'ti-scissors')}"></i></div><div class="svc-card-nome">${esc(s.nome)}</div>` +
+    `<div class="svc-card-preco">${incluso ? 'Incluso' : moeda(s.preco)}</div><div class="svc-card-dur"><i class="ti ti-clock"></i> ${Number(s.dur) || 30} min</div></button>`;
+}
+/* ── Seleção de vários serviços de uma vez ── */
+const selSvc = new Set();
+function inclusosDoPlano() {
+  const as = assinAtiva(S.cid); if (!as || vencida(as)) return null;
+  const p = getPlano(as.plano);
+  const ids = p && p.servicos && p.servicos.length ? p.servicos.map(String) : D.servicos.map(s => String(s.id));
+  return { as, p, ids };
+}
+function montarCombo() {
+  const pl = inclusosDoPlano();
+  const itens = D.servicos.filter(s => selSvc.has(String(s.id))).map(s => {
+    const plano = !!(pl && pl.ids.includes(String(s.id)));
+    return { id: String(s.id), nome: s.nome, preco: plano ? 0 : (Number(s.preco) || 0), dur: Number(s.dur) || 30, plano };
+  });
+  const total = itens.reduce((t, i) => t + i.preco, 0), dur = itens.reduce((t, i) => t + i.dur, 0);
+  const usaPlano = itens.some(i => i.plano);
+  return { itens, total, dur, usaPlano, planoId: usaPlano ? pl.as.plano : null };
+}
+function alternarSvc(id) {
+  id = String(id);
+  if (selSvc.has(id)) selSvc.delete(id); else selSvc.add(id);
+  document.querySelectorAll(`.svc-card[data-id="${CSS.escape(id)}"]`).forEach(b => b.setAttribute('aria-pressed', selSvc.has(id)));
+  renderSelBar();
+}
+function limparSelecao() { selSvc.clear(); document.querySelectorAll('.svc-card[aria-pressed="true"]').forEach(b => b.setAttribute('aria-pressed', 'false')); renderSelBar(); }
+function renderSelBar() {
+  const bar = $('sel-bar');
+  const onde = $('svc-select-screen').classList.contains('visible') || (S.secao === 'svc-cli' && !document.querySelector('#agenda-screen.visible, #chat-screen.visible, #plan-select-screen.visible'));
+  if (!selSvc.size || !onde || S.role !== 'cliente') { bar.hidden = true; document.body.classList.remove('com-selbar'); return; }
+  const c = montarCombo();
+  $('sel-nomes').textContent = c.itens.map(i => i.nome).join(' + ');
+  $('sel-info').textContent = `${c.itens.length} serviço${c.itens.length > 1 ? 's' : ''} · ${c.dur} min · ${c.total ? moeda(c.total) : 'Incluso no plano'}${c.total && c.usaPlano ? ' (parte no plano)' : ''}`;
+  bar.hidden = false; document.body.classList.add('com-selbar');
+}
+function agendarSelecao() {
+  const c = montarCombo(); if (!c.itens.length) return;
+  const svc = { id: c.itens.map(i => i.id).join('+'), nome: c.itens.map(i => i.nome).join(' + '), preco: c.total, dur: c.dur, itens: c.itens };
+  esconderTela('svc-select-screen');
+  abrirAgenda({ modo: c.total === 0 && c.usaPlano ? 'plano-svc' : 'avulso', svc, planoId: c.planoId });
+  renderSelBar();
 }
 function renderSvcCli() {
   const as = assinAtiva(S.cid), el = $('svc-cli-container');
@@ -1918,11 +1986,13 @@ function renderSvcCli() {
     const lim = Number(p && p.cortes) || 0, usado = usoPlano(S.cid, hoje().slice(0, 7));
     el.innerHTML = `<h1 class="section-title" style="margin-bottom:1rem;">Serviços</h1>` +
       `<div class="plano-ativo-card"><i class="ti ti-badge-check" style="font-size:26px;color:var(--k-gold);"></i><div class="row-main"><div class="cn">Plano ativo: <b style="color:var(--k-gold)">${esc(p ? p.nome : '')}</b></div><div class="cm">${as.vencimento ? 'Válido até ' + fmt(as.vencimento) : ''}${lim ? ` · ${usado} de ${lim} usados neste mês` : ''}</div></div></div>` +
-      `<div class="sub-title"><i class="ti ti-crown"></i>Inclusos no seu plano</div><div class="svc-grid">${inclusos.map(s => cardSvc(s, 'agendar-plano')).join('')}</div>` +
-      (outros.length ? `<div class="sub-title"><i class="ti ti-scissors"></i>Outros serviços (pagos à parte)</div><div class="svc-grid">${outros.map(s => cardSvc(s, 'agendar-avulso')).join('')}</div>` : '');
+      `<p class="cm" style="margin-bottom:1rem;">Toque em um ou mais serviços para fazer tudo no mesmo horário.</p>` +
+      `<div class="sub-title"><i class="ti ti-crown"></i>Inclusos no seu plano</div><div class="svc-grid">${inclusos.map(s => cardSvc(s, true)).join('')}</div>` +
+      (outros.length ? `<div class="sub-title"><i class="ti ti-scissors"></i>Outros serviços (pagos à parte)</div><div class="svc-grid">${outros.map(s => cardSvc(s, false)).join('')}</div>` : '');
   } else {
-    el.innerHTML = `<h1 class="section-title" style="margin-bottom:.4rem;">Serviços</h1><p class="cm" style="margin-bottom:1rem;">Escolha o serviço, o dia e o horário. O pagamento é pelo PIX.</p><div class="svc-grid">${D.servicos.map(s => cardSvc(s, 'agendar-avulso')).join('')}</div>`;
+    el.innerHTML = `<h1 class="section-title" style="margin-bottom:.4rem;">Serviços</h1><p class="cm" style="margin-bottom:1rem;">Toque em um ou mais serviços para fazer tudo no mesmo horário. O pagamento é pelo PIX.</p><div class="svc-grid">${D.servicos.map(s => cardSvc(s, false)).join('')}</div>`;
   }
+  renderSelBar();
 }
 function renderPlanosCli() {
   const as = assinAtiva(S.cid);
@@ -1942,7 +2012,8 @@ function renderEscolhaPlano() {
 }
 function abrirEscolhaSvc() { esconderTela('plan-select-screen'); renderEscolhaSvc(); mostrarTela('svc-select-screen'); }
 function renderEscolhaSvc() {
-  $('svc-grid-avulso').innerHTML = D.servicos.length ? D.servicos.map(s => cardSvc(s, 'agendar-avulso')).join('') : vazio('ti-scissors', 'Nenhum serviço disponível no momento.');
+  $('svc-grid-avulso').innerHTML = D.servicos.length ? D.servicos.map(s => cardSvc(s, false)).join('') : vazio('ti-scissors', 'Nenhum serviço disponível no momento.');
+  renderSelBar();
 }
 
 /* ════════ CHAT E PAGAMENTO ════════ */
@@ -2342,9 +2413,10 @@ const ACT = {
   'migrar': migrar,
   // cliente
   'contratar': el => contratarPlano(el.dataset.id),
-  'agendar-avulso': el => { const s = getSvc(el.dataset.id); if (!s) return; esconderTela('svc-select-screen'); abrirAgenda({ modo: 'avulso', svc: s }); },
-  'agendar-plano': el => { const s = getSvc(el.dataset.id), as = assinAtiva(S.cid); if (!s || !as) return; abrirAgenda({ modo: 'plano-svc', svc: s, planoId: as.plano }); },
-  'remarcar': el => { const a = getAg(el.dataset.id); if (!a) return; abrirAgenda({ modo: 'remarcar', svc: getSvc(a.svcId) || { nome: a.svc, dur: a.dur }, ag: a }); },
+  'sel-svc': el => alternarSvc(el.dataset.id),
+  'sel-agendar': agendarSelecao,
+  'sel-limpar': limparSelecao,
+  'remarcar': el => { const a = getAg(el.dataset.id); if (!a) return; abrirAgenda({ modo: 'remarcar', svc: { nome: a.svc, dur: a.dur }, ag: a }); },
   'cancelar-meu': el => cancelarMeu(el.dataset.id),
   'pular-plano': abrirEscolhaSvc,
   'voltar-planos': () => { esconderTela('svc-select-screen'); abrirEscolhaPlano(); },
