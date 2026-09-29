@@ -1,0 +1,87 @@
+rules_version = '2';
+// KJota Barbearia v2 — regras do Firestore
+// Publique em: Firebase Console → Firestore Database → Regras
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado()  { return request.auth != null; }
+    function isAdmin() { return logado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function meuCid()  { return get(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.clienteId; }
+    function soMuda(campos) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos); }
+
+    // Quem é dono: admins/{UID}, criado no primeiro acesso do usuário kjdono
+    match /admins/{uid} {
+      allow read: if logado() && request.auth.uid == uid;
+      // Só a conta do usuário "kjdono" pode se registrar como dono (primeiro acesso)
+      allow create: if logado() && request.auth.uid == uid && request.auth.token.email == 'kjdono@kjota.app';
+      allow update, delete: if false;
+    }
+
+    // Perfil do login → qual cliente ele é
+    match /perfis/{uid} {
+      allow read: if isAdmin() || (logado() && request.auth.uid == uid);
+      allow create: if isAdmin() || (logado() && request.auth.uid == uid
+                      && request.resource.data.role == 'cliente'
+                      && request.resource.data.clienteId == uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /config/{id}   { allow read: if logado(); allow write: if isAdmin(); }
+    match /servicos/{id} { allow read: if logado(); allow write: if isAdmin(); }
+    match /planos/{id}   { allow read: if logado(); allow write: if isAdmin(); }
+
+    match /clientes/{id} {
+      allow read: if isAdmin() || (logado() && id == meuCid());
+      allow create: if isAdmin() || (logado() && id == request.auth.uid && request.resource.data.visitas == 0);
+      allow update, delete: if isAdmin();
+    }
+
+    match /assinantes/{id} {
+      allow read: if isAdmin() || (logado() && resource.data.cliente == meuCid());
+      allow write: if isAdmin();
+    }
+
+    match /agendamentos/{id} {
+      allow read: if isAdmin() || (logado() && resource.data.cliente == meuCid());
+      // Cliente cria reserva aguardando pagamento, ou horário sem custo pelo plano
+      allow create: if isAdmin() || (logado()
+                      && request.resource.data.cliente == meuCid()
+                      && request.resource.data.pago == false
+                      && (request.resource.data.status == 'aguardando_pag'
+                          || (request.resource.data.status == 'wait'
+                              && request.resource.data.tipo == 'plano-svc'
+                              && request.resource.data.preco == 0)));
+      // Cliente só pode cancelar ou remarcar o que é dele
+      allow update: if isAdmin() || (logado()
+                      && resource.data.cliente == meuCid()
+                      && resource.data.status in ['wait', 'aguardando_pag']
+                      && soMuda(['status', 'data', 'hora', 'remarcadoEm', 'canceladoEm', 'chatId'])
+                      && request.resource.data.status in ['cancel', resource.data.status]);
+      allow delete: if isAdmin();
+    }
+
+    // Só horários (sem nomes): usado para mostrar o que está ocupado
+    match /agenda_dias/{dia} {
+      allow read: if logado();
+      allow write: if logado() && request.resource.data.keys().hasOnly(['itens']) && request.resource.data.itens is list;
+    }
+
+    match /caixa/{id} { allow read, write: if isAdmin(); }
+
+    match /chats/{id} {
+      allow read: if isAdmin() || (logado() && resource.data.clienteId == meuCid());
+      allow create: if isAdmin() || (logado()
+                      && request.resource.data.clienteId == meuCid()
+                      && request.resource.data.status == 'pendente');
+      allow update: if isAdmin() || (logado()
+                      && resource.data.clienteId == meuCid()
+                      && soMuda(['msgs', 'meses', 'naoLidasDono', 'naoLidasCliente', 'atualizadoEm', 'ultimaMsg']));
+      allow delete: if isAdmin();
+    }
+
+    // Senhas da versão antiga: só o dono (para a migração, que depois apaga tudo)
+    match /usuarios/{id} { allow read, write: if isAdmin(); }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
