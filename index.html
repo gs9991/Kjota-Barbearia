@@ -1019,7 +1019,11 @@ onAuthStateChanged(auth, async user => {
 async function entrar(user) {
   loading('Entrando');
   try {
-    const adm = await getDoc(doc(db, 'admins', user.uid));
+    let adm = await getDoc(doc(db, 'admins', user.uid));
+    if (!adm.exists() && user.email === emailDe(USUARIO_DONO)) {
+      await setDoc(doc(db, 'admins', user.uid), { nome: 'Dono', user: USUARIO_DONO, criadoEm: serverTimestamp() });
+      adm = await getDoc(doc(db, 'admins', user.uid));
+    }
     if (adm.exists()) {
       Object.assign(S, { uid: user.uid, role: 'dono', cid: null, nome: adm.data().nome || 'Dono', user: '' });
     } else {
@@ -1032,7 +1036,7 @@ async function entrar(user) {
     mostrarApp();
   } catch (e) {
     console.error(e);
-    const msg = e.code === 'sem-perfil' ? 'Sua conta ainda não foi liberada. Fale com a barbearia.' : erroAmigavel(e, 'Não foi possível entrar. Tente de novo.');
+    const msg = e.code === 'sem-perfil' ? 'Sua conta ainda não foi liberada. Fale com a barbearia.' : erroLogin(e);
     await signOut(auth).catch(() => {});
     sairLocal();
     mostrarErro('login-error', msg);
@@ -1046,10 +1050,11 @@ function erroLogin(e) {
   if (['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email', 'auth/invalid-login-credentials'].includes(c)) return 'Usuário ou senha incorretos.';
   if (c === 'auth/too-many-requests') return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
   if (c === 'auth/network-request-failed') return 'Sem conexão com a internet.';
-  if (c === 'auth/operation-not-allowed') return 'O login por e-mail e senha não está ativado no Firebase.';
+  if (c === 'auth/operation-not-allowed' || c === 'auth/configuration-not-found') return 'O login ainda não está ativado no Firebase (Authentication → E-mail/senha → Ativar).';
+  if (c === 'permission-denied') return 'O Firebase bloqueou o acesso pelas regras do Firestore (' + c + ').';
   if (c === 'auth/email-already-in-use') return 'Esse usuário já existe. Escolha outro.';
   if (c === 'auth/weak-password') return 'Senha fraca. Use pelo menos 6 caracteres.';
-  console.error(e); return 'Não foi possível concluir. Tente de novo.';
+  console.error(e); return 'Não foi possível concluir (' + (c || (e && e.message) || 'erro desconhecido') + ').';
 }
 
 async function doLogin() {
