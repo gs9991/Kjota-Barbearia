@@ -809,6 +809,17 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-cx"><i class="ti ti-check"></i>Registrar</button></div>
 </div></div>
 
+<div class="modal-overlay" id="m-cancel-pago" role="dialog" aria-modal="true" aria-labelledby="m-cp-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-cp-t">Cancelar horário pago</div></div>
+  <p class="cm" id="mcp-info" style="font-size:13px;line-height:1.6;margin-bottom:1rem;"></p>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <button class="btn btn-gold btn-block" data-act="cancel-pago" data-m="credito" id="mcp-credito"></button>
+    <button class="btn btn-outline btn-block" data-act="cancel-pago" data-m="devolver" id="mcp-devolver"></button>
+    <button class="btn btn-danger btn-block" data-act="cancel-pago" data-m="nada"><i class="ti ti-x"></i>Só cancelar (sem crédito nem devolução)</button>
+    <button class="btn btn-ghost btn-block" data-act="close-modal">Voltar</button>
+  </div>
+</div></div>
+
 <!-- UTILITÁRIOS -->
 <div id="lightbox" data-act="fechar-lightbox"><button class="icon-btn" data-act="fechar-lightbox" aria-label="Fechar"><i class="ti ti-x"></i></button><img id="lightbox-img" alt="Comprovante ampliado"/></div>
 <div class="notif-toast" id="notif-toast" role="status">
@@ -952,6 +963,8 @@ function assinAtiva(cid) {
   return D.assinantes.filter(a => String(a.cliente) === String(cid) && a.status === 'ativo')
     .sort((a, b) => (b.vencimento || '9999').localeCompare(a.vencimento || '9999'))[0] || null;
 }
+const creditoDe = cid => Math.max(0, Number((getCliente(cid) || {}).credito) || 0);
+const valorPagoAg = a => Math.max(0, (Number(a.preco) || 0) - (Number(a.creditoUsado) || 0)); // dinheiro que entrou de fato
 const vencida = a => !!(a && a.vencimento && a.vencimento < hoje());
 function usoPlano(cid, mes) {
   return D.agendamentos.filter(a => String(a.cliente) === String(cid) && (a.tipo === 'plano-svc' || a.tipo === 'assinatura' || a.usaPlano)
@@ -1203,7 +1216,14 @@ function iniciarOuvintes() {
     ouvir('chats', collection(db, 'chats'), snap => tratarChats(snap, 'naoLidasDono'));
   } else {
     const cid = S.cid;
-    ouvir('cliente', doc(db, 'clientes', cid), snap => { if (snap.exists()) { D.clientes = [{ ...snap.data(), id: snap.id }]; S.nome = snap.data().nome || S.nome; } });
+    let creditoAntes = null;
+    ouvir('cliente', doc(db, 'clientes', cid), snap => {
+      if (!snap.exists()) return;
+      D.clientes = [{ ...snap.data(), id: snap.id }]; S.nome = snap.data().nome || S.nome;
+      const cr = Number(snap.data().credito) || 0;
+      if (creditoAntes !== null && cr > creditoAntes + 0.009) avisar('💰 Você recebeu crédito', `${moeda(cr - creditoAntes)} para usar no próximo agendamento. Saldo: ${moeda(cr)}.`, { sec: 'minha-area' });
+      creditoAntes = cr;
+    });
     lista('assinantes', 'assinantes', query(collection(db, 'assinantes'), where('cliente', '==', cid)));
     ouvir('agendamentos', query(collection(db, 'agendamentos'), where('cliente', '==', cid)), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     ouvir('chats', query(collection(db, 'chats'), where('clienteId', '==', cid)), snap => tratarChats(snap, 'naoLidasCliente'));
@@ -1433,9 +1453,59 @@ function acoesAgDono(a) {
     (a.chatId && getChat(a.chatId) ? `<button class="btn btn-ghost btn-sm" data-act="abrir-chat" data-id="${a.chatId}"><i class="ti ti-message-circle"></i>Chat</button>` : '') +
     b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
   if (a.status === 'done') return b('desfazer-concluido', 'ti-arrow-back-up', 'Desfazer', 'btn-ghost');
-  if (a.status === 'cancel') return b('reativar-ag', 'ti-refresh', 'Reativar', 'btn-outline') + b('excluir-ag', 'ti-trash', 'Excluir', 'btn-danger');
+  if (a.status === 'cancel') return (a.pago && Number(a.preco) > 0 && !a.creditoGerado && !a.estornado ? b('credito-cancelado', 'ti-coins', 'Gerar crédito', 'btn-gold') : '') + b('reativar-ag', 'ti-refresh', 'Reativar', 'btn-outline') + b('excluir-ag', 'ti-trash', 'Excluir', 'btn-danger');
   return '';
 }
+/* ── Cancelamento de horário já pago: crédito, devolução ou só cancelar ── */
+let cancelPagoId = null;
+function abrirModalCancelPago(a) {
+  cancelPagoId = a.id;
+  const pago = valorPagoAg(a), cr = Number(a.creditoUsado) || 0;
+  $('mcp-info').innerHTML = `<b>${esc(nomeCli(a.cliente, a.clienteNome))}</b> já pagou ${moeda(a.preco)} por <b>${esc(a.svc)}</b> (${fmt(a.data)} às ${esc(a.hora)})${cr ? ` — ${moeda(pago)} no PIX e ${moeda(cr)} de crédito` : ''}.<br/>O que fazer com o valor?`;
+  $('mcp-credito').innerHTML = `<i class="ti ti-coins"></i>Cancelar e gerar crédito de ${moeda(a.preco)}`;
+  $('mcp-devolver').innerHTML = `<i class="ti ti-arrow-back-up"></i>Cancelar e devolver ${moeda(pago)}${cr ? ` (+ ${moeda(cr)} volta como crédito)` : ''}`;
+  $('mcp-devolver').hidden = !pago;
+  openModal('m-cancel-pago');
+}
+async function gerarCreditoAg(a, valor, jaCancelado) {
+  const b = writeBatch(db);
+  b.update(doc(db, 'clientes', String(a.cliente)), { credito: increment(valor) });
+  b.update(doc(db, 'agendamentos', a.id), { creditoGerado: valor, creditoGeradoEm: serverTimestamp() });
+  await b.commit();
+  const ch = a.chatId && getChat(a.chatId);
+  if (ch) await empurrarMsg(ch, [msgInfo('kjota', `💰 ${jaCancelado ? 'Geramos' : 'Seu horário de ' + fmt(a.data) + ' às ' + a.hora + ' foi cancelado e geramos'} um crédito de **${moeda(valor)}** para você. Ele é usado automaticamente no seu próximo agendamento.`)]).catch(() => {});
+}
+async function cancelarPago(modo) {
+  const a = getAg(cancelPagoId); closeModal('m-cancel-pago'); if (!a) return;
+  await comLoading('Cancelando', async () => {
+    try {
+      if (a.status !== 'cancel') await cancelarAg(a);
+      const nome = nomeCli(a.cliente, a.clienteNome);
+      if (modo === 'credito') { await gerarCreditoAg(a, Number(a.preco) || 0, false); toast(`Cancelado. Crédito de ${moeda(a.preco)} gerado para ${primeiroNome(nome)}.`); }
+      else if (modo === 'devolver') {
+        const b = writeBatch(db), pago = valorPagoAg(a), cr = Number(a.creditoUsado) || 0;
+        if (pago > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'saida', desc: `Devolução — ${a.svc} — ${nome}`, val: pago, hora: agora(), data: hoje(), origem: 'saida', agId: a.id, _createdAt: serverTimestamp() });
+        if (cr > 0) b.update(doc(db, 'clientes', String(a.cliente)), { credito: increment(cr) });
+        b.update(doc(db, 'agendamentos', a.id), { estornado: true, estornadoEm: serverTimestamp() });
+        await b.commit(); toast('Cancelado. Devolução lançada como saída no caixa.');
+      } else toast('Horário cancelado.');
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+async function creditoDeCancelado(id) {
+  const a = getAg(id); if (!a || a.status !== 'cancel' || !a.pago || a.creditoGerado || a.estornado) return;
+  if (!confirmar(`Gerar crédito de ${moeda(a.preco)} para ${nomeCli(a.cliente, a.clienteNome)}?`)) return;
+  await comLoading('Gerando crédito', async () => { try { await gerarCreditoAg(a, Number(a.preco) || 0, true); toast('Crédito gerado!'); } catch (e) { toast(erroAmigavel(e), true); } });
+}
+async function ajustarCredito(cid) {
+  const c = getCliente(cid); if (!c) return;
+  const v = window.prompt(`Crédito de ${c.nome} (saldo atual ${moeda(creditoDe(cid))}).\nDigite o novo saldo em reais:`, String(creditoDe(cid)).replace('.', ','));
+  if (v === null) return;
+  const n = Number(String(v).replace(/\./g, '').replace(',', '.'));
+  if (!isFinite(n) || n < 0) return toast('Valor inválido.', true);
+  await comLoading('Salvando', async () => { try { await updateDoc(doc(db, 'clientes', String(cid)), { credito: Math.round(n * 100) / 100 }); toast('Crédito atualizado.'); } catch (e) { toast(erroAmigavel(e), true); } });
+}
+
 /* Volta um atendimento concluído para "Aguardando" e desfaz o lançamento no caixa e a visita */
 async function desfazerConcluido(id) {
   const a = getAg(id); if (!a || a.status !== 'done') return;
@@ -1454,6 +1524,7 @@ async function desfazerConcluido(id) {
 /* Traz de volta um horário cancelado (se o horário ainda estiver livre) */
 async function reativarAg(id) {
   const a = getAg(id); if (!a || a.status !== 'cancel') return;
+  if (a.creditoGerado || a.estornado) return toast('Esse horário já virou crédito/devolução. Faça um novo agendamento.', true);
   const novo = a.pago || a.tipo !== 'avulso' || !a.chatId ? 'wait' : 'aguardando_pag';
   const tentar = forcar => runTransaction(db, async tx => {
     const snap = await tx.get(diaRef(a.data));
@@ -1486,7 +1557,9 @@ function linhaAgDono(a) {
   const chips = (a.tipo === 'plano-svc' || a.tipo === 'assinatura' || a.usaPlano ? '<span class="chip"><i class="ti ti-crown"></i>Plano</span>' : '') +
     (a.pago ? '<span class="chip"><i class="ti ti-check"></i>Pago</span>' : '') +
     (reservaExpirada(a) ? '<span class="chip red">Reserva expirada</span>' : '') +
-    (a.remarcadoPor === 'cliente' ? '<span class="chip">Remarcado pelo cliente</span>' : '');
+    (a.remarcadoPor === 'cliente' ? '<span class="chip">Remarcado pelo cliente</span>' : '') +
+    (a.creditoUsado ? `<span class="chip">Usou ${moeda(a.creditoUsado)} de crédito</span>` : '') +
+    (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '');
   const acoes = acoesAgDono(a);
   return `<div class="row-item ag-dono"${a.status === 'cancel' ? ' style="opacity:.55"' : ''}><div class="agenda-time">${esc(a.hora)}</div><div class="row-main"><div class="cn">${esc(nomeCli(a.cliente, a.clienteNome))}${chips}</div>` +
     `<div class="cm">${esc(a.svc)} · ${Number(a.dur) || 30} min${a.preco ? ' · ' + moeda(a.preco) : ''}${a.obs ? ' · ' + esc(a.obs) : ''}${wa ? ` · <a href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div>` +
@@ -1530,6 +1603,7 @@ function renderAgendaDia() {
 async function alterarStatus(id, st) {
   const a = getAg(id); if (!a) return;
   if (st === 'cancel') {
+    if (a.pago && Number(a.preco) > 0) return abrirModalCancelPago(a);
     if (!confirmar(`Cancelar o horário de ${nomeCli(a.cliente, a.clienteNome)} às ${a.hora}?`)) return;
     await comLoading('Cancelando', async () => { try { await cancelarAg(a); toast('Horário cancelado.'); } catch (e) { toast(erroAmigavel(e), true); } });
     return;
@@ -1563,7 +1637,9 @@ function renderClientes() {
     return `<div class="row-item"><div class="av" aria-hidden="true">${esc(iniciais(c.nome))}</div><div class="row-main">` +
       `<div class="cn">${esc(c.nome)}${as ? `<span class="chip${vencida(as) ? ' red' : ''}"><i class="ti ti-crown"></i>${esc(nomePlano(as.plano))}${vencida(as) ? ' · vencido' : ''}</span>` : ''}</div>` +
       `<div class="cm">${esc(c.tel || 'sem telefone')}${c.user ? ' · login: <b style="color:var(--k-gold)">' + esc(c.user) + '</b>' : ''}${c.uid ? '' : (c.user ? ' · <span style="color:var(--k-red)">acesso não migrado</span>' : '')}</div></div>` +
-      `<div class="row-end"><span class="cm" title="Atendimentos concluídos"><i class="ti ti-scissors"></i> ${Number(c.visitas) || 0}</span>${wa ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp de ${esc(c.nome)}"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></div>`;
+      `<div class="row-end"><span class="cm" title="Atendimentos concluídos"><i class="ti ti-scissors"></i> ${Number(c.visitas) || 0}</span>` +
+      `<button class="btn ${creditoDe(c.id) ? 'btn-gold' : 'btn-ghost'} btn-sm" data-act="ajustar-credito" data-id="${c.id}" title="Crédito do cliente"><i class="ti ti-coins"></i>${creditoDe(c.id) ? moeda(creditoDe(c.id)) : 'Crédito'}</button>`+
+      `${wa ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp de ${esc(c.nome)}"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></div>`;
   }).join('');
 }
 
@@ -1997,8 +2073,14 @@ function escolherHoraAg(hh) {
   let nota = '', botao = 'Confirmar';
   if (agS.modo === 'avulso') {
     const temPlano = (agS.svc.itens || []).some(i => i.plano);
-    nota = `<i class="ti ti-clock-dollar"></i><div>${temPlano ? 'Os itens do plano não são cobrados; você paga só o restante. ' : ''}O horário fica reservado por <b>${CONFIG.reservaMin >= 60 ? (CONFIG.reservaMin / 60) + ' h' : CONFIG.reservaMin + ' min'}</b>. Pague o PIX e envie o comprovante no chat para confirmar.</div>`;
-    botao = 'Reservar e pagar';
+    const cr = Math.min(creditoDe(S.cid), agS.preco), falta = agS.preco - cr;
+    if (cr > 0) $('res-val').textContent = falta > 0 ? `${moeda(falta)} (${moeda(cr)} de crédito)` : 'Pago com crédito';
+    if (cr > 0 && falta <= 0) {
+      nota = `<i class="ti ti-coins"></i><div>Seu crédito de <b>${moeda(creditoDe(S.cid))}</b> cobre esse agendamento. Não precisa pagar nada: a barbearia só confirma o horário.</div>`;
+      botao = 'Reservar com crédito';
+    } else
+    nota = `<i class="ti ti-clock-dollar"></i><div>${cr > 0 ? `Usando <b>${moeda(cr)}</b> do seu crédito, falta pagar <b>${moeda(falta)}</b>. ` : ''}${temPlano ? 'Os itens do plano não são cobrados; você paga só o restante. ' : ''}O horário fica reservado por <b>${CONFIG.reservaMin >= 60 ? (CONFIG.reservaMin / 60) + ' h' : CONFIG.reservaMin + ' min'}</b>. Pague o PIX e envie o comprovante no chat para confirmar.</div>`;
+    if (!(cr > 0 && falta <= 0)) botao = 'Reservar e pagar';
   } else if (agS.modo === 'plano-svc') {
     const p = getPlano(agS.planoId), usado = usoPlano(S.cid, agS.data.slice(0, 7)), lim = Number(p && p.cortes) || 0;
     nota = `<i class="ti ti-crown"></i><div>Sem cobrança: incluso no <b>${esc(p ? p.nome : 'seu plano')}</b>.${lim ? ` Uso em ${MESES[deISO(agS.data).getMonth()].toLowerCase()}: <b>${usado} de ${lim}</b>.` : ''}</div>`;
@@ -2042,13 +2124,16 @@ async function confirmarAgendaCli() {
       return;
     }
     // avulso (ou combo com parte paga): reserva o horário e abre o chat de pagamento
-    const ag = { cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'avulso', data: agS.data, hora: agS.hora, dur: agS.dur, preco: agS.preco, obs: '', status: 'aguardando_pag', pago: false };
+    const creditoUsado = Math.min(creditoDe(S.cid), agS.preco), falta = agS.preco - creditoUsado;
+    const ag = { cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'avulso', data: agS.data, hora: agS.hora, dur: agS.dur, preco: agS.preco, creditoUsado, obs: '', status: 'aguardando_pag', pago: false };
     const agId = await reservar(ag);
     const lista = itens.map(i => `• ${i.nome}${i.plano ? ' (incluso no plano)' : ' · ' + moeda(i.preco)}`).join('\n');
+    const linhaValor = creditoUsado > 0 ? `💰 Total: **${moeda(agS.preco)}** · crédito: **${moeda(creditoUsado)}** · a pagar: **${moeda(falta)}**` : `💰 Total: **${moeda(agS.preco)}**`;
+    const fim = falta > 0 ? 'Pague pelo PIX abaixo e envie o comprovante aqui para confirmar.' : 'Seu crédito cobre tudo, não precisa pagar. A barbearia vai confirmar seu horário.';
     const chatRef = await addDoc(collection(db, 'chats'), {
-      clienteId: S.cid, clienteNome: S.nome, tipo: 'avulso', planoId: extra.planoId || null, svcId: extra.svcId, svcNome: agS.svc.nome, svcPreco: agS.preco, svcDur: agS.dur, itens,
+      clienteId: S.cid, clienteNome: S.nome, tipo: 'avulso', planoId: extra.planoId || null, svcId: extra.svcId, svcNome: agS.svc.nome, svcPreco: agS.preco, svcDur: agS.dur, itens, creditoUsado,
       agId, agData: agS.data, agHora: agS.hora, meses: 1, status: 'pendente', vencimento: null,
-      msgs: [msgInfo('kjota', `Olá, ${primeiroNome(S.nome)}! Seu horário está reservado:\n📅 **${fmt(agS.data)}** às **${agS.hora}**\n✂️ ${itens.length > 1 ? '**Serviços:**\n' + lista : '**' + agS.svc.nome + '**'}\n💰 Total: **${moeda(agS.preco)}**\n\nPague pelo PIX abaixo e envie o comprovante aqui para confirmar.`), msgPix()],
+      msgs: [msgInfo('kjota', `Olá, ${primeiroNome(S.nome)}! Seu horário está reservado:\n📅 **${fmt(agS.data)}** às **${agS.hora}**\n✂️ ${itens.length > 1 ? '**Serviços:**\n' + lista : '**' + agS.svc.nome + '**'}\n${linhaValor}\n\n${fim}`), ...(falta > 0 ? [msgPix()] : [])],
       naoLidasDono: 1, naoLidasCliente: 0, ultimaMsg: 'Nova reserva', criadoEm: serverTimestamp(), atualizadoEm: serverTimestamp()
     });
     await updateDoc(doc(db, 'agendamentos', agId), { chatId: chatRef.id }).catch(() => {});
@@ -2092,6 +2177,8 @@ function renderMinhaArea() {
   } else {
     h += `<div class="note"><i class="ti ti-crown-off"></i><div><b>Você não tem plano ativo.</b> Agende um serviço avulso ou conheça os planos.<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="nav" data-sec="svc-cli"><i class="ti ti-scissors"></i>Agendar serviço</button><button class="btn btn-outline btn-sm" data-act="nav" data-sec="planos-cli"><i class="ti ti-crown"></i>Ver planos</button></div></div></div>`;
   }
+  const cr = creditoDe(S.cid);
+  if (cr > 0) h = `<div class="note ok"><i class="ti ti-coins"></i><div><b>Você tem ${moeda(cr)} de crédito.</b> Ele é descontado automaticamente no seu próximo agendamento avulso.</div></div>` + h;
   $('ma-assin').innerHTML = blocoAvisos() + h;
 
   const abertos = D.chats.filter(c => c.status === 'pendente' || (Number(c.naoLidasCliente) || 0) > 0);
@@ -2213,7 +2300,7 @@ const msgBase = (lado, tipo, extra) => ({ lado, tipo, hora: agora(), em: Date.no
 const msgInfo = (lado, texto) => msgBase(lado, 'texto', { texto });
 const msgPix = () => msgBase('kjota', 'pix', { texto: '' });
 const msgSistema = texto => msgBase('system', 'sistema', { texto });
-const totalChat = c => c.tipo === 'avulso' ? (Number(c.svcPreco) || 0) : (Number((getPlano(c.planoId) || {}).preco) || 0) * (Number(c.meses) || 1);
+const totalChat = c => c.tipo === 'avulso' ? Math.max(0, (Number(c.svcPreco) || 0) - (Number(c.creditoUsado) || 0)) : (Number((getPlano(c.planoId) || {}).preco) || 0) * (Number(c.meses) || 1);
 
 async function contratarPlano(planoId) {
   const p = getPlano(planoId); if (!p) return toast('Plano não encontrado', true);
@@ -2290,7 +2377,7 @@ function renderChat(forcarRolagem) {
   let qa = '';
   if (S.role === 'dono') {
     qa = c.status === 'pendente'
-      ? `<button class="btn btn-outline btn-sm" style="color:var(--k-green);border-color:var(--k-green-bd)" data-act="confirmar-pag"><i class="ti ti-check"></i>Confirmar pagamento (${moeda(totalChat(c))})</button><button class="btn btn-danger btn-sm" data-act="rejeitar-pag"><i class="ti ti-x"></i>Rejeitar</button>`
+      ? `<button class="btn btn-outline btn-sm" style="color:var(--k-green);border-color:var(--k-green-bd)" data-act="confirmar-pag"><i class="ti ti-check"></i>${totalChat(c) > 0 ? `Confirmar pagamento (${moeda(totalChat(c))}${c.creditoUsado ? ' + crédito' : ''})` : `Confirmar (pago com crédito)`}</button><button class="btn btn-danger btn-sm" data-act="rejeitar-pag"><i class="ti ti-x"></i>Rejeitar</button>`
       : `<span class="cm" style="color:var(--k-green)"><i class="ti ti-check"></i> Pagamento confirmado${c.vencimento ? ' · plano até ' + fmt(c.vencimento) : ''}</span>`;
     qa += `<button class="btn btn-ghost btn-sm" data-act="excluir-conversa" style="margin-left:auto"><i class="ti ti-trash"></i>Excluir conversa</button>`;
   } else if (c.status === 'pendente' && !avulso) {
@@ -2298,7 +2385,7 @@ function renderChat(forcarRolagem) {
     qa = `<div class="chat-actions-lbl">Quantos meses?</div><div class="meses-grid" style="width:100%">` + [1, 2, 3, 6].map(n =>
       `<button class="mes-btn" data-act="meses" data-n="${n}" aria-pressed="${(Number(c.meses) || 1) === n}"><div class="mes-btn-num">${n}</div><div class="mes-btn-label">${n > 1 ? 'meses' : 'mês'}</div><div class="mes-btn-desc">${moeda(p.preco * n)}</div></button>`).join('') + '</div>';
   } else if (c.status === 'pendente') {
-    qa = `<span class="cm"><i class="ti ti-paperclip"></i> Depois de pagar, envie o comprovante pelo clipe.</span>`;
+    qa = totalChat(c) > 0 ? `<span class="cm"><i class="ti ti-paperclip"></i> Depois de pagar, envie o comprovante pelo clipe.</span>` : `<span class="cm"><i class="ti ti-coins"></i> Pago com crédito. Aguarde a barbearia confirmar.</span>`;
   } else if (!avulso) {
     qa = `<button class="btn btn-gold btn-sm" data-act="ir-agendar"><i class="ti ti-calendar-plus"></i>Agendar meu horário</button>`;
   }
@@ -2401,13 +2488,14 @@ async function confirmarPagAg(id) {
   const a = getAg(id); if (!a || a.status !== 'aguardando_pag') return;
   const ch = a.chatId && getChat(a.chatId);
   if (ch && ch.status === 'pendente') return confirmarPagamento(ch.id);
-  if (!confirmar(`Confirmar o pagamento de ${moeda(a.preco)} de ${nomeCli(a.cliente, a.clienteNome)}?`)) return;
+  if (!confirmar(valorPagoAg(a) > 0 ? `Confirmar o pagamento de ${moeda(valorPagoAg(a))} de ${nomeCli(a.cliente, a.clienteNome)}?${a.creditoUsado ? ` (+ ${moeda(a.creditoUsado)} de crédito)` : ''}` : `Confirmar o horário de ${nomeCli(a.cliente, a.clienteNome)} pago com ${moeda(a.creditoUsado)} de crédito?`)) return;
   await comLoading('Confirmando', async () => {
     try {
       await confirmarNoDia(a.id, a.data, a.hora, a.dur);
-      const b = writeBatch(db);
+      const b = writeBatch(db), cr = Number(a.creditoUsado) || 0, dinheiro = valorPagoAg(a);
       b.update(doc(db, 'agendamentos', a.id), { status: 'conf', pago: true, pagoEm: serverTimestamp() });
-      if (Number(a.preco) > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `${a.svc} (avulso) — ${nomeCli(a.cliente, a.clienteNome)}`, val: Number(a.preco), hora: agora(), data: hoje(), origem: 'avulso', agId: a.id, _createdAt: serverTimestamp() });
+      if (cr > 0) b.update(doc(db, 'clientes', String(a.cliente)), { credito: increment(-Math.min(cr, creditoDe(a.cliente))) });
+      if (dinheiro > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `${a.svc} (avulso) — ${nomeCli(a.cliente, a.clienteNome)}${cr ? ' · crédito ' + moeda(cr) : ''}`, val: dinheiro, hora: agora(), data: hoje(), origem: 'avulso', agId: a.id, _createdAt: serverTimestamp() });
       await b.commit(); toast('Pagamento confirmado!');
     } catch (e) { toast(erroAmigavel(e), true); }
   });
@@ -2415,7 +2503,7 @@ async function confirmarPagAg(id) {
 async function confirmarPagamento(chatId) {
   const c = getChat(chatId || S.chatId); if (!c || c.status !== 'pendente') return;
   const nome = c.clienteNome || nomeCli(c.clienteId);
-  if (!confirmar(`Confirmar o pagamento de ${moeda(totalChat(c))} de ${nome}?`)) return;
+  if (!confirmar(totalChat(c) > 0 ? `Confirmar o pagamento de ${moeda(totalChat(c))} de ${nome}?${c.creditoUsado ? ` (+ ${moeda(c.creditoUsado)} de crédito)` : ''}` : `Confirmar o horário de ${nome} pago com ${moeda(c.creditoUsado)} de crédito?`)) return;
   loading('Confirmando pagamento');
   try {
     if (c.tipo === 'avulso') {
@@ -2428,7 +2516,13 @@ async function confirmarPagamento(chatId) {
         agId = await reservar({ cliente: String(c.clienteId), clienteNome: nome, svc: c.svcNome || 'Serviço', svcId: c.svcId || null, tipo: 'avulso', data: c.agData, hora: c.agHora, dur: Number(c.svcDur) || 30, preco: Number(c.svcPreco) || 0, obs: '', status: 'conf', pago: true, chatId: c.id }, true);
       }
       const b = writeBatch(db);
-      b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `${c.svcNome || 'Serviço'} (avulso) — ${nome}`, val: Number(c.svcPreco) || 0, hora: agora(), data: hoje(), origem: 'avulso', chatId: c.id, _createdAt: serverTimestamp() });
+      const cr = Number(c.creditoUsado) || 0, dinheiro = totalChat(c);
+      if (cr > 0) {
+        const saldo = creditoDe(c.clienteId);
+        if (saldo + 0.009 < cr) toast(`Atenção: o cliente só tinha ${moeda(saldo)} de crédito (usou ${moeda(cr)}).`, true);
+        b.update(doc(db, 'clientes', String(c.clienteId)), { credito: increment(-Math.min(cr, saldo)) });
+      }
+      if (dinheiro > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `${c.svcNome || 'Serviço'} (avulso) — ${nome}${cr ? ' · crédito ' + moeda(cr) : ''}`, val: dinheiro, hora: agora(), data: hoje(), origem: 'avulso', chatId: c.id, _createdAt: serverTimestamp() });
       b.update(doc(db, 'chats', c.id), {
         status: 'confirmado', agId: agId || null, atualizadoEm: serverTimestamp(), naoLidasCliente: increment(2), ultimaMsg: 'Pagamento confirmado',
         msgs: arrayUnion(msgInfo('kjota', `✅ Pagamento confirmado! Te esperamos:\n📅 **${fmt(c.agData)}** às **${c.agHora}**\n✂️ **${c.svcNome || 'Serviço'}**`), msgSistema('Agendamento confirmado — ' + fmt(c.agData) + ' às ' + c.agHora))
@@ -2668,6 +2762,9 @@ const ACT = {
   'ag-status': el => alterarStatus(el.dataset.id, el.dataset.st),
   'ag-modo': el => { agModo = el.dataset.m; renderAgenda(); },
   'desfazer-concluido': el => desfazerConcluido(el.dataset.id),
+  'cancel-pago': el => cancelarPago(el.dataset.m),
+  'credito-cancelado': el => creditoDeCancelado(el.dataset.id),
+  'ajustar-credito': el => ajustarCredito(el.dataset.id),
   'reativar-ag': el => reativarAg(el.dataset.id),
   'excluir-ag': el => excluirAg(el.dataset.id),
   'ver-proximos': () => { agModo = 'proximos'; goTo('agenda'); },
