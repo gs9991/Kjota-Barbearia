@@ -1,5 +1,5 @@
 // KJota Barbearia — service worker (app instalável + abre rápido)
-const CACHE = 'kjota-v2.9';
+const CACHE = 'kjota-v3.1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './img/logo.webp', './img/icon-192.png', './img/icon-512.png'];
 const CDN = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'www.gstatic.com'];
 
@@ -37,5 +37,17 @@ self.addEventListener('notificationclick', e => {
     const c = cs[0];
     if (c) { c.focus(); if (alvo) c.postMessage({ alvo }); return; }
     return self.clients.openWindow('./');
+  }));
+});
+
+// Notificação com o app fechado (enviada pelas funções do servidor via Firebase Cloud Messaging)
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { notification: { title: 'KJota Barbearia', body: e.data ? e.data.text() : '' } }; }
+  const n = d.notification || {}, data = d.data || {};
+  const alvo = data.chatId ? { chatId: data.chatId } : (data.sec ? { sec: data.sec, dia: data.dia || undefined } : {});
+  e.waitUntil(self.registration.showNotification(n.title || 'KJota Barbearia', {
+    body: n.body || '', icon: 'img/icon-192.png', badge: 'img/icon-192.png', tag: n.tag || data.tag || undefined,
+    renotify: !!(n.tag || data.tag), vibrate: [200, 100, 200], data: alvo
   }));
 });
