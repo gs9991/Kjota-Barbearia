@@ -1353,6 +1353,8 @@ function tratarAgs() {
           avisar('📅 Horário marcado para você', `${a.svc} · ${quando}`, { sec: 'minha-area' });
         else if (ant && ant.st !== 'cancel' && a.status === 'cancel' && a.canceladoPor !== 'cliente')
           avisar('❌ Seu horário foi cancelado', `${a.svc} · ${fmtCurto(ant.d)} às ${ant.h}. Fale com a barbearia ou agende outro.`, { sec: 'minha-area' });
+        else if (ant && ant.st === 'cancel' && a.status !== 'cancel')
+          avisar('✅ Seu horário foi reativado', `${a.svc} · ${quando}`, { sec: 'minha-area' });
         else if (ant && (ant.d !== a.data || ant.h !== a.hora) && a.remarcadoPor === 'dono')
           avisar('🔁 Seu horário mudou', `${a.svc} · agora ${quando}`, { sec: 'minha-area' });
         else if (ant && ant.st === 'aguardando_pag' && a.status === 'wait')
@@ -1428,7 +1430,54 @@ function acoesAgDono(a) {
   if (a.status === 'aguardando_pag') return b('confirmar-pag-ag', 'ti-cash', 'Confirmar PIX', 'btn-gold') +
     (a.chatId && getChat(a.chatId) ? `<button class="btn btn-ghost btn-sm" data-act="abrir-chat" data-id="${a.chatId}"><i class="ti ti-message-circle"></i>Chat</button>` : '') +
     b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
+  if (a.status === 'done') return b('desfazer-concluido', 'ti-arrow-back-up', 'Desfazer', 'btn-ghost');
+  if (a.status === 'cancel') return b('reativar-ag', 'ti-refresh', 'Reativar', 'btn-outline') + b('excluir-ag', 'ti-trash', 'Excluir', 'btn-danger');
   return '';
+}
+/* Volta um atendimento concluído para "Aguardando" e desfaz o lançamento no caixa e a visita */
+async function desfazerConcluido(id) {
+  const a = getAg(id); if (!a || a.status !== 'done') return;
+  if (!confirmar(`Voltar ${a.svc} de ${nomeCli(a.cliente, a.clienteNome)} para "Aguardando"?\nO valor lançado no caixa por essa conclusão também é removido.`)) return;
+  await comLoading('Desfazendo', async () => {
+    try {
+      const b = writeBatch(db);
+      b.update(doc(db, 'agendamentos', a.id), { status: 'wait', concluidoEm: null });
+      D.caixa.filter(c => c.agId === a.id && c.origem === 'servico').forEach(c => b.delete(doc(db, 'caixa', c.id)));
+      const cli = getCliente(a.cliente);
+      if (cli && (Number(cli.visitas) || 0) > 0) b.update(doc(db, 'clientes', String(a.cliente)), { visitas: increment(-1) });
+      await b.commit(); toast('Atendimento reaberto.');
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+/* Traz de volta um horário cancelado (se o horário ainda estiver livre) */
+async function reativarAg(id) {
+  const a = getAg(id); if (!a || a.status !== 'cancel') return;
+  const novo = a.pago || a.tipo !== 'avulso' || !a.chatId ? 'wait' : 'aguardando_pag';
+  const tentar = forcar => runTransaction(db, async tx => {
+    const snap = await tx.get(diaRef(a.data));
+    const itens = itensValidos(snap.exists() ? snap.data().itens : []).filter(i => i.id !== a.id);
+    if (!forcar && conflita(itens, a.hora, a.dur, a.id)) throw new Error('OCUPADO');
+    itens.push({ id: a.id, hora: a.hora, dur: Number(a.dur) || 30, st: novo === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
+    tx.set(diaRef(a.data), { itens });
+    tx.update(doc(db, 'agendamentos', a.id), { status: novo, canceladoPor: null, reativadoEm: serverTimestamp() });
+  });
+  loading('Reativando');
+  try {
+    try { await tentar(false); }
+    catch (e) {
+      if (e.message !== 'OCUPADO') throw e;
+      unloading();
+      if (!confirmar(`O horário ${a.hora} de ${fmt(a.data)} já foi ocupado por outro cliente. Reativar mesmo assim (encaixe)?\nSe preferir, cancele e use Reagendar.`)) return;
+      loading('Reativando'); await tentar(true);
+    }
+    toast('Horário reativado!');
+  } catch (e) { toast(erroAmigavel(e), true); }
+  finally { unloading(); }
+}
+async function excluirAg(id) {
+  const a = getAg(id); if (!a || a.status !== 'cancel') return;
+  if (!confirmar(`Excluir de vez o agendamento cancelado de ${nomeCli(a.cliente, a.clienteNome)} (${fmt(a.data)} às ${a.hora})?`)) return;
+  await comLoading('Excluindo', async () => { try { await deleteDoc(doc(db, 'agendamentos', a.id)); toast('Agendamento excluído.'); } catch (e) { toast(erroAmigavel(e), true); } });
 }
 function linhaAgDono(a) {
   const cli = getCliente(a.cliente), wa = cli && linkWhats(cli.tel);
@@ -2612,6 +2661,9 @@ const ACT = {
   'dia': el => { const d = Number(el.dataset.d); agDia = d === 0 ? hoje() : addDias(agDia, d); agModo = 'dia'; renderAgenda(); },
   'ag-status': el => alterarStatus(el.dataset.id, el.dataset.st),
   'ag-modo': el => { agModo = el.dataset.m; renderAgenda(); },
+  'desfazer-concluido': el => desfazerConcluido(el.dataset.id),
+  'reativar-ag': el => reativarAg(el.dataset.id),
+  'excluir-ag': el => excluirAg(el.dataset.id),
   'ver-proximos': () => { agModo = 'proximos'; goTo('agenda'); },
   'reagendar-dono': el => { const a = getAg(el.dataset.id); if (!a) return; abrirAgenda({ modo: 'remarcar', svc: { nome: a.svc, dur: a.dur }, ag: a }); },
   'confirmar-pag-ag': el => { el.disabled = true; confirmarPagAg(el.dataset.id).finally(() => { el.disabled = false; }); },
