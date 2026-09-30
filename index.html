@@ -233,6 +233,16 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .row-item.ag-dono{align-items:flex-start;}
 .ag-dono-fim{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:.5rem;}
 .ag-dono-fim .row-actions{justify-content:flex-start;}
+.bloq-row{background:repeating-linear-gradient(135deg,transparent 0 8px,rgba(255,255,255,.025) 8px 16px);}
+.bloq-row .agenda-time{color:var(--k-muted);}
+.horario-inputs.pausa{flex-basis:100%;margin-left:122px;}
+@media (max-width:640px){.horario-inputs.pausa{margin-left:0;}}
+.estrelas{display:flex;gap:4px;}
+.estrelas button{background:none;border:none;font-size:32px;line-height:1;color:var(--k-border);cursor:pointer;padding:2px;}
+.estrelas:hover button{color:var(--k-gold);}
+.estrelas button:hover ~ button{color:var(--k-border);}
+.estrelas-txt{color:var(--k-gold);letter-spacing:1px;}
+.avaliar-card{border-color:var(--k-gold-dim);}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -443,6 +453,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
       <div class="login-title">Criar conta</div>
       <div class="form-group"><label class="form-label" for="cad-nome">Nome completo</label><input class="form-input" type="text" id="cad-nome" autocomplete="name" placeholder="Seu nome"/></div>
       <div class="form-group"><label class="form-label" for="cad-tel">WhatsApp</label><input class="form-input" type="tel" id="cad-tel" autocomplete="tel" inputmode="tel" placeholder="(31) 99999-0000"/></div>
+      <div class="form-group"><label class="form-label" for="cad-nasc">Aniversário (opcional)</label><input class="form-input" type="date" id="cad-nasc"/></div>
       <div class="form-group"><label class="form-label" for="cad-user">Usuário</label><input class="form-input" type="text" id="cad-user" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex: joao123"/></div>
       <div class="form-group"><label class="form-label" for="cad-pass">Senha (mínimo 6 caracteres)</label><div class="pw-wrap"><input class="form-input" type="password" id="cad-pass" autocomplete="new-password" placeholder="••••••"/><button type="button" class="pw-eye" data-act="toggle-pw" data-target="cad-pass" aria-label="Mostrar senha"><i class="ti ti-eye"></i></button></div></div>
       <div class="form-group"><label class="form-label" for="cad-pass2">Confirmar senha</label><input class="form-input" type="password" id="cad-pass2" autocomplete="new-password" placeholder="••••••"/></div>
@@ -471,6 +482,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
       <div id="dash-alertas"></div>
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar-event"></i>Próximos agendamentos</span><button class="btn btn-outline btn-sm" data-act="modal-ag"><i class="ti ti-plus"></i>Agendar</button></div><div class="card-body" id="dash-agenda"></div></div>
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-cash"></i>Movimentações de hoje</span></div><div class="card-body" id="dash-caixa"></div></div>
+      <div id="dash-avaliacoes"></div>
     </section>
 
     <section class="section" id="s-agenda">
@@ -487,11 +499,17 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
           <button class="btn btn-ghost btn-sm" data-act="dia" data-d="0">Hoje</button>
           <button class="btn btn-outline btn-sm" data-act="dia" data-d="1" aria-label="Próximo dia"><i class="ti ti-chevron-right"></i></button>
         </div></div>
-        <div class="card-body" id="lista-agenda"></div></div>
+        <div class="card-body" id="lista-agenda"></div>
+        <div class="card-body" style="border-top:1px solid var(--k-border);padding-top:.7rem;"><button class="btn btn-ghost btn-sm" data-act="modal-bloq"><i class="ti ti-lock"></i>Bloquear horário neste dia</button></div></div>
     </section>
 
     <section class="section" id="s-clientes">
       <div class="section-head"><h1 class="section-title">Clientes</h1><button class="btn btn-outline btn-sm" data-act="modal-cl"><i class="ti ti-plus"></i>Novo</button></div>
+      <div class="seg" role="group" aria-label="Filtrar clientes" style="margin-bottom:.8rem;">
+        <button data-act="cli-filtro" data-f="todos" aria-pressed="true">Todos</button>
+        <button data-act="cli-filtro" data-f="aniv" aria-pressed="false">🎂 Aniversariantes</button>
+        <button data-act="cli-filtro" data-f="sumidos" aria-pressed="false">👋 Sumidos</button>
+      </div>
       <label class="sr-only" for="busca-cli">Buscar cliente</label>
       <input class="form-input" type="search" id="busca-cli" placeholder="Buscar por nome ou telefone..." style="margin-bottom:1rem;"/>
       <div class="card"><div class="card-body scroll-list" id="lista-clientes"></div></div>
@@ -520,7 +538,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
     </section>
 
     <section class="section" id="s-caixa">
-      <div class="section-head"><h1 class="section-title">Caixa</h1><button class="btn btn-outline btn-sm" data-act="modal-cx"><i class="ti ti-plus"></i>Lançamento</button></div>
+      <div class="section-head"><h1 class="section-title">Caixa</h1><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="modal-venda"><i class="ti ti-shopping-cart"></i>Vender produto</button><button class="btn btn-outline btn-sm" data-act="modal-cx"><i class="ti ti-plus"></i>Lançamento</button></div></div>
       <div class="seg" role="group" aria-label="Período" style="margin-bottom:1rem;" id="cx-periodos">
         <button data-act="cx-periodo" data-p="hoje" aria-pressed="true">Hoje</button>
         <button data-act="cx-periodo" data-p="7d" aria-pressed="false">7 dias</button>
@@ -533,6 +551,12 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
         <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-scissors"></i>Serviços realizados</span></div><div class="card-body" id="cx-servicos"></div></div>
       </div>
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-list"></i>Movimentações</span><span class="cm" id="cx-count"></span></div><div class="card-body scroll-list" id="lista-caixa"></div></div>
+    </section>
+
+    <section class="section" id="s-produtos">
+      <div class="section-head"><h1 class="section-title">Produtos</h1><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="modal-venda"><i class="ti ti-shopping-cart"></i>Vender</button><button class="btn btn-outline btn-sm" data-act="modal-produto"><i class="ti ti-plus"></i>Novo</button></div></div>
+      <p class="cm" style="margin-bottom:1rem;">Cadastre o que a barbearia vende (pomada, óleo, shampoo...). Cada venda baixa o estoque e entra no caixa.</p>
+      <div class="card"><div class="card-body" id="lista-produtos"></div></div>
     </section>
 
     <section class="section" id="s-config">
@@ -604,6 +628,11 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
           <button class="btn btn-ghost btn-sm" data-act="alternar-som" id="btn-som"></button>
           <button class="btn btn-ghost btn-sm" data-act="testar-som"><i class="ti ti-volume"></i>Testar som</button>
         </div>
+      </div></div>
+
+      <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-star"></i>Avaliações</span></div><div class="card-body">
+        <div class="form-group"><label class="form-label" for="cfg-google">Link para avaliar no Google</label><input class="form-input" type="url" id="cfg-google" placeholder="https://g.page/r/.../review"/>
+          <div class="cm" style="margin-top:5px;">Quem der 5 estrelas no app é convidado a avaliar no Google. Pegue o link no Perfil da Empresa no Google → "Pedir avaliações".</div></div>
       </div></div>
 
       <div class="card" id="card-migracao"><div class="card-header"><span class="card-title"><i class="ti ti-database-import"></i>Migração da versão antiga</span></div><div class="card-body">
@@ -763,11 +792,13 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
     <div class="form-group"><label class="form-label" for="cl-nasc">Aniversário</label><input class="form-input" type="date" id="cl-nasc"/></div>
   </div>
   <div class="form-group"><label class="form-label" for="cl-obs">Observação</label><textarea class="form-input" id="cl-obs"></textarea></div>
+  <div id="cl-login-wrap">
   <div class="divider"></div>
   <p class="cm" style="margin-bottom:.7rem;">Opcional: crie o acesso do cliente ao app. A senha precisa ter pelo menos 6 caracteres.</p>
   <div class="form-row">
     <div class="form-group"><label class="form-label" for="cl-user">Usuário</label><input class="form-input" type="text" id="cl-user" autocapitalize="none" autocomplete="off" placeholder="Ex: joao"/></div>
     <div class="form-group"><label class="form-label" for="cl-pass">Senha</label><input class="form-input" type="password" id="cl-pass" autocomplete="new-password"/></div>
+  </div>
   </div>
   <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-cli"><i class="ti ti-check"></i>Salvar</button></div>
 </div></div>
@@ -820,6 +851,44 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   </div>
 </div></div>
 
+<div class="modal-overlay" id="m-bloq" role="dialog" aria-modal="true" aria-labelledby="m-bloq-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-bloq-t">Bloquear horário</div></div>
+  <p class="cm" style="margin-bottom:.8rem;">Os clientes não conseguem agendar nesse período. Para um intervalo fixo toda semana (almoço), use Config. → Horários.</p>
+  <div class="form-group"><label class="form-label" for="bq-data">Data</label><input class="form-input" type="date" id="bq-data"/></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label" for="bq-ini">De</label><input class="form-input" type="time" id="bq-ini"/></div>
+    <div class="form-group"><label class="form-label" for="bq-fim">Até</label><input class="form-input" type="time" id="bq-fim"/></div>
+  </div>
+  <div class="form-group"><label class="form-label" for="bq-motivo">Motivo (só você vê)</label><input class="form-input" type="text" id="bq-motivo" placeholder="Ex: Médico, Almoço, Compromisso"/></div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-bloq"><i class="ti ti-lock"></i>Bloquear</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-produto" role="dialog" aria-modal="true" aria-labelledby="m-prod-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-prod-t">Novo produto</div></div>
+  <input type="hidden" id="pr-id"/>
+  <div class="form-group"><label class="form-label" for="pr-nome">Nome</label><input class="form-input" type="text" id="pr-nome" placeholder="Ex: Pomada modeladora"/></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label" for="pr-preco">Preço de venda (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="pr-preco"/></div>
+    <div class="form-group"><label class="form-label" for="pr-custo">Custo (R$, opcional)</label><input class="form-input" type="number" step="0.01" min="0" id="pr-custo"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label" for="pr-estoque">Em estoque</label><input class="form-input" type="number" min="0" step="1" id="pr-estoque"/></div>
+    <div class="form-group"><label class="form-label" for="pr-min">Avisar quando tiver até</label><input class="form-input" type="number" min="0" step="1" id="pr-min"/></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-produto"><i class="ti ti-check"></i>Salvar</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-venda" role="dialog" aria-modal="true" aria-labelledby="m-venda-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-venda-t">Vender produto</div></div>
+  <div class="form-group"><label class="form-label" for="vd-prod">Produto</label><select class="form-input" id="vd-prod" data-change="vd-total"></select></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label" for="vd-qtd">Quantidade</label><input class="form-input" type="number" min="1" step="1" id="vd-qtd" data-input="vd-total"/></div>
+    <div class="form-group"><span class="form-label">Total</span><div class="kpi-value" id="vd-total" style="font-size:24px;"></div></div>
+  </div>
+  <div class="form-group"><label class="form-label" for="vd-cli">Cliente (opcional)</label><select class="form-input" id="vd-cli"></select></div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-venda"><i class="ti ti-check"></i>Registrar venda</button></div>
+</div></div>
+
 <!-- UTILITÁRIOS -->
 <div id="lightbox" data-act="fechar-lightbox"><button class="icon-btn" data-act="fechar-lightbox" aria-label="Fechar"><i class="ti ti-x"></i></button><img id="lightbox-img" alt="Comprovante ampliado"/></div>
 <div class="notif-toast" id="notif-toast" role="status">
@@ -847,13 +916,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getFirestore, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   collection, query, where, onSnapshot, serverTimestamp, runTransaction,
-  writeBatch, increment, arrayUnion
+  writeBatch, increment, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAmtS_vK17R6IO2A_KOOY-3DGFwZNE22O4",
@@ -925,13 +995,13 @@ const CFG_PADRAO = {
     5: { ativo: true, inicio: '08:00', fim: '20:00', label: 'Sexta' },
     6: { ativo: true, inicio: '08:00', fim: '18:00', label: 'Sábado' }
   },
-  folgas: []
+  folgas: [], bloqueios: [], googleUrl: '', vapidKey: ''
 };
 let CONFIG = structuredClone(CFG_PADRAO);
 let CFG_EDIT = null; // cópia em edição na tela de Configurações
 
 const S = { uid: null, role: null, cid: null, nome: '', user: '', secao: null, chatId: null };
-const D = { clientes: [], planos: [], servicos: [], assinantes: [], agendamentos: [], caixa: [], chats: [] };
+const D = { clientes: [], planos: [], servicos: [], assinantes: [], agendamentos: [], caixa: [], chats: [], espera: [], produtos: [] };
 let unsubs = [];
 let cadastrando = false;
 let prontoResolver = null, dadosProntos = null;
@@ -942,6 +1012,7 @@ function mergeConfig(dados) {
   c.horarios = structuredClone(CFG_PADRAO.horarios);
   if (dados && dados.horarios) for (const k of Object.keys(c.horarios)) Object.assign(c.horarios[k], dados.horarios[k] || {});
   c.folgas = Array.isArray(dados && dados.folgas) ? dados.folgas : [];
+  c.bloqueios = Array.isArray(dados && dados.bloqueios) ? dados.bloqueios : [];
   c.intervalo = Number(c.intervalo) || 30;
   c.antecedenciaH = Number(c.antecedenciaH ?? 2);
   c.reservaMin = Number(c.reservaMin) || 60;
@@ -969,6 +1040,15 @@ const vencida = a => !!(a && a.vencimento && a.vencimento < hoje());
 function usoPlano(cid, mes) {
   return D.agendamentos.filter(a => String(a.cliente) === String(cid) && (a.tipo === 'plano-svc' || a.tipo === 'assinatura' || a.usaPlano)
     && a.status !== 'cancel' && String(a.data || '').slice(0, 7) === mes).length;
+}
+/* Intervalo fixo do dia da semana (almoço) + bloqueios pontuais, como itens ocupados da agenda */
+function bloqueiosDoDia(ds, cfg = CONFIG) {
+  const out = [], h = cfg.horarios[deISO(ds).getDay()];
+  if (h && h.pausaIni && h.pausaFim && horaToMin(h.pausaFim) > horaToMin(h.pausaIni))
+    out.push({ id: 'pausa', hora: h.pausaIni, dur: horaToMin(h.pausaFim) - horaToMin(h.pausaIni), st: 'c', bloq: true, motivo: 'Intervalo' });
+  (cfg.bloqueios || []).filter(b => b.data === ds && b.inicio && b.fim && horaToMin(b.fim) > horaToMin(b.inicio))
+    .forEach(b => out.push({ id: 'bloq-' + b.id, hora: b.inicio, dur: horaToMin(b.fim) - horaToMin(b.inicio), st: 'c', bloq: true, motivo: b.motivo || 'Bloqueado', bid: b.id }));
+  return out;
 }
 function diaAberto(ds, cfg = CONFIG) {
   const h = cfg.horarios[deISO(ds).getDay()];
@@ -1081,6 +1161,7 @@ async function entrar(user) {
     }
     iniciarOuvintes();
     mostrarApp();
+    dadosProntos.then(() => { checarVencimentoPlano(); registrarPush(); });
   } catch (e) {
     console.error(e);
     const msg = e.code === 'sem-perfil' ? 'Sua conta ainda não foi liberada. Fale com a barbearia.' : erroLogin(e);
@@ -1148,7 +1229,7 @@ async function doCadastro() {
     const uid = cred.user.uid;
     const b = writeBatch(db);
     b.set(doc(db, 'perfis', uid), { role: 'cliente', clienteId: uid, nome, user, criadoEm: serverTimestamp() });
-    b.set(doc(db, 'clientes', uid), { nome, tel, nasc: '', obs: '', visitas: 0, user, uid, criadoEm: serverTimestamp() });
+    b.set(doc(db, 'clientes', uid), { nome, tel, nasc: $('cad-nasc').value || '', obs: '', visitas: 0, user, uid, criadoEm: serverTimestamp() });
     await b.commit();
     cadastrando = false;
     await entrar(cred.user);
@@ -1162,6 +1243,7 @@ async function doCadastro() {
 
 async function doLogout() {
   if (!confirmar('Sair da sua conta?')) return;
+  await desregistrarPush();
   await signOut(auth).catch(() => {});
 }
 
@@ -1185,6 +1267,7 @@ function mostrarLogin() {
 /* ════════ DADOS EM TEMPO REAL ════════ */
 function pararOuvintes() {
   unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = [];
+  pararEspera();
   chatsIniciais = true; for (const k of Object.keys(ultimoNaoLido)) delete ultimoNaoLido[k];
   agsAntes = null;
 }
@@ -1214,6 +1297,8 @@ function iniciarOuvintes() {
     ouvir('agendamentos', collection(db, 'agendamentos'), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     lista('caixa', 'caixa', collection(db, 'caixa'), (a, b) => (b.data || '').localeCompare(a.data || '') || (b.hora || '').localeCompare(a.hora || ''));
     ouvir('chats', collection(db, 'chats'), snap => tratarChats(snap, 'naoLidasDono'));
+    lista('produtos', 'produtos', collection(db, 'produtos'), (a, b) => String(a.nome).localeCompare(String(b.nome)));
+    lista('espera', 'espera', collection(db, 'espera'));
   } else {
     const cid = S.cid;
     let creditoAntes = null;
@@ -1227,6 +1312,7 @@ function iniciarOuvintes() {
     lista('assinantes', 'assinantes', query(collection(db, 'assinantes'), where('cliente', '==', cid)));
     ouvir('agendamentos', query(collection(db, 'agendamentos'), where('cliente', '==', cid)), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     ouvir('chats', query(collection(db, 'chats'), where('clienteId', '==', cid)), snap => tratarChats(snap, 'naoLidasCliente'));
+    ouvir('espera', query(collection(db, 'espera'), where('cliente', '==', cid)), snap => { D.espera = snap.docs.map(d => ({ ...d.data(), id: d.id })); sincronizarEspera(); });
   }
 }
 
@@ -1274,7 +1360,7 @@ function aplicarMarca() {
 }
 
 /* ════════ NAVEGAÇÃO ════════ */
-const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['config', 'ti-settings', 'Config.']];
+const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['produtos', 'ti-package', 'Produtos'], ['config', 'ti-settings', 'Config.']];
 const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['planos-cli', 'ti-crown', 'Planos']];
 
 function mostrarApp() {
@@ -1342,7 +1428,7 @@ function avisar(titulo, desc, alvo) {
   clearTimeout(notifT); notifT = setTimeout(() => $('notif-toast').classList.remove('show'), 8000);
   tocarSom();
   try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
-  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+  if (document.hidden && !pushAtivo && 'Notification' in window && Notification.permission === 'granted') {
     const opts = { body: desc, icon: 'img/icon-192.png', badge: 'img/icon-192.png', tag: 'kj-' + (alvo && (alvo.chatId || alvo.sec) || Date.now()), renotify: true, silent: false, vibrate: [200, 100, 200], requireInteraction: false, data: alvo || {} };
     if (swReg) swReg.showNotification(titulo, opts).catch(() => {});
     else try { new Notification(titulo, opts); } catch (e) {}
@@ -1414,6 +1500,7 @@ function renderDash() {
     `<div class="kpi"><div class="kpi-label">Agend. hoje</div><div class="kpi-value">${ags.length}</div><div class="kpi-sub">${ags.filter(a => a.status === 'done').length} concluídos</div></div>` +
     `<div class="kpi"><div class="kpi-label">A atender</div><div class="kpi-value">${ags.filter(a => a.status === 'wait' || a.status === 'conf').length}</div><div class="kpi-sub">${ags.filter(a => a.status === 'aguardando_pag').length} aguardando PIX</div></div>` +
     `<div class="kpi"><div class="kpi-label">Receita hoje</div><div class="kpi-value">${moeda(rec)}</div></div>` +
+    (resumoAvaliacoes().av.length ? `<div class="kpi"><div class="kpi-label">Avaliação</div><div class="kpi-value">${resumoAvaliacoes().media.toFixed(1).replace('.', ',')}★</div><div class="kpi-sub">${resumoAvaliacoes().av.length} avaliações</div></div>` : '') +
     `<div class="kpi"><div class="kpi-label">Assinantes</div><div class="kpi-value">${ativos.length}</div><div class="kpi-sub">${moeda(ativos.reduce((s, a) => s + (Number(a.val) || 0), 0))}/mês</div></div>`;
 
   const lim7 = addDias(t, 7);
@@ -1421,7 +1508,16 @@ function renderDash() {
   let alertas = '';
   if (pendPag.length) alertas += `<button class="note warn" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="chats"><i class="ti ti-receipt"></i><div><b>${pendPag.length} comprovante${pendPag.length > 1 ? 's' : ''} para conferir.</b> Toque para abrir os chats e confirmar os pagamentos.</div></button>`;
   if (vencendo.length) alertas += `<div class="note"><i class="ti ti-calendar-due"></i><div><b>${vencendo.length} assinatura${vencendo.length > 1 ? 's vencem' : ' vence'} nos próximos 7 dias:</b> ${vencendo.map(a => esc(nomeCli(a.cliente)) + ' (' + fmtCurto(a.vencimento) + ')').join(', ')}.</div></div>`;
+  const amanha = addDias(t, 1), agsAmanha = D.agendamentos.filter(a => a.data === amanha && ['wait', 'conf'].includes(a.status));
+  if (agsAmanha.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ver-dia" data-ds="${amanha}"><i class="ti ti-brand-whatsapp"></i><div><b>${agsAmanha.length} cliente${agsAmanha.length > 1 ? 's' : ''} amanhã.</b> Toque para abrir a agenda de amanhã e mandar os lembretes pelo WhatsApp (botão Lembrar).</div></button>`;
+  const aniv = aniversariantes(), anivHoje = aniv.filter(c => String(c.nasc).slice(8, 10) === t.slice(8));
+  if (aniv.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-clientes" data-f="aniv"><i class="ti ti-cake"></i><div><b>${aniv.length} aniversariante${aniv.length > 1 ? 's' : ''} este mês${anivHoje.length ? ` (${anivHoje.map(c => primeiroNome(c.nome)).join(', ')} hoje!)` : ''}.</b> Toque para mandar parabéns ou dar um crédito de presente.</div></button>`;
+  const sum = sumidos();
+  if (sum.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-clientes" data-f="sumidos"><i class="ti ti-user-question"></i><div><b>${sum.length} cliente${sum.length > 1 ? 's' : ''} sumido${sum.length > 1 ? 's' : ''}</b> há mais de ${DIAS_SUMIDO} dias. Toque para chamar no WhatsApp.</div></button>`;
+  const baixos = D.produtos.filter(estoqueBaixo);
+  if (baixos.length) alertas += `<button class="note warn" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="produtos"><i class="ti ti-package"></i><div><b>Estoque baixo:</b> ${baixos.map(p => esc(p.nome) + ' (' + (Number(p.estoque) || 0) + ')').join(', ')}.</div></button>`;
   $('dash-alertas').innerHTML = blocoAvisos() + alertas;
+  $('dash-avaliacoes').innerHTML = cardAvaliacoes();
 
   const prox = proximosAgs(8);
   $('dash-agenda').innerHTML = prox.length ? listaAgrupada(prox) + (proximosAgs().length > prox.length ? `<button class="link-btn" data-act="ver-proximos">Ver todos os próximos</button>` : '')
@@ -1447,8 +1543,8 @@ function rotuloDia(ds) {
 }
 function acoesAgDono(a) {
   const b = (act, ic, txt, cls, extra) => `<button class="btn ${cls} btn-sm" data-act="${act}" data-id="${a.id}"${extra || ''}><i class="ti ${ic}"></i>${txt}</button>`;
-  if (a.status === 'wait') return b('ag-status', 'ti-check', 'Confirmar', 'btn-gold', ' data-st="conf"') + b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
-  if (a.status === 'conf') return b('ag-status', 'ti-circle-check', 'Concluído', 'btn-outline', ' data-st="done"') + b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
+  if (a.status === 'wait') return linkLembrete(a) + b('ag-status', 'ti-check', 'Confirmar', 'btn-gold', ' data-st="conf"') + b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
+  if (a.status === 'conf') return (a.data >= hoje() ? linkLembrete(a) : '') + b('ag-status', 'ti-circle-check', 'Concluído', 'btn-outline', ' data-st="done"') + b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
   if (a.status === 'aguardando_pag') return b('confirmar-pag-ag', 'ti-cash', 'Confirmar PIX', 'btn-gold') +
     (a.chatId && getChat(a.chatId) ? `<button class="btn btn-ghost btn-sm" data-act="abrir-chat" data-id="${a.chatId}"><i class="ti ti-message-circle"></i>Chat</button>` : '') +
     b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
@@ -1559,7 +1655,7 @@ function linhaAgDono(a) {
     (reservaExpirada(a) ? '<span class="chip red">Reserva expirada</span>' : '') +
     (a.remarcadoPor === 'cliente' ? '<span class="chip">Remarcado pelo cliente</span>' : '') +
     (a.creditoUsado ? `<span class="chip">Usou ${moeda(a.creditoUsado)} de crédito</span>` : '') +
-    (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '');
+    (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '') + (a.avaliacao ? `<span class="chip">${estrelas(Number(a.avaliacao))}</span>` : '');
   const acoes = acoesAgDono(a);
   return `<div class="row-item ag-dono"${a.status === 'cancel' ? ' style="opacity:.55"' : ''}><div class="agenda-time">${esc(a.hora)}</div><div class="row-main"><div class="cn">${esc(nomeCli(a.cliente, a.clienteNome))}${chips}</div>` +
     `<div class="cm">${esc(a.svc)} · ${Number(a.dur) || 30} min${a.preco ? ' · ' + moeda(a.preco) : ''}${a.obs ? ' · ' + esc(a.obs) : ''}${wa ? ` · <a href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div>` +
@@ -1596,8 +1692,19 @@ function renderAgendaDia() {
   $('ag-dia-label').textContent = (agDia === t ? 'Hoje — ' : DIAS_LONGO[deISO(agDia).getDay()] + ', ') + fmt(agDia);
   const ags = D.agendamentos.filter(a => a.data === agDia).sort((a, b) => (a.hora || '').localeCompare(b.hora || '') || (a.status === 'cancel') - (b.status === 'cancel'));
   const el = $('lista-agenda');
-  if (!ags.length) { el.innerHTML = vazio('ti-calendar-off', diaAberto(agDia) ? 'Nenhum agendamento neste dia' : 'Barbearia fechada neste dia'); return; }
-  el.innerHTML = ags.map(linhaAgDono).join('');
+  const bloqs = bloqueiosDoDia(agDia).map(b => ({ bloqueio: true, ...b }));
+  const linhas = [...ags, ...bloqs].sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+  const esp = D.espera.filter(e => e.data === agDia);
+  const espHtml = esp.length ? `<div class="dia-sep">Lista de espera <span>${esp.length} cliente${esp.length > 1 ? 's' : ''}</span></div>` + esp.map(e => {
+    const cli = getCliente(e.cliente), wa = cli && linkWhats(cli.tel);
+    const msg = encodeURIComponent(`Olá, ${primeiroNome(e.clienteNome || (cli && cli.nome))}! Abriu um horário na KJota dia ${fmt(e.data)}. Quer agendar?`);
+    return `<div class="row-item"><div class="av" aria-hidden="true">${esc(iniciais(e.clienteNome))}</div><div class="row-main"><div class="cn">${esc(e.clienteNome || nomeCli(e.cliente))}</div><div class="cm">${esc(e.svc || '')}${e.dur ? ' · ' + e.dur + ' min' : ''}</div></div>` +
+      `<div class="row-actions">${wa ? `<a class="btn btn-outline btn-sm" href="${wa}?text=${msg}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>Avisar</a>` : ''}<button class="btn btn-ghost btn-sm" data-act="espera-remover" data-id="${e.id}" aria-label="Tirar da lista"><i class="ti ti-x"></i></button></div></div>`;
+  }).join('') : '';
+  if (!linhas.length) { el.innerHTML = vazio('ti-calendar-off', diaAberto(agDia) ? 'Nenhum agendamento neste dia' : 'Barbearia fechada neste dia') + espHtml; return; }
+  el.innerHTML = linhas.map(a => a.bloqueio
+    ? `<div class="row-item bloq-row"><div class="agenda-time">${esc(a.hora)}</div><div class="row-main"><div class="cn"><i class="ti ti-lock"></i> ${esc(a.motivo)}</div><div class="cm">até ${minToHora(horaToMin(a.hora) + a.dur)}${a.bid ? '' : ' · intervalo fixo (Config.)'}</div></div>${a.bid ? `<button class="btn btn-ghost btn-sm" data-act="bloq-remover" data-id="${esc(a.bid)}"><i class="ti ti-lock-open"></i>Liberar</button>` : ''}</div>`
+    : linhaAgDono(a)).join('') + espHtml;
 }
 
 async function alterarStatus(id, st) {
@@ -1627,6 +1734,7 @@ async function alterarStatus(id, st) {
 
 /* ════════ CLIENTES ════════ */
 function renderClientes() {
+  if (renderClientesFiltro()) return;
   const f = ($('busca-cli').value || '').toLowerCase().trim();
   const fd = soDigitos(f);
   const lista = D.clientes.filter(c => String(c.nome || '').toLowerCase().includes(f) || (fd && soDigitos(c.tel).includes(fd)));
@@ -1638,6 +1746,7 @@ function renderClientes() {
       `<div class="cn">${esc(c.nome)}${as ? `<span class="chip${vencida(as) ? ' red' : ''}"><i class="ti ti-crown"></i>${esc(nomePlano(as.plano))}${vencida(as) ? ' · vencido' : ''}</span>` : ''}</div>` +
       `<div class="cm">${esc(c.tel || 'sem telefone')}${c.user ? ' · login: <b style="color:var(--k-gold)">' + esc(c.user) + '</b>' : ''}${c.uid ? '' : (c.user ? ' · <span style="color:var(--k-red)">acesso não migrado</span>' : '')}</div></div>` +
       `<div class="row-end"><span class="cm" title="Atendimentos concluídos"><i class="ti ti-scissors"></i> ${Number(c.visitas) || 0}</span>` +
+      `<button class="btn btn-ghost btn-sm" data-act="editar-cli" data-id="${c.id}" aria-label="Editar ${esc(c.nome)}"><i class="ti ti-pencil"></i></button>` +
       `<button class="btn ${creditoDe(c.id) ? 'btn-gold' : 'btn-ghost'} btn-sm" data-act="ajustar-credito" data-id="${c.id}" title="Crédito do cliente"><i class="ti ti-coins"></i>${creditoDe(c.id) ? moeda(creditoDe(c.id)) : 'Crédito'}</button>`+
       `${wa ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp de ${esc(c.nome)}"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></div>`;
   }).join('');
@@ -1798,7 +1907,7 @@ function origemDe(c) {
   if (d.includes('(avulso)')) return 'avulso';
   return 'manual';
 }
-const ORIGEM_LBL = { assinatura: 'Assinaturas', avulso: 'Serviços pagos no PIX', servico: 'Serviços no balcão', manual: 'Lançamentos manuais' };
+const ORIGEM_LBL = { produto: 'Venda de produtos', assinatura: 'Assinaturas', avulso: 'Serviços pagos no PIX', servico: 'Serviços no balcão', manual: 'Lançamentos manuais' };
 function minutosAbertos(ds) { const h = CONFIG.horarios[deISO(ds).getDay()]; return diaAberto(ds) ? Math.max(0, horaToMin(h.fim) - horaToMin(h.inicio)) : 0; }
 function barras(lista, fmtVal) {
   if (!lista.length) return vazio('ti-chart-bar-off', 'Sem dados no período');
@@ -1852,6 +1961,7 @@ async function getAuthSecundaria() {
   return authSecundaria;
 }
 async function salvarCli() {
+  if (cliEditId) return salvarEdicaoCli();
   const nome = $('cl-nome').value.trim(); if (!nome) return toast('Informe o nome', true);
   const user = normUser($('cl-user').value), pass = $('cl-pass').value;
   if ((user || pass) && (!user || pass.length < 6)) return toast('Para criar o acesso, informe usuário e senha com 6+ caracteres.', true);
@@ -1948,14 +2058,14 @@ async function itensDoDia(ds) {
   // Também considera o que já está carregado (dono vê tudo; cliente vê os próprios)
   D.agendamentos.filter(a => a.data === ds && a.status !== 'cancel' && !reservaExpirada(a) && !itens.some(i => i.id === a.id))
     .forEach(a => itens.push({ id: a.id, hora: a.hora, dur: Number(a.dur) || 30, st: a.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() }));
-  return itens;
+  return itens.concat(bloqueiosDoDia(ds));
 }
 async function reservar(ag, forcar) {
   const agRef = doc(collection(db, 'agendamentos'));
   await runTransaction(db, async tx => {
     const snap = await tx.get(diaRef(ag.data));
     const itens = itensValidos(snap.exists() ? snap.data().itens : []);
-    if (!forcar && conflita(itens, ag.hora, ag.dur)) throw new Error('OCUPADO');
+    if (!forcar && conflita(itens.concat(bloqueiosDoDia(ag.data)), ag.hora, ag.dur)) throw new Error('OCUPADO');
     itens.push({ id: agRef.id, hora: ag.hora, dur: Number(ag.dur) || 30, st: ag.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
     tx.set(diaRef(ag.data), { itens });
     tx.set(agRef, { ...ag, criadoEm: serverTimestamp() });
@@ -1976,7 +2086,7 @@ async function remarcarAg(ag, data, hora) {
     const sNovo = mesmoDia ? sVelho : await tx.get(diaRef(data));
     const velhos = (sVelho.exists() ? sVelho.data().itens : []).filter(i => i.id !== ag.id);
     const novos = mesmoDia ? velhos : itensValidos(sNovo.exists() ? sNovo.data().itens : []);
-    if (conflita(itensValidos(novos), hora, ag.dur, ag.id)) throw new Error('OCUPADO');
+    if (conflita(itensValidos(novos).concat(S.role === 'dono' ? [] : bloqueiosDoDia(data)), hora, ag.dur, ag.id)) throw new Error('OCUPADO');
     novos.push({ id: ag.id, hora, dur: Number(ag.dur) || 30, st: ag.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
     if (!mesmoDia) tx.set(diaRef(ag.data), { itens: velhos });
     tx.set(diaRef(data), { itens: novos });
@@ -2057,7 +2167,11 @@ async function escolherDiaAg(ds) {
   $('ag-horarios-grid').innerHTML = slots.length ? slots.map(s => {
     const oc = conflita(itens, s, agS.dur, ignorar);
     return `<button class="hora-slot" ${oc ? 'disabled' : `data-act="ag-hora" data-h="${s}"`} aria-label="${s}${oc ? ', ocupado' : ''}"><span>${s}</span><small>${oc ? 'Ocupado' : agS.dur + ' min'}</small></button>`;
-  }).join('') : '<div class="cm" style="grid-column:1/-1;text-align:center;padding:1rem;">Sem horários livres neste dia. Escolha outra data.</div>';
+  }).join('') : '<div class="cm" style="grid-column:1/-1;text-align:center;padding:1rem;">Sem horários livres neste dia.</div>';
+  if (S.role === 'cliente') {
+    const ja = D.espera.some(e => e.data === ds);
+    $('ag-horarios-grid').insertAdjacentHTML('beforeend', `<div style="grid-column:1/-1;text-align:center;">${ja ? '<span class="cm"><i class="ti ti-hourglass"></i> Você está na lista de espera deste dia.</span>' : `<button class="btn ${slots.some(s => !conflita(itens, s, agS.dur, ignorar)) ? 'btn-ghost' : 'btn-gold'} btn-sm" data-act="espera-entrar"><i class="ti ti-hourglass"></i>${slots.some(s => !conflita(itens, s, agS.dur, ignorar)) ? 'Nenhum serve? Entrar na lista de espera' : 'Entrar na lista de espera deste dia'}</button>`}</div>`);
+  }
 }
 function escolherHoraAg(hh) {
   agS.hora = hh;
@@ -2120,7 +2234,7 @@ async function confirmarAgendaCli() {
     }
     if (agS.modo === 'plano-svc') {
       await reservar({ cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'plano-svc', data: agS.data, hora: agS.hora, dur: agS.dur, preco: 0, obs: '', status: 'wait', pago: false });
-      limparSelecao(); esconderTela('agenda-screen'); toast('Agendado! Te esperamos.'); goTo('minha-area');
+      limparEsperaDoDia(agS.data); limparSelecao(); esconderTela('agenda-screen'); toast('Agendado! Te esperamos.'); goTo('minha-area');
       return;
     }
     // avulso (ou combo com parte paga): reserva o horário e abre o chat de pagamento
@@ -2137,7 +2251,7 @@ async function confirmarAgendaCli() {
       naoLidasDono: 1, naoLidasCliente: 0, ultimaMsg: 'Nova reserva', criadoEm: serverTimestamp(), atualizadoEm: serverTimestamp()
     });
     await updateDoc(doc(db, 'agendamentos', agId), { chatId: chatRef.id }).catch(() => {});
-    limparSelecao(); esconderTela('agenda-screen');
+    limparEsperaDoDia(agS.data); limparSelecao(); esconderTela('agenda-screen');
     await esperarChat(chatRef.id);
     abrirChat(chatRef.id);
   } catch (e) {
@@ -2182,12 +2296,12 @@ function renderMinhaArea() {
   $('ma-assin').innerHTML = blocoAvisos() + h;
 
   const abertos = D.chats.filter(c => c.status === 'pendente' || (Number(c.naoLidasCliente) || 0) > 0);
-  $('ma-pagamentos').innerHTML = abertos.length ? `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-message-circle"></i>Pagamentos e mensagens</span></div><div class="card-body">` +
+  $('ma-pagamentos').innerHTML = blocoGoogle() + blocoAvaliar() + blocoEspera() + (abertos.length ? `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-message-circle"></i>Pagamentos e mensagens</span></div><div class="card-body">` +
     abertos.map(c => {
       const nl = Number(c.naoLidasCliente) || 0;
       const titulo = c.tipo === 'avulso' ? (c.svcNome || 'Serviço') + (c.agData ? ' · ' + fmtCurto(c.agData) + ' ' + (c.agHora || '') : '') : nomePlano(c.planoId);
       return `<div class="row-item"><div class="row-main"><div class="cn">${esc(titulo)}</div><div class="cm">${c.status === 'pendente' ? 'Aguardando pagamento' : 'Pagamento confirmado'}</div></div><div class="row-end">${nl ? `<span class="nav-badge">${nl} nova${nl > 1 ? 's' : ''}</span>` : ''}<button class="btn btn-outline btn-sm" data-act="abrir-chat" data-id="${c.id}">Abrir</button></div></div>`;
-    }).join('') + '</div></div>' : '';
+    }).join('') + '</div></div>' : '');
 
   const meus = D.agendamentos.filter(a => a.status !== 'cancel' || a.data >= t);
   const futuros = meus.filter(a => a.data >= t && a.status !== 'done').sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
@@ -2591,6 +2705,305 @@ async function rejeitarPagamento() {
   catch (e) { toast(erroAmigavel(e), true); }
 }
 
+/* ════════ BLOQUEIO DE HORÁRIO PONTUAL (DONO) ════════ */
+function abrirModalBloq() {
+  $('bq-data').value = agDia < hoje() ? hoje() : agDia;
+  $('bq-ini').value = '12:00'; $('bq-fim').value = '13:00'; $('bq-motivo').value = '';
+  openModal('m-bloq');
+}
+async function salvarBloq() {
+  const data = $('bq-data').value, inicio = $('bq-ini').value, fim = $('bq-fim').value, motivo = $('bq-motivo').value.trim() || 'Bloqueado';
+  if (!data || !inicio || !fim || horaToMin(fim) <= horaToMin(inicio)) return toast('Confira a data e os horários.', true);
+  const conflitos = D.agendamentos.filter(a => a.data === data && ['wait', 'conf', 'aguardando_pag'].includes(a.status) && conflita([{ id: 'x', hora: inicio, dur: horaToMin(fim) - horaToMin(inicio) }], a.hora, a.dur));
+  if (conflitos.length && !confirmar(`Já tem ${conflitos.length} agendamento(s) nesse horário (${conflitos.map(a => a.hora + ' ' + nomeCli(a.cliente, a.clienteNome)).join(', ')}). Eles não são cancelados. Bloquear mesmo assim?`)) return;
+  const b = { id: String(Date.now()), data, inicio, fim, motivo };
+  await comLoading('Bloqueando', async () => {
+    try { await setDoc(doc(db, 'config', 'geral'), { bloqueios: arrayUnion(b) }, { merge: true }); closeModal('m-bloq'); agDia = data; agModo = 'dia'; toast('Horário bloqueado.'); }
+    catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+async function removerBloq(bid) {
+  if (!confirmar('Liberar esse horário para agendamentos?')) return;
+  await comLoading('Liberando', async () => {
+    try { await setDoc(doc(db, 'config', 'geral'), { bloqueios: (CONFIG.bloqueios || []).filter(b => b.id !== bid) }, { merge: true }); toast('Horário liberado.'); }
+    catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+
+/* ════════ CLIENTES: aniversariantes, sumidos, edição ════════ */
+let cliFiltro = 'todos';
+const DIAS_SUMIDO = 45;
+function ultimaVisita(cid) {
+  return D.agendamentos.filter(a => String(a.cliente) === String(cid) && a.status === 'done').map(a => a.data).sort().pop() || null;
+}
+function temFuturo(cid) { const t = hoje(); return D.agendamentos.some(a => String(a.cliente) === String(cid) && a.data >= t && ['wait', 'conf', 'aguardando_pag'].includes(a.status)); }
+function aniversariantes(mes) {
+  const m = pad((mes ?? new Date().getMonth()) + 1);
+  return D.clientes.filter(c => c.nasc && String(c.nasc).slice(5, 7) === m).sort((a, b) => String(a.nasc).slice(8).localeCompare(String(b.nasc).slice(8)));
+}
+function sumidos() {
+  const lim = addDias(hoje(), -DIAS_SUMIDO);
+  return D.clientes.map(c => ({ c, ult: ultimaVisita(c.id) })).filter(x => x.ult && x.ult < lim && !temFuturo(x.c.id)).sort((a, b) => a.ult.localeCompare(b.ult));
+}
+function linhaCliExtra(c, sub, acoes) {
+  return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(c.nome))}</div><div class="row-main"><div class="cn">${esc(c.nome)}</div><div class="cm">${sub}</div></div><div class="row-end"><div class="row-actions">${acoes}</div></div></div>`;
+}
+function renderClientesFiltro() {
+  document.querySelectorAll('[data-act="cli-filtro"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === cliFiltro));
+  $('busca-cli').hidden = cliFiltro !== 'todos';
+  if (cliFiltro === 'todos') return false;
+  const el = $('lista-clientes');
+  if (cliFiltro === 'aniv') {
+    const lista = aniversariantes(), diaHoje = hoje().slice(8);
+    el.innerHTML = lista.length ? lista.map(c => {
+      const wa = linkWhats(c.tel), dia = String(c.nasc).slice(8, 10);
+      const msg = encodeURIComponent(`Feliz aniversário, ${primeiroNome(c.nome)}! 🎉 A KJota Barbearia te deseja um ótimo dia. Passa aqui pra ficar na régua!`);
+      return linhaCliExtra(c, `🎂 dia ${dia}${dia === diaHoje ? ' · <b style="color:var(--k-gold)">é hoje!</b>' : ''}${c.tel ? ' · ' + esc(c.tel) : ''}`,
+        (wa ? `<a class="btn btn-outline btn-sm" href="${wa}?text=${msg}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>Parabéns</a>` : '') +
+        `<button class="btn btn-gold btn-sm" data-act="presente-credito" data-id="${c.id}"><i class="ti ti-gift"></i>Dar crédito</button>`);
+    }).join('') : vazio('ti-cake-off', 'Nenhum aniversariante este mês. Cadastre a data de aniversário tocando no cliente.');
+  } else {
+    const lista = sumidos();
+    el.innerHTML = lista.length ? lista.map(({ c, ult }) => {
+      const wa = linkWhats(c.tel), dias = Math.round((deISO(hoje()) - deISO(ult)) / 864e5);
+      const msg = encodeURIComponent(`Fala, ${primeiroNome(c.nome)}! Sentimos sua falta aqui na KJota 💈 Bora marcar um horário? É só agendar pelo app.`);
+      return linhaCliExtra(c, `Última visita: ${fmt(ult)} · há ${dias} dias`, wa ? `<a class="btn btn-outline btn-sm" href="${wa}?text=${msg}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>Chamar</a>` : '<span class="cm">sem telefone</span>');
+    }).join('') : vazio('ti-mood-happy', `Nenhum cliente sumido há mais de ${DIAS_SUMIDO} dias.`);
+  }
+  return true;
+}
+async function presenteCredito(cid) {
+  const c = getCliente(cid); if (!c) return;
+  const v = window.prompt(`Quanto de crédito dar de presente para ${c.nome}? (R$)`, '10');
+  if (v === null) return;
+  const n = Number(String(v).replace(/\./g, '').replace(',', '.'));
+  if (!isFinite(n) || n <= 0) return toast('Valor inválido.', true);
+  await comLoading('Salvando', async () => { try { await updateDoc(doc(db, 'clientes', String(cid)), { credito: increment(Math.round(n * 100) / 100) }); toast(`Crédito de ${moeda(n)} dado para ${primeiroNome(c.nome)}!`); } catch (e) { toast(erroAmigavel(e), true); } });
+}
+let cliEditId = null;
+function abrirEditarCli(cid) {
+  const c = getCliente(cid); if (!c) return;
+  cliEditId = cid;
+  $('m-cl-t').textContent = 'Editar cliente';
+  $('cl-nome').value = c.nome || ''; $('cl-tel').value = c.tel || ''; $('cl-nasc').value = c.nasc || ''; $('cl-obs').value = c.obs || '';
+  $('cl-login-wrap').hidden = true;
+  openModal('m-cl');
+}
+function abrirNovoCli() {
+  cliEditId = null;
+  $('m-cl-t').textContent = 'Novo cliente';
+  ['cl-nome', 'cl-tel', 'cl-nasc', 'cl-obs', 'cl-user', 'cl-pass'].forEach(i => { $(i).value = ''; });
+  $('cl-login-wrap').hidden = false;
+  openModal('m-cl');
+}
+async function salvarEdicaoCli() {
+  const nome = $('cl-nome').value.trim(); if (!nome) return toast('Informe o nome', true);
+  await comLoading('Salvando', async () => {
+    try {
+      await updateDoc(doc(db, 'clientes', String(cliEditId)), { nome, tel: $('cl-tel').value.trim(), nasc: $('cl-nasc').value, obs: $('cl-obs').value.trim() });
+      closeModal('m-cl'); toast('Cliente atualizado!');
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+
+/* ════════ PRODUTOS E ESTOQUE ════════ */
+const estoqueBaixo = p => (Number(p.estoque) || 0) <= (Number(p.estoqueMin) || 0);
+function renderProdutos() {
+  const el = $('lista-produtos');
+  if (!D.produtos.length) { el.innerHTML = vazio('ti-package', 'Nenhum produto cadastrado. Toque em Novo para começar.'); return; }
+  el.innerHTML = D.produtos.map(p => {
+    const baixo = estoqueBaixo(p);
+    return `<div class="row-item wrap-sm"><div class="svc-row-icon"><i class="ti ti-package"></i></div><div class="row-main"><div class="cn">${esc(p.nome)}${baixo ? '<span class="chip red">Estoque baixo</span>' : ''}</div>` +
+      `<div class="cm">${moeda(p.preco)} · <b style="color:${baixo ? 'var(--k-red)' : 'var(--k-cream)'}">${Number(p.estoque) || 0} em estoque</b>${p.custo ? ' · custo ' + moeda(p.custo) : ''}</div></div>` +
+      `<div class="row-end"><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="vender-produto" data-id="${p.id}"${(Number(p.estoque) || 0) <= 0 ? ' disabled' : ''}><i class="ti ti-shopping-cart"></i>Vender</button>` +
+      `<button class="btn btn-outline btn-sm" data-act="entrada-estoque" data-id="${p.id}"><i class="ti ti-plus"></i>Estoque</button>` +
+      `<button class="btn btn-ghost btn-sm" data-act="editar-produto" data-id="${p.id}" aria-label="Editar ${esc(p.nome)}"><i class="ti ti-pencil"></i></button>` +
+      `<button class="btn btn-danger btn-sm" data-act="excluir-produto" data-id="${p.id}" aria-label="Excluir ${esc(p.nome)}"><i class="ti ti-trash"></i></button></div></div></div>`;
+  }).join('');
+}
+function abrirModalProduto(id) {
+  const p = id ? D.produtos.find(x => x.id === id) : null;
+  $('m-prod-t').textContent = p ? 'Editar produto' : 'Novo produto';
+  $('pr-id').value = p ? p.id : '';
+  $('pr-nome').value = p ? p.nome : ''; $('pr-preco').value = p ? p.preco : ''; $('pr-custo').value = p && p.custo ? p.custo : '';
+  $('pr-estoque').value = p ? (Number(p.estoque) || 0) : ''; $('pr-min').value = p ? (Number(p.estoqueMin) || 0) : 3;
+  openModal('m-produto');
+}
+async function salvarProduto() {
+  const nome = $('pr-nome').value.trim(); if (!nome) return toast('Informe o nome do produto', true);
+  const dados = { nome, preco: parseFloat($('pr-preco').value) || 0, custo: parseFloat($('pr-custo').value) || 0, estoque: parseInt($('pr-estoque').value) || 0, estoqueMin: parseInt($('pr-min').value) || 0 };
+  const id = $('pr-id').value || String(Date.now());
+  await comLoading('Salvando', async () => {
+    try { await setDoc(doc(db, 'produtos', id), { ...dados, _updatedAt: serverTimestamp() }, { merge: true }); closeModal('m-produto'); toast('Produto salvo!'); }
+    catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+async function excluirProduto(id) {
+  const p = D.produtos.find(x => x.id === id); if (!p || !confirmar(`Excluir o produto "${p.nome}"?`)) return;
+  await comLoading('Removendo', async () => { try { await deleteDoc(doc(db, 'produtos', id)); toast('Produto removido.'); } catch (e) { toast(erroAmigavel(e), true); } });
+}
+async function entradaEstoque(id) {
+  const p = D.produtos.find(x => x.id === id); if (!p) return;
+  const v = window.prompt(`Quantas unidades de "${p.nome}" chegaram?`, '1'); if (v === null) return;
+  const n = parseInt(v); if (!n || n < 0) return toast('Quantidade inválida.', true);
+  await comLoading('Atualizando', async () => { try { await updateDoc(doc(db, 'produtos', id), { estoque: increment(n) }); toast(`+${n} no estoque.`); } catch (e) { toast(erroAmigavel(e), true); } });
+}
+function abrirModalVenda(id) {
+  if (!D.produtos.length) return toast('Cadastre um produto primeiro.', true);
+  $('vd-prod').innerHTML = D.produtos.map(p => `<option value="${p.id}"${p.id === id ? ' selected' : ''}${(Number(p.estoque) || 0) <= 0 ? ' disabled' : ''}>${esc(p.nome)} — ${moeda(p.preco)} (${Number(p.estoque) || 0} em estoque)</option>`).join('');
+  $('vd-cli').innerHTML = '<option value="">Sem cliente</option>' + D.clientes.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  $('vd-qtd').value = 1;
+  atualizarTotalVenda();
+  openModal('m-venda');
+}
+function atualizarTotalVenda() {
+  const p = D.produtos.find(x => x.id === $('vd-prod').value), q = parseInt($('vd-qtd').value) || 0;
+  $('vd-total').textContent = p ? moeda((Number(p.preco) || 0) * q) : '';
+}
+async function salvarVenda() {
+  const id = $('vd-prod').value, qtd = parseInt($('vd-qtd').value) || 0, cid = $('vd-cli').value;
+  if (!id || qtd <= 0) return toast('Escolha o produto e a quantidade.', true);
+  await comLoading('Registrando venda', async () => {
+    try {
+      await runTransaction(db, async tx => {
+        const ref = doc(db, 'produtos', id), snap = await tx.get(ref);
+        if (!snap.exists()) throw Object.assign(new Error('x'), { amigavel: 'Produto não encontrado.' });
+        const p = snap.data(), est = Number(p.estoque) || 0;
+        if (est < qtd) throw Object.assign(new Error('x'), { amigavel: `Só tem ${est} em estoque.` });
+        tx.update(ref, { estoque: est - qtd });
+        tx.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Venda: ${p.nome}${qtd > 1 ? ' x' + qtd : ''}${cid ? ' — ' + nomeCli(cid) : ''}`, val: (Number(p.preco) || 0) * qtd, custo: (Number(p.custo) || 0) * qtd, hora: agora(), data: hoje(), origem: 'produto', produtoId: id, qtd, cliente: cid || null, _createdAt: serverTimestamp() });
+      });
+      closeModal('m-venda'); toast('Venda registrada!');
+    } catch (e) { toast(e.amigavel || erroAmigavel(e), true); }
+  });
+}
+
+/* ════════ AVALIAÇÃO DO ATENDIMENTO ════════ */
+function estrelas(n) { return '★'.repeat(n) + '☆'.repeat(5 - n); }
+let conviteGoogle = false;
+function blocoGoogle() {
+  if (!conviteGoogle || !CONFIG.googleUrl) return '';
+  return `<div class="note ok"><i class="ti ti-star"></i><div><b>Obrigado pelas 5 estrelas!</b> Ajuda muito se você avaliar a KJota no Google também.<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><a class="btn btn-gold btn-sm" href="${esc(CONFIG.googleUrl)}" target="_blank" rel="noopener" data-keep="1"><i class="ti ti-brand-google"></i>Avaliar no Google</a><button class="btn btn-ghost btn-sm" data-act="fechar-google">Agora não</button></div></div></div>`;
+}
+function blocoAvaliar() {
+  const lim = addDias(hoje(), -14);
+  const pend = D.agendamentos.filter(a => a.status === 'done' && !a.avaliacao && a.data >= lim).sort((a, b) => (b.data + b.hora).localeCompare(a.data + a.hora))[0];
+  if (!pend) return '';
+  return `<div class="card avaliar-card"><div class="card-body"><div class="cn" style="margin-bottom:.2rem;">Como foi seu atendimento?</div><div class="cm" style="margin-bottom:.6rem;">${esc(pend.svc)} · ${fmt(pend.data)}</div>` +
+    `<div class="estrelas" role="group" aria-label="Dar nota">${[1, 2, 3, 4, 5].map(n => `<button data-act="avaliar" data-id="${pend.id}" data-n="${n}" aria-label="${n} estrela${n > 1 ? 's' : ''}">★</button>`).join('')}</div></div></div>`;
+}
+async function avaliar(id, n) {
+  const a = getAg(id); if (!a || a.avaliacao) return;
+  const comentario = n <= 4 ? (window.prompt('Obrigado! Quer contar o que podemos melhorar? (opcional)', '') || '') : (window.prompt('Valeu demais! Quer deixar um comentário? (opcional)', '') || '');
+  try {
+    await updateDoc(doc(db, 'agendamentos', id), { avaliacao: n, avaliacaoComentario: comentario.slice(0, 500), avaliadoEm: serverTimestamp() });
+    if (n === 5 && CONFIG.googleUrl) { conviteGoogle = true; renderMinhaArea(); }
+    else toast('Obrigado pela avaliação!');
+  } catch (e) { toast(erroAmigavel(e), true); }
+}
+function resumoAvaliacoes() {
+  const av = D.agendamentos.filter(a => a.avaliacao).sort((a, b) => tempoMs(b.avaliadoEm) - tempoMs(a.avaliadoEm));
+  const media = av.length ? av.reduce((s, a) => s + Number(a.avaliacao), 0) / av.length : 0;
+  return { av, media };
+}
+function cardAvaliacoes() {
+  const { av, media } = resumoAvaliacoes();
+  if (!av.length) return '';
+  return `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-star"></i>Avaliações</span><span class="cm"><b style="color:var(--k-gold)">${media.toFixed(1).replace('.', ',')}</b> de 5 · ${av.length} avaliação${av.length > 1 ? 'ões' : ''}</span></div><div class="card-body">` +
+    av.slice(0, 5).map(a => `<div class="row-item"><div class="row-main"><div class="cn"><span class="estrelas-txt">${estrelas(Number(a.avaliacao))}</span> ${esc(nomeCli(a.cliente, a.clienteNome))}</div><div class="cm">${esc(a.svc)} · ${fmtCurto(a.data)}${a.avaliacaoComentario ? ' · “' + esc(a.avaliacaoComentario) + '”' : ''}</div></div></div>`).join('') + '</div></div>';
+}
+
+/* ════════ LISTA DE ESPERA ════════ */
+async function entrarEspera() {
+  if (!agS.data) return;
+  if (D.espera.some(e => e.data === agS.data)) return toast('Você já está na lista de espera desse dia.');
+  await comLoading('Entrando na lista', async () => {
+    try {
+      await addDoc(collection(db, 'espera'), { cliente: S.cid, clienteNome: S.nome, data: agS.data, svc: agS.modo === 'remarcar' ? agS.ag.svc : agS.svc.nome, dur: agS.dur, criadoEm: serverTimestamp() });
+      toast('Pronto! Te avisamos se abrir um horário nesse dia.');
+      escolherDiaAg(agS.data);
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+async function sairEspera(id) {
+  try { await deleteDoc(doc(db, 'espera', id)); toast('Você saiu da lista de espera.'); } catch (e) { toast(erroAmigavel(e), true); }
+}
+/* Cliente: fica de olho nos dias da lista de espera e avisa quando abrir horário */
+const esperaOuvintes = {};
+function livresNoDia(ds, itens, dur) {
+  if (!diaAberto(ds)) return 0;
+  const h = CONFIG.horarios[deISO(ds).getDay()];
+  const todos = itensValidos(itens).concat(bloqueiosDoDia(ds));
+  const agoraMin = ds === hoje() ? new Date().getHours() * 60 + new Date().getMinutes() + 15 : -1;
+  let n = 0;
+  for (let m = horaToMin(h.inicio); m + dur <= horaToMin(h.fim); m += CONFIG.intervalo) if (m > agoraMin && !conflita(todos, minToHora(m), dur)) n++;
+  return n;
+}
+function sincronizarEspera() {
+  if (S.role !== 'cliente') return;
+  const t = hoje(), ativos = new Set();
+  for (const e of D.espera) {
+    if (e.data < t) continue;
+    ativos.add(e.id);
+    if (esperaOuvintes[e.id]) continue;
+    const o = { antes: null };
+    o.unsub = onSnapshot(diaRef(e.data), snap => {
+      const livres = livresNoDia(e.data, snap.exists() ? snap.data().itens : [], Number(e.dur) || 30);
+      if (o.antes === 0 && livres > 0) avisar('🔔 Abriu horário!', `Dia ${fmtCurto(e.data)} tem horário livre para ${e.svc || 'você'}. Agende antes que alguém pegue.`, { sec: 'svc-cli' });
+      o.antes = livres;
+    }, () => {});
+    esperaOuvintes[e.id] = o;
+  }
+  for (const id of Object.keys(esperaOuvintes)) if (!ativos.has(id)) { try { esperaOuvintes[id].unsub(); } catch (e) {} delete esperaOuvintes[id]; }
+}
+function pararEspera() { for (const id of Object.keys(esperaOuvintes)) { try { esperaOuvintes[id].unsub(); } catch (e) {} delete esperaOuvintes[id]; } }
+function blocoEspera() {
+  const t = hoje(), lista = D.espera.filter(e => e.data >= t).sort((a, b) => a.data.localeCompare(b.data));
+  if (!lista.length) return '';
+  return `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-hourglass"></i>Lista de espera</span></div><div class="card-body">` +
+    lista.map(e => `<div class="row-item"><div class="row-main"><div class="cn">${DIAS_CURTO[deISO(e.data).getDay()]}, ${fmt(e.data)}</div><div class="cm">${esc(e.svc || '')} · você recebe um aviso se abrir horário</div></div><button class="btn btn-ghost btn-sm" data-act="espera-sair" data-id="${e.id}">Sair</button></div>`).join('') + '</div></div>';
+}
+async function limparEsperaDoDia(ds) {
+  for (const e of D.espera.filter(x => x.data === ds)) await deleteDoc(doc(db, 'espera', e.id)).catch(() => {});
+}
+
+/* ════════ PLANO VENCENDO (aviso ao cliente, 1x por dia) ════════ */
+function checarVencimentoPlano() {
+  if (S.role !== 'cliente') return;
+  const as = assinAtiva(S.cid); if (!as || !as.vencimento || vencida(as)) return;
+  const dias = Math.round((deISO(as.vencimento) - deISO(hoje())) / 864e5);
+  if (dias > 3) return;
+  const chave = 'kj-venc-' + as.id + '-' + hoje();
+  try { if (localStorage.getItem(chave)) return; localStorage.setItem(chave, '1'); } catch (e) {}
+  avisar('⏰ Seu plano está vencendo', dias === 0 ? `${nomePlano(as.plano)} vence hoje. Renove para continuar agendando sem custo.` : `${nomePlano(as.plano)} vence em ${dias} dia${dias > 1 ? 's' : ''} (${fmt(as.vencimento)}). Renove pelo app.`, { sec: 'planos-cli' });
+}
+
+/* ════════ NOTIFICAÇÃO COM O APP FECHADO (push via Firebase Cloud Messaging) ════════ */
+let pushToken = null, pushAtivo = false;
+async function registrarPush() {
+  try {
+    if (!CONFIG.vapidKey || !swReg || !('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!(await isSupported())) return;
+    const token = await getToken(getMessaging(fbApp), { vapidKey: CONFIG.vapidKey, serviceWorkerRegistration: swReg });
+    if (!token) return;
+    pushToken = token; pushAtivo = true;
+    await setDoc(doc(db, 'tokens', S.uid), { tokens: arrayUnion(token), role: S.role, cid: S.cid || null, atualizadoEm: serverTimestamp() }, { merge: true });
+  } catch (e) { console.warn('push', e); }
+}
+async function desregistrarPush() {
+  if (!pushToken || !S.uid) return;
+  try { await updateDoc(doc(db, 'tokens', S.uid), { tokens: arrayRemove(pushToken) }); } catch (e) {}
+  pushToken = null; pushAtivo = false;
+}
+
+/* ════════ LEMBRETE PELO WHATSAPP (manual, gratuito) ════════ */
+function linkLembrete(a) {
+  const cli = getCliente(a.cliente), wa = cli && linkWhats(cli.tel); if (!wa) return '';
+  const quando = a.data === hoje() ? 'hoje' : a.data === addDias(hoje(), 1) ? 'amanhã' : 'dia ' + fmtCurto(a.data);
+  const msg = encodeURIComponent(`Olá, ${primeiroNome(cli.nome)}! Passando pra lembrar do seu horário na KJota ${quando} às ${a.hora} (${a.svc}). Te esperamos! 💈`);
+  return `<a class="btn btn-ghost btn-sm" href="${wa}?text=${msg}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>Lembrar</a>`;
+}
+
 /* ════════ CONFIGURAÇÕES ════════ */
 let cfgMes = new Date(); cfgMes.setDate(1);
 function renderConfig() {
@@ -2599,6 +3012,7 @@ function renderConfig() {
   f('cfg-nome', CFG_EDIT.nome); f('cfg-tel', CFG_EDIT.tel); f('cfg-insta', CFG_EDIT.insta); f('cfg-end', CFG_EDIT.end);
   f('cfg-cidade', CFG_EDIT.cidade); f('cfg-cep', CFG_EDIT.cep); f('cfg-pix-tipo', CFG_EDIT.pixTipo); f('cfg-pix-key', CFG_EDIT.pixKey);
   f('cfg-pix-nome', CFG_EDIT.pixNome); f('cfg-pix-cidade', CFG_EDIT.pixCidade);
+  f('cfg-google', CFG_EDIT.googleUrl);
   f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin));
   renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif();
 }
@@ -2607,7 +3021,8 @@ function renderHorariosCfg() {
     const h = CFG_EDIT.horarios[d];
     return `<div class="horario-row"><div class="horario-dia">${esc(h.label || DIAS_LONGO[d])}</div>` +
       `<label class="toggle"><input type="checkbox" data-change="cfg-dia" data-d="${d}"${h.ativo ? ' checked' : ''} aria-label="Aberto na ${esc(h.label || DIAS_LONGO[d])}"/><span class="toggle-slider"></span></label>` +
-      `<div class="horario-inputs${h.ativo ? '' : ' off'}"><input class="form-input" type="time" data-change="cfg-hora" data-d="${d}" data-k="inicio" value="${esc(h.inicio)}" aria-label="Abre"/><span class="cm" style="margin:0">às</span><input class="form-input" type="time" data-change="cfg-hora" data-d="${d}" data-k="fim" value="${esc(h.fim)}" aria-label="Fecha"/></div></div>`;
+      `<div class="horario-inputs${h.ativo ? '' : ' off'}"><input class="form-input" type="time" data-change="cfg-hora" data-d="${d}" data-k="inicio" value="${esc(h.inicio)}" aria-label="Abre"/><span class="cm" style="margin:0">às</span><input class="form-input" type="time" data-change="cfg-hora" data-d="${d}" data-k="fim" value="${esc(h.fim)}" aria-label="Fecha"/></div>` +
+      `<div class="horario-inputs pausa${h.ativo ? '' : ' off'}"><span class="cm" style="margin:0;min-width:58px">Intervalo</span><input class="form-input" type="time" data-change="cfg-hora" data-d="${d}" data-k="pausaIni" value="${esc(h.pausaIni || '')}" aria-label="Início do intervalo"/><span class="cm" style="margin:0">às</span><input class="form-input" type="time" data-change="cfg-hora" data-d="${d}" data-k="pausaFim" value="${esc(h.pausaFim || '')}" aria-label="Fim do intervalo"/>${h.pausaIni ? `<button class="icon-btn" style="font-size:15px" data-act="cfg-sem-pausa" data-d="${d}" aria-label="Tirar intervalo"><i class="ti ti-x"></i></button>` : ''}</div></div>`;
   }).join('');
 }
 function renderCalCfg() {
@@ -2632,6 +3047,7 @@ function cfgDoFormulario() {
   const g = id => $(id).value.trim();
   return { ...CFG_EDIT, nome: g('cfg-nome') || 'KJota Barbearia', tel: g('cfg-tel'), insta: g('cfg-insta'), end: g('cfg-end'), cidade: g('cfg-cidade'), cep: g('cfg-cep'),
     pixTipo: $('cfg-pix-tipo').value, pixKey: g('cfg-pix-key'), pixNome: g('cfg-pix-nome'), pixCidade: g('cfg-pix-cidade'),
+    googleUrl: g('cfg-google'),
     intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60 };
 }
 function previewPix() {
@@ -2644,7 +3060,9 @@ function previewPix() {
 }
 async function salvarConfig() {
   const cfg = cfgDoFormulario();
-  for (const k of Object.keys(cfg.horarios)) { const h = cfg.horarios[k]; if (h.ativo && horaToMin(h.fim) <= horaToMin(h.inicio)) return toast(`${h.label}: o horário de fechar precisa ser depois do de abrir.`, true); }
+  for (const k of Object.keys(cfg.horarios)) { const h = cfg.horarios[k]; if (h.ativo && horaToMin(h.fim) <= horaToMin(h.inicio)) return toast(`${h.label}: o horário de fechar precisa ser depois do de abrir.`, true);
+    if ((h.pausaIni && !h.pausaFim) || (!h.pausaIni && h.pausaFim) || (h.pausaIni && horaToMin(h.pausaFim) <= horaToMin(h.pausaIni))) return toast(`${h.label}: confira o intervalo (início e fim).`, true); }
+  cfg.bloqueios = (cfg.bloqueios || []).filter(b => b.data >= hoje());
   if (cfg.pixKey && !chavePixFormatada(cfg.pixTipo, cfg.pixKey)) return toast('Chave PIX inválida para o tipo escolhido.', true);
   cfg.folgas = cfg.folgas.filter(d => d >= addDias(hoje(), -60)).sort();
   await comLoading('Salvando', async () => {
@@ -2741,14 +3159,14 @@ async function ativarNotif() {
   estadoBotaoNotif();
   document.querySelectorAll('#convite-avisos').forEach(n => n.remove());
   if (r === 'granted') {
-    toast('Notificações ativadas!'); destravarSom(); tocarSom();
+    toast('Notificações ativadas!'); destravarSom(); tocarSom(); registrarPush();
     const opts = { body: 'Você vai receber os avisos da KJota por aqui.', icon: 'img/icon-192.png', tag: 'kj-teste' };
     if (swReg) swReg.showNotification('KJota Barbearia', opts).catch(() => {}); else try { new Notification('KJota Barbearia', opts); } catch (e) {}
   } else toast('Notificações bloqueadas. Libere nas configurações do navegador.', true);
 }
 
 /* ════════ EVENTOS ════════ */
-const RENDER = { dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
+const RENDER = { produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
 
 const ACT = {
   'tab': el => { const login = el.dataset.tab === 'login'; $('tab-login').setAttribute('aria-selected', login); $('tab-cadastro').setAttribute('aria-selected', !login); $('form-login').hidden = !login; $('form-cadastro').hidden = login; },
@@ -2768,10 +3186,23 @@ const ACT = {
   'reativar-ag': el => reativarAg(el.dataset.id),
   'excluir-ag': el => excluirAg(el.dataset.id),
   'ver-proximos': () => { agModo = 'proximos'; goTo('agenda'); },
+  'ver-dia': el => { agDia = el.dataset.ds; agModo = 'dia'; goTo('agenda'); },
   'reagendar-dono': el => { const a = getAg(el.dataset.id); if (!a) return; abrirAgenda({ modo: 'remarcar', svc: { nome: a.svc, dur: a.dur }, ag: a }); },
   'confirmar-pag-ag': el => { el.disabled = true; confirmarPagAg(el.dataset.id).finally(() => { el.disabled = false; }); },
   'modal-ag': abrirModalAg, 'salvar-ag': salvarAg,
-  'modal-cl': () => openModal('m-cl'), 'salvar-cli': salvarCli,
+  'modal-cl': abrirNovoCli, 'salvar-cli': salvarCli, 'editar-cli': el => abrirEditarCli(el.dataset.id),
+  'cli-filtro': el => { cliFiltro = el.dataset.f; renderClientes(); },
+  'ir-clientes': el => { cliFiltro = el.dataset.f; goTo('clientes'); },
+  'presente-credito': el => presenteCredito(el.dataset.id),
+  'modal-bloq': abrirModalBloq, 'salvar-bloq': salvarBloq, 'bloq-remover': el => removerBloq(el.dataset.id),
+  'cfg-sem-pausa': el => { CFG_EDIT.horarios[el.dataset.d].pausaIni = ''; CFG_EDIT.horarios[el.dataset.d].pausaFim = ''; renderHorariosCfg(); },
+  'espera-entrar': entrarEspera, 'espera-sair': el => sairEspera(el.dataset.id),
+  'espera-remover': el => { if (confirmar('Tirar esse cliente da lista de espera?')) sairEspera(el.dataset.id); },
+  'modal-produto': () => abrirModalProduto(), 'editar-produto': el => abrirModalProduto(el.dataset.id), 'salvar-produto': salvarProduto,
+  'excluir-produto': el => excluirProduto(el.dataset.id), 'entrada-estoque': el => entradaEstoque(el.dataset.id),
+  'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
+  'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
+  'fechar-google': () => { conviteGoogle = false; renderMinhaArea(); },
   'modal-svc': () => abrirModalSvc(), 'editar-svc': el => abrirModalSvc(el.dataset.id), 'salvar-svc': salvarSvc, 'excluir-svc': el => excluirSvc(el.dataset.id),
   'modal-plano': () => abrirModalPlano(), 'editar-plano': el => abrirModalPlano(el.dataset.id), 'salvar-plano': salvarPlano, 'excluir-plano': el => excluirPlano(el.dataset.id),
   'pl-add-item': () => $('pl-itens').insertAdjacentHTML('beforeend', linhaItemPlano('')),
@@ -2827,6 +3258,7 @@ const ACT = {
 const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
   'as-valor': preencherValorAssin,
+  'vd-total': atualizarTotalVenda,
   'cfg-dia': el => { CFG_EDIT.horarios[el.dataset.d].ativo = el.checked; renderHorariosCfg(); renderCalCfg(); },
   'cfg-hora': el => { CFG_EDIT.horarios[el.dataset.d][el.dataset.k] = el.value; },
   'pix-preview': previewPix
@@ -2834,7 +3266,7 @@ const CHANGE = {
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
   const fn = ACT[el.dataset.act]; if (!fn) return;
-  if (el.tagName === 'BUTTON' || el.tagName === 'A') e.preventDefault();
+  if (el.tagName === 'BUTTON' || (el.tagName === 'A' && !el.getAttribute('href'))) e.preventDefault();
   fn(el, e);
 });
 document.addEventListener('change', e => { const el = e.target.closest('[data-change]'); if (el && CHANGE[el.dataset.change]) CHANGE[el.dataset.change](el); });
