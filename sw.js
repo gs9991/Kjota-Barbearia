@@ -1,5 +1,5 @@
 // KJota Barbearia — service worker (app instalável + abre rápido)
-const CACHE = 'kjota-v2.7';
+const CACHE = 'kjota-v2.8';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './img/logo.webp', './img/icon-192.png', './img/icon-512.png'];
 const CDN = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'www.gstatic.com'];
 
