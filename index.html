@@ -243,6 +243,17 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .estrelas button:hover ~ button{color:var(--k-border);}
 .estrelas-txt{color:var(--k-gold);letter-spacing:1px;}
 .avaliar-card{border-color:var(--k-gold-dim);}
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--k-border);}
+.svc-card-foto{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin-bottom:.6rem;display:block;}
+.foto-prev{display:flex;align-items:center;gap:10px;margin-bottom:.5rem;flex-wrap:wrap;}
+.foto-prev img{width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--k-border);}
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.prod-card{background:var(--k-dark);border:1px solid var(--k-border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+.prod-card.esgotado{opacity:.55;}
+.prod-foto{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--k-card);}
+.prod-foto.sem{display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--k-gold);}
+.prod-info{padding:.8rem;display:flex;flex-direction:column;gap:5px;flex:1;}
+.prod-info .btn{margin-top:auto;}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -657,6 +668,12 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
 
     <section class="section" id="s-svc-cli"><div id="svc-cli-container"></div></section>
 
+    <section class="section" id="s-produtos-cli">
+      <h1 class="section-title" style="margin-bottom:.4rem;">Produtos</h1>
+      <p class="cm" style="margin-bottom:1rem;">Toque em Quero e a gente separa pra você pegar na barbearia.</p>
+      <div class="prod-grid" id="lista-produtos-cli"></div>
+    </section>
+
     <section class="section" id="s-planos-cli">
       <h1 class="section-title" style="margin-bottom:1rem;">Planos</h1>
       <div class="plan-grid" id="plan-grid-cli"></div>
@@ -759,7 +776,11 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
     <div class="form-group"><label class="form-label" for="svc-preco">Preço (R$)</label><input class="form-input" type="number" step="0.01" min="0" inputmode="decimal" id="svc-preco" placeholder="0"/></div>
     <div class="form-group"><label class="form-label" for="svc-dur">Duração (min)</label><input class="form-input" type="number" min="5" step="5" inputmode="numeric" id="svc-dur" placeholder="30"/></div>
   </div>
-  <div class="form-group"><label class="form-label" for="svc-icone">Ícone</label>
+  <div class="form-group"><span class="form-label">Foto (opcional)</span>
+    <div class="foto-prev" id="svc-foto-prev"></div>
+    <button class="btn btn-outline btn-sm" data-act="foto-escolher" data-q="svc"><i class="ti ti-photo"></i>Escolher foto</button>
+    <input type="file" id="svc-foto-input" accept="image/*" hidden/></div>
+  <div class="form-group"><label class="form-label" for="svc-icone">Ícone (quando não tem foto)</label>
     <select class="form-input" id="svc-icone">
       <option value="ti-scissors">Tesoura (corte)</option><option value="ti-razor">Navalha (barba)</option><option value="ti-droplet">Gota (hidratação)</option><option value="ti-star">Estrela (especial)</option><option value="ti-sparkles">Brilho (acabamento)</option>
     </select></div>
@@ -867,9 +888,14 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-prod-t">Novo produto</div></div>
   <input type="hidden" id="pr-id"/>
   <div class="form-group"><label class="form-label" for="pr-nome">Nome</label><input class="form-input" type="text" id="pr-nome" placeholder="Ex: Pomada modeladora"/></div>
+  <div class="form-group"><label class="form-label" for="pr-desc">Descrição curta (aparece para o cliente)</label><input class="form-input" type="text" id="pr-desc" maxlength="120" placeholder="Ex: Fixação forte, efeito seco"/></div>
+  <div class="form-group"><span class="form-label">Foto (opcional)</span>
+    <div class="foto-prev" id="prod-foto-prev"></div>
+    <button class="btn btn-outline btn-sm" data-act="foto-escolher" data-q="prod"><i class="ti ti-photo"></i>Escolher foto</button>
+    <input type="file" id="prod-foto-input" accept="image/*" hidden/></div>
   <div class="form-row">
     <div class="form-group"><label class="form-label" for="pr-preco">Preço de venda (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="pr-preco"/></div>
-    <div class="form-group"><label class="form-label" for="pr-custo">Custo (R$, opcional)</label><input class="form-input" type="number" step="0.01" min="0" id="pr-custo"/></div>
+    <div class="form-group"><label class="form-label" for="pr-custo">Custo (R$, só você vê)</label><input class="form-input" type="number" step="0.01" min="0" id="pr-custo"/></div>
   </div>
   <div class="form-row">
     <div class="form-group"><label class="form-label" for="pr-estoque">Em estoque</label><input class="form-input" type="number" min="0" step="1" id="pr-estoque"/></div>
@@ -916,7 +942,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getFirestore, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   collection, query, where, onSnapshot, serverTimestamp, runTransaction,
-  writeBatch, increment, arrayUnion, arrayRemove
+  writeBatch, increment, arrayUnion, arrayRemove, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
@@ -1001,7 +1027,7 @@ let CONFIG = structuredClone(CFG_PADRAO);
 let CFG_EDIT = null; // cópia em edição na tela de Configurações
 
 const S = { uid: null, role: null, cid: null, nome: '', user: '', secao: null, chatId: null };
-const D = { clientes: [], planos: [], servicos: [], assinantes: [], agendamentos: [], caixa: [], chats: [], espera: [], produtos: [] };
+const D = { clientes: [], planos: [], servicos: [], assinantes: [], agendamentos: [], caixa: [], chats: [], espera: [], produtos: [], custos: [] };
 let unsubs = [];
 let cadastrando = false;
 let prontoResolver = null, dadosProntos = null;
@@ -1299,6 +1325,7 @@ function iniciarOuvintes() {
     ouvir('chats', collection(db, 'chats'), snap => tratarChats(snap, 'naoLidasDono'));
     lista('produtos', 'produtos', collection(db, 'produtos'), (a, b) => String(a.nome).localeCompare(String(b.nome)));
     lista('espera', 'espera', collection(db, 'espera'));
+    lista('custos', 'custos', collection(db, 'custos'));
   } else {
     const cid = S.cid;
     let creditoAntes = null;
@@ -1312,6 +1339,7 @@ function iniciarOuvintes() {
     lista('assinantes', 'assinantes', query(collection(db, 'assinantes'), where('cliente', '==', cid)));
     ouvir('agendamentos', query(collection(db, 'agendamentos'), where('cliente', '==', cid)), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     ouvir('chats', query(collection(db, 'chats'), where('clienteId', '==', cid)), snap => tratarChats(snap, 'naoLidasCliente'));
+    lista('produtos', 'produtos', collection(db, 'produtos'), (a, b) => String(a.nome).localeCompare(String(b.nome)));
     ouvir('espera', query(collection(db, 'espera'), where('cliente', '==', cid)), snap => { D.espera = snap.docs.map(d => ({ ...d.data(), id: d.id })); sincronizarEspera(); });
   }
 }
@@ -1361,7 +1389,7 @@ function aplicarMarca() {
 
 /* ════════ NAVEGAÇÃO ════════ */
 const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['produtos', 'ti-package', 'Produtos'], ['config', 'ti-settings', 'Config.']];
-const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['planos-cli', 'ti-crown', 'Planos']];
+const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['produtos-cli', 'ti-package', 'Produtos'], ['planos-cli', 'ti-crown', 'Planos']];
 
 function mostrarApp() {
   $('login-screen').classList.remove('visible');
@@ -1756,7 +1784,7 @@ function renderClientes() {
 function renderServicos() {
   const el = $('lista-servicos');
   if (!D.servicos.length) { el.innerHTML = vazio('ti-scissors', 'Nenhum serviço cadastrado. Toque em Novo para começar.'); return; }
-  el.innerHTML = D.servicos.map(s => `<div class="row-item"><div class="svc-row-icon"><i class="ti ${esc(s.icone || 'ti-scissors')}"></i></div>` +
+  el.innerHTML = D.servicos.map(s => `<div class="row-item">${s.foto ? `<img class="thumb" src="${esc(s.foto)}" alt=""/>` : `<div class="svc-row-icon"><i class="ti ${esc(s.icone || 'ti-scissors')}"></i></div>`}` +
     `<div class="row-main"><div class="cn">${esc(s.nome)}</div><div class="cm"><i class="ti ti-clock"></i> ${Number(s.dur) || 30} min</div></div>` +
     `<div class="fluxo-val" style="color:var(--k-gold)">${moeda(s.preco)}</div>` +
     `<div class="row-actions"><button class="btn btn-outline btn-sm" data-act="editar-svc" data-id="${s.id}" aria-label="Editar ${esc(s.nome)}"><i class="ti ti-pencil"></i></button><button class="btn btn-danger btn-sm" data-act="excluir-svc" data-id="${s.id}" aria-label="Excluir ${esc(s.nome)}"><i class="ti ti-trash"></i></button></div></div>`).join('');
@@ -1767,11 +1795,12 @@ function abrirModalSvc(id) {
   $('svc-id').value = s ? s.id : '';
   $('svc-nome').value = s ? s.nome : ''; $('svc-preco').value = s ? s.preco : ''; $('svc-dur').value = s ? (s.dur || 30) : '';
   $('svc-icone').value = s ? (s.icone || 'ti-scissors') : 'ti-scissors';
+  fotoEdit.svc = undefined; mostrarFotoPrev('svc', s && s.foto);
   openModal('m-svc');
 }
 async function salvarSvc() {
   const nome = $('svc-nome').value.trim(); if (!nome) return toast('Informe o nome do serviço', true);
-  const dados = { nome, preco: parseFloat($('svc-preco').value) || 0, dur: parseInt($('svc-dur').value) || 30, icone: $('svc-icone').value };
+  const dados = { nome, preco: parseFloat($('svc-preco').value) || 0, dur: parseInt($('svc-dur').value) || 30, icone: $('svc-icone').value, ...campoFoto('svc') };
   const id = $('svc-id').value || String(Date.now());
   await comLoading('Salvando', async () => {
     try { await setDoc(doc(db, 'servicos', id), { ...dados, _updatedAt: serverTimestamp() }, { merge: true }); closeModal('m-svc'); toast('Serviço salvo!'); }
@@ -2325,7 +2354,7 @@ function renderMinhaArea() {
 
 function cardSvc(s, incluso) {
   const sel = selSvc.has(String(s.id));
-  return `<button class="svc-card" data-act="sel-svc" data-id="${s.id}" aria-pressed="${sel}"><span class="svc-check" aria-hidden="true"><i class="ti ti-check"></i></span><div class="svc-card-icon"><i class="ti ${esc(s.icone || 'ti-scissors')}"></i></div><div class="svc-card-nome">${esc(s.nome)}</div>` +
+  return `<button class="svc-card" data-act="sel-svc" data-id="${s.id}" aria-pressed="${sel}"><span class="svc-check" aria-hidden="true"><i class="ti ti-check"></i></span>${s.foto ? `<img class="svc-card-foto" src="${esc(s.foto)}" alt="" loading="lazy"/>` : `<div class="svc-card-icon"><i class="ti ${esc(s.icone || 'ti-scissors')}"></i></div>`}<div class="svc-card-nome">${esc(s.nome)}</div>` +
     `<div class="svc-card-preco">${incluso ? 'Incluso' : moeda(s.preco)}</div><div class="svc-card-dur"><i class="ti ti-clock"></i> ${Number(s.dur) || 30} min</div></button>`;
 }
 /* ── Seleção de vários serviços de uma vez ── */
@@ -2705,6 +2734,29 @@ async function rejeitarPagamento() {
   catch (e) { toast(erroAmigavel(e), true); }
 }
 
+/* ════════ FOTOS DE SERVIÇOS E PRODUTOS ════════
+   Sem o Storage (plano pago), a foto vai comprimida (~30–60 KB) dentro do próprio documento. */
+const fotoEdit = { svc: undefined, prod: undefined };   // undefined = não mexeu; '' = removida; 'data:...' = nova
+async function fotoParaDataUrl(file) {
+  let url = '';
+  for (const [lado, q] of [[640, .72], [520, .62], [420, .55]]) {
+    url = await blobParaDataUrl(await comprimir(file, lado, q));
+    if (url.length < 90000) break;
+  }
+  return url;
+}
+function mostrarFotoPrev(qual, src) {
+  const box = $(qual + '-foto-prev');
+  box.innerHTML = src ? `<img src="${esc(src)}" alt="Foto"/><button class="btn btn-danger btn-sm" data-act="foto-remover" data-q="${qual}"><i class="ti ti-trash"></i>Remover foto</button>`
+    : `<span class="cm">Sem foto</span>`;
+}
+async function escolherFoto(qual, file) {
+  if (!file || !file.type.startsWith('image/')) return toast('Escolha uma imagem.', true);
+  try { const url = await fotoParaDataUrl(file); fotoEdit[qual] = url; mostrarFotoPrev(qual, url); }
+  catch (e) { toast('Não foi possível ler essa imagem.', true); }
+}
+const campoFoto = qual => fotoEdit[qual] === undefined ? {} : { foto: fotoEdit[qual] };
+
 /* ════════ BLOQUEIO DE HORÁRIO PONTUAL (DONO) ════════ */
 function abrirModalBloq() {
   $('bq-data').value = agDia < hoje() ? hoje() : agDia;
@@ -2807,14 +2859,15 @@ async function salvarEdicaoCli() {
 }
 
 /* ════════ PRODUTOS E ESTOQUE ════════ */
+const custoDe = p => { const c = D.custos.find(x => x.id === p.id); return Number(c ? c.custo : p.custo) || 0; };
 const estoqueBaixo = p => (Number(p.estoque) || 0) <= (Number(p.estoqueMin) || 0);
 function renderProdutos() {
   const el = $('lista-produtos');
   if (!D.produtos.length) { el.innerHTML = vazio('ti-package', 'Nenhum produto cadastrado. Toque em Novo para começar.'); return; }
   el.innerHTML = D.produtos.map(p => {
     const baixo = estoqueBaixo(p);
-    return `<div class="row-item wrap-sm"><div class="svc-row-icon"><i class="ti ti-package"></i></div><div class="row-main"><div class="cn">${esc(p.nome)}${baixo ? '<span class="chip red">Estoque baixo</span>' : ''}</div>` +
-      `<div class="cm">${moeda(p.preco)} · <b style="color:${baixo ? 'var(--k-red)' : 'var(--k-cream)'}">${Number(p.estoque) || 0} em estoque</b>${p.custo ? ' · custo ' + moeda(p.custo) : ''}</div></div>` +
+    return `<div class="row-item wrap-sm">${p.foto ? `<img class="thumb" src="${esc(p.foto)}" alt=""/>` : '<div class="svc-row-icon"><i class="ti ti-package"></i></div>'}<div class="row-main"><div class="cn">${esc(p.nome)}${baixo ? '<span class="chip red">Estoque baixo</span>' : ''}</div>` +
+      `<div class="cm">${moeda(p.preco)} · <b style="color:${baixo ? 'var(--k-red)' : 'var(--k-cream)'}">${Number(p.estoque) || 0} em estoque</b>${custoDe(p) ? ' · custo ' + moeda(custoDe(p)) : ''}</div></div>` +
       `<div class="row-end"><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="vender-produto" data-id="${p.id}"${(Number(p.estoque) || 0) <= 0 ? ' disabled' : ''}><i class="ti ti-shopping-cart"></i>Vender</button>` +
       `<button class="btn btn-outline btn-sm" data-act="entrada-estoque" data-id="${p.id}"><i class="ti ti-plus"></i>Estoque</button>` +
       `<button class="btn btn-ghost btn-sm" data-act="editar-produto" data-id="${p.id}" aria-label="Editar ${esc(p.nome)}"><i class="ti ti-pencil"></i></button>` +
@@ -2825,22 +2878,30 @@ function abrirModalProduto(id) {
   const p = id ? D.produtos.find(x => x.id === id) : null;
   $('m-prod-t').textContent = p ? 'Editar produto' : 'Novo produto';
   $('pr-id').value = p ? p.id : '';
-  $('pr-nome').value = p ? p.nome : ''; $('pr-preco').value = p ? p.preco : ''; $('pr-custo').value = p && p.custo ? p.custo : '';
+  $('pr-nome').value = p ? p.nome : ''; $('pr-preco').value = p ? p.preco : ''; $('pr-custo').value = p ? (custoDe(p) || '') : '';
+  $('pr-desc').value = p ? (p.desc || '') : '';
+  fotoEdit.prod = undefined; mostrarFotoPrev('prod', p && p.foto);
   $('pr-estoque').value = p ? (Number(p.estoque) || 0) : ''; $('pr-min').value = p ? (Number(p.estoqueMin) || 0) : 3;
   openModal('m-produto');
 }
 async function salvarProduto() {
   const nome = $('pr-nome').value.trim(); if (!nome) return toast('Informe o nome do produto', true);
-  const dados = { nome, preco: parseFloat($('pr-preco').value) || 0, custo: parseFloat($('pr-custo').value) || 0, estoque: parseInt($('pr-estoque').value) || 0, estoqueMin: parseInt($('pr-min').value) || 0 };
+  const dados = { nome, desc: $('pr-desc').value.trim(), preco: parseFloat($('pr-preco').value) || 0, estoque: parseInt($('pr-estoque').value) || 0, estoqueMin: parseInt($('pr-min').value) || 0, custo: deleteField(), ...campoFoto('prod') };
+  const custo = parseFloat($('pr-custo').value) || 0;
   const id = $('pr-id').value || String(Date.now());
   await comLoading('Salvando', async () => {
-    try { await setDoc(doc(db, 'produtos', id), { ...dados, _updatedAt: serverTimestamp() }, { merge: true }); closeModal('m-produto'); toast('Produto salvo!'); }
+    try {
+      const b = writeBatch(db);
+      b.set(doc(db, 'produtos', id), { ...dados, _updatedAt: serverTimestamp() }, { merge: true });
+      b.set(doc(db, 'custos', id), { custo }, { merge: true });  // custo fica separado: cliente não enxerga
+      await b.commit(); closeModal('m-produto'); toast('Produto salvo!');
+    }
     catch (e) { toast(erroAmigavel(e), true); }
   });
 }
 async function excluirProduto(id) {
   const p = D.produtos.find(x => x.id === id); if (!p || !confirmar(`Excluir o produto "${p.nome}"?`)) return;
-  await comLoading('Removendo', async () => { try { await deleteDoc(doc(db, 'produtos', id)); toast('Produto removido.'); } catch (e) { toast(erroAmigavel(e), true); } });
+  await comLoading('Removendo', async () => { try { await deleteDoc(doc(db, 'produtos', id)); await deleteDoc(doc(db, 'custos', id)).catch(() => {}); toast('Produto removido.'); } catch (e) { toast(erroAmigavel(e), true); } });
 }
 async function entradaEstoque(id) {
   const p = D.produtos.find(x => x.id === id); if (!p) return;
@@ -2871,11 +2932,31 @@ async function salvarVenda() {
         const p = snap.data(), est = Number(p.estoque) || 0;
         if (est < qtd) throw Object.assign(new Error('x'), { amigavel: `Só tem ${est} em estoque.` });
         tx.update(ref, { estoque: est - qtd });
-        tx.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Venda: ${p.nome}${qtd > 1 ? ' x' + qtd : ''}${cid ? ' — ' + nomeCli(cid) : ''}`, val: (Number(p.preco) || 0) * qtd, custo: (Number(p.custo) || 0) * qtd, hora: agora(), data: hoje(), origem: 'produto', produtoId: id, qtd, cliente: cid || null, _createdAt: serverTimestamp() });
+        tx.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Venda: ${p.nome}${qtd > 1 ? ' x' + qtd : ''}${cid ? ' — ' + nomeCli(cid) : ''}`, val: (Number(p.preco) || 0) * qtd, custo: custoDe({ ...p, id }) * qtd, hora: agora(), data: hoje(), origem: 'produto', produtoId: id, qtd, cliente: cid || null, _createdAt: serverTimestamp() });
       });
       closeModal('m-venda'); toast('Venda registrada!');
     } catch (e) { toast(e.amigavel || erroAmigavel(e), true); }
   });
+}
+
+/* ════════ VITRINE DE PRODUTOS (CLIENTE) ════════ */
+function renderProdutosCli() {
+  const el = $('lista-produtos-cli');
+  const lista = D.produtos.filter(p => p.visivel !== false);
+  if (!lista.length) { el.innerHTML = vazio('ti-package', 'Nenhum produto disponível no momento.'); return; }
+  el.innerHTML = lista.map(p => {
+    const tem = (Number(p.estoque) || 0) > 0;
+    return `<div class="prod-card${tem ? '' : ' esgotado'}">${p.foto ? `<img class="prod-foto" src="${esc(p.foto)}" alt="${esc(p.nome)}" loading="lazy"/>` : '<div class="prod-foto sem"><i class="ti ti-package"></i></div>'}` +
+      `<div class="prod-info"><div class="svc-card-nome">${esc(p.nome)}</div>${p.desc ? `<div class="cm">${esc(p.desc)}</div>` : ''}<div class="svc-card-preco">${moeda(p.preco)}</div>` +
+      (tem ? `<button class="btn btn-gold btn-sm btn-block" data-act="quero-produto" data-id="${p.id}"><i class="ti ti-shopping-bag"></i>Quero</button>` : '<span class="badge badge-cancel">Esgotado</span>') + `</div></div>`;
+  }).join('');
+}
+function queroProduto(id) {
+  const p = D.produtos.find(x => x.id === id); if (!p) return;
+  const wa = linkWhats(CONFIG.tel);
+  const msg = `Olá! Quero separar ${p.nome} (${moeda(p.preco)}) para pegar na barbearia. — ${S.nome}`;
+  if (wa) window.open(`${wa}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+  else { copiar(msg, 'Mensagem copiada'); toast('A barbearia ainda não cadastrou o WhatsApp. Mostre essa mensagem no atendimento.'); }
 }
 
 /* ════════ AVALIAÇÃO DO ATENDIMENTO ════════ */
@@ -3166,7 +3247,7 @@ async function ativarNotif() {
 }
 
 /* ════════ EVENTOS ════════ */
-const RENDER = { produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
+const RENDER = { 'produtos-cli': renderProdutosCli, produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
 
 const ACT = {
   'tab': el => { const login = el.dataset.tab === 'login'; $('tab-login').setAttribute('aria-selected', login); $('tab-cadastro').setAttribute('aria-selected', !login); $('form-login').hidden = !login; $('form-cadastro').hidden = login; },
@@ -3202,6 +3283,9 @@ const ACT = {
   'excluir-produto': el => excluirProduto(el.dataset.id), 'entrada-estoque': el => entradaEstoque(el.dataset.id),
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
+  'quero-produto': el => queroProduto(el.dataset.id),
+  'foto-escolher': el => $(el.dataset.q + '-foto-input').click(),
+  'foto-remover': el => { fotoEdit[el.dataset.q] = ''; mostrarFotoPrev(el.dataset.q, ''); },
   'fechar-google': () => { conviteGoogle = false; renderMinhaArea(); },
   'modal-svc': () => abrirModalSvc(), 'editar-svc': el => abrirModalSvc(el.dataset.id), 'salvar-svc': salvarSvc, 'excluir-svc': el => excluirSvc(el.dataset.id),
   'modal-plano': () => abrirModalPlano(), 'editar-plano': el => abrirModalPlano(el.dataset.id), 'salvar-plano': salvarPlano, 'excluir-plano': el => excluirPlano(el.dataset.id),
@@ -3279,6 +3363,7 @@ document.addEventListener('input', e => {
 $('form-login').addEventListener('submit', e => { e.preventDefault(); doLogin(); });
 $('form-cadastro').addEventListener('submit', e => { e.preventDefault(); doCadastro(); });
 $('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.matchMedia('(pointer:fine)').matches) { e.preventDefault(); enviarMsg(); } });
+['svc', 'prod'].forEach(q => $(q + '-foto-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) escolherFoto(q, f); }));
 $('file-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) enviarArquivo(f); });
 function autoAltura(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
 document.addEventListener('keydown', e => {
