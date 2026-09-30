@@ -588,7 +588,11 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
 
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-bell"></i>Avisos neste aparelho</span></div><div class="card-body">
         <p class="cm" style="margin:0 0 .7rem;">Receba um aviso do sistema quando chegar mensagem ou comprovante, mesmo com o app em segundo plano.</p>
-        <button class="btn btn-outline btn-sm" data-act="ativar-notif" id="btn-notif"><i class="ti ti-bell-ringing"></i>Ativar avisos</button>
+        <div class="row-actions" style="justify-content:flex-start">
+          <button class="btn btn-outline btn-sm" data-act="ativar-notif" id="btn-notif"><i class="ti ti-bell-ringing"></i>Ativar avisos</button>
+          <button class="btn btn-ghost btn-sm" data-act="alternar-som" id="btn-som"></button>
+          <button class="btn btn-ghost btn-sm" data-act="testar-som"><i class="ti ti-volume"></i>Testar som</button>
+        </div>
       </div></div>
 
       <div class="card" id="card-migracao"><div class="card-header"><span class="card-title"><i class="ti ti-database-import"></i>Migração da versão antiga</span></div><div class="card-body">
@@ -841,6 +845,8 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 const auth = getAuth(fbApp);
 const storage = getStorage(fbApp);
+storage.maxUploadRetryTime = 6000;     // sem isso o Firebase tenta por até 10 minutos
+storage.maxOperationRetryTime = 6000;
 
 /* Domínio interno: o cliente continua entrando com "usuário", o Firebase Auth recebe um e-mail. */
 const DOMINIO_LOGIN = 'kjota.app';
@@ -1203,7 +1209,7 @@ function tratarChats(snap, campo) {
     const n = Number(c[campo]) || 0, antes = ultimoNaoLido[c.id] ?? n;
     ultimoNaoLido[c.id] = n;
     if (primeiro || n <= antes) continue;
-    if (S.chatId === c.id && !document.hidden) { marcarLido(c); continue; }
+    if (S.chatId === c.id && !document.hidden) { marcarLido(c); tocarSom(); continue; }
     const ult = c.msgs[c.msgs.length - 1];
     const titulo = S.role === 'dono' ? (c.clienteNome || nomeCli(c.clienteId)) : 'KJota Barbearia';
     const desc = ult ? previewMsg(ult) : 'Nova mensagem';
@@ -1272,6 +1278,28 @@ function atualizarBadges() {
 }
 
 /* ════════ AVISOS (na tela e do sistema) ════════ */
+/* Som do aviso (gerado no navegador, sem arquivo). O navegador só libera som depois do primeiro toque na tela. */
+let audioCtx = null;
+function somLigado() { try { return localStorage.getItem('kj-som') !== '0'; } catch (e) { return true; } }
+function destravarSom() {
+  try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) {}
+}
+['pointerdown', 'keydown', 'touchend'].forEach(ev => document.addEventListener(ev, destravarSom, { passive: true }));
+function tocarSom() {
+  if (!somLigado() || !audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    [[988, 0], [1319, 0.13]].forEach(([f, d]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + d);
+      g.gain.exponentialRampToValueAtTime(0.4, t + d + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.45);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t + d); o.stop(t + d + 0.5);
+    });
+  } catch (e) {}
+}
 let notifAlvo = null, notifT;
 /* alvo: { chatId } abre o chat; { sec } abre uma tela */
 function avisar(titulo, desc, alvo) {
@@ -1281,9 +1309,10 @@ function avisar(titulo, desc, alvo) {
   $('notif-btn').textContent = alvo && alvo.chatId ? 'Ver chat' : 'Ver';
   $('notif-toast').classList.add('show');
   clearTimeout(notifT); notifT = setTimeout(() => $('notif-toast').classList.remove('show'), 8000);
-  try { if (navigator.vibrate) navigator.vibrate([80, 40, 80]); } catch (e) {}
+  tocarSom();
+  try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
   if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-    const opts = { body: desc, icon: 'img/icon-192.png', badge: 'img/icon-192.png', tag: 'kj-' + (alvo && (alvo.chatId || alvo.sec) || Date.now()), renotify: true, data: alvo || {} };
+    const opts = { body: desc, icon: 'img/icon-192.png', badge: 'img/icon-192.png', tag: 'kj-' + (alvo && (alvo.chatId || alvo.sec) || Date.now()), renotify: true, silent: false, vibrate: [200, 100, 200], requireInteraction: false, data: alvo || {} };
     if (swReg) swReg.showNotification(titulo, opts).catch(() => {});
     else try { new Notification(titulo, opts); } catch (e) {}
   }
@@ -2168,6 +2197,7 @@ function renderChat(forcarRolagem) {
   const perto = tela.scrollHeight - tela.scrollTop - tela.clientHeight < 160;
   if (forcarRolagem || perto || c.msgs.length !== ultimoTotalMsgs) requestAnimationFrame(() => { tela.scrollTop = tela.scrollHeight; });
   ultimoTotalMsgs = c.msgs.length;
+  mostrarEnvioPendente();
 }
 
 async function empurrarMsg(c, msgs, extra) {
@@ -2209,22 +2239,24 @@ async function enviarArquivo(file) {
   if (file.size > 15 * 1024 * 1024) return toast('Arquivo muito grande (máximo 15 MB).', true);
   const prog = $('upload-prog'); prog.hidden = false; prog.textContent = 'Enviando comprovante...';
   const lado = S.role === 'dono' ? 'kjota' : 'cliente';
+  if (isImg) { envioPendente = { chatId: c.id, url: URL.createObjectURL(file) }; mostrarEnvioPendente(); }
   try {
     let blob = file;
-    if (isImg) blob = await comprimir(file, 1600, .82);
+    if (isImg) blob = await comprimir(file, 1280, .72); // comprovante não precisa de foto gigante: fica ~100-250 KB
     if (isPdf && file.size > 5 * 1024 * 1024) throw Object.assign(new Error('grande'), { amigavel: 'PDF muito grande (máximo 5 MB). Envie uma foto do comprovante.' });
     let msg;
     try {
+      if (storageDesligado()) throw new Error('storage-off');
       const caminho = `comprovantes/${c.clienteId}/${c.id}/${Date.now()}.${isPdf ? 'pdf' : 'jpg'}`;
       const r = sRef(storage, caminho);
-      await comTempo(uploadBytes(r, blob, { contentType: isPdf ? 'application/pdf' : 'image/jpeg' }), 30000);
+      await comTempo(uploadBytes(r, blob, { contentType: isPdf ? "application/pdf" : "image/jpeg" }), 6000);
       msg = msgBase(lado, isPdf ? 'pdf' : 'imagem', { url: await getDownloadURL(r), fileName: file.name, texto: '' });
     } catch (e) {
-      console.warn('Storage indisponível, usando cópia comprimida no chat:', e);
-      prog.textContent = 'Otimizando comprovante...';
+      if (e.message !== 'storage-off') { console.warn('Storage indisponível, guardando no chat:', e); marcarStorageDesligado(); }
       let dataUrl;
       if (isImg) {
-        for (const [ld, q] of [[1100, .7], [900, .6], [700, .5]]) { dataUrl = await blobParaDataUrl(await comprimir(file, ld, q)); if (dataUrl.length < 320000) break; }
+        dataUrl = await blobParaDataUrl(blob);
+        for (const [ld, q] of [[1000, .62], [800, .55], [640, .5]]) { if (dataUrl.length < 320000) break; dataUrl = await blobParaDataUrl(await comprimir(file, ld, q)); }
       } else {
         if (file.size > 600 * 1024) throw Object.assign(new Error('grande'), { amigavel: 'Não foi possível enviar esse PDF. Envie uma foto ou print do comprovante.' });
         dataUrl = await blobParaDataUrl(file);
@@ -2234,8 +2266,21 @@ async function enviarArquivo(file) {
     await empurrarMsg(c, [msg]);
     toast('Comprovante enviado!');
   } catch (e) { toast(e.amigavel || erroAmigavel(e, 'Não foi possível enviar o arquivo.'), true); }
-  finally { prog.hidden = true; }
+  finally {
+    prog.hidden = true;
+    if (envioPendente) { URL.revokeObjectURL(envioPendente.url); envioPendente = null; }
+    const p = $('envio-pendente'); if (p) p.remove();
+  }
 }
+/* Mostra a foto na hora, enquanto envia */
+let envioPendente = null;
+function mostrarEnvioPendente() {
+  if (!envioPendente || envioPendente.chatId !== S.chatId || $('envio-pendente')) return;
+  $('chat-body').insertAdjacentHTML('beforeend', `<div class="chat-msg ${S.role === 'dono' ? 'kjota' : 'cliente'}" id="envio-pendente"><div class="chat-bubble"><img class="comprovante-img" style="opacity:.55;display:block" src="${envioPendente.url}" alt="Enviando"/><div class="cm" style="margin-top:4px"><i class="ti ti-loader-2"></i> Enviando...</div></div></div>`);
+  const tela = $('chat-screen'); requestAnimationFrame(() => { tela.scrollTop = tela.scrollHeight; });
+}
+function storageDesligado() { try { return Date.now() - Number(localStorage.getItem('kj-storage-off') || 0) < 6 * 3600000; } catch (e) { return false; } }
+function marcarStorageDesligado() { try { localStorage.setItem('kj-storage-off', String(Date.now())); } catch (e) {} }
 function abrirPdfLegado(i) {
   const c = getChat(S.chatId); const m = c && c.msgs[i]; if (!m || !m.dataUrl) return;
   fetch(m.dataUrl).then(r => r.blob()).then(b => window.open(URL.createObjectURL(b), '_blank'));
@@ -2464,6 +2509,7 @@ async function instalar() {
   promptInstalar = null; $('install-btn').classList.remove('show');
 }
 function estadoBotaoNotif() {
+  const bs = $('btn-som'); if (bs) bs.innerHTML = somLigado() ? '<i class="ti ti-volume"></i>Som ligado' : '<i class="ti ti-volume-off"></i>Som desligado';
   const b = $('btn-notif'); if (!b) return;
   if (!('Notification' in window)) { b.disabled = true; b.innerHTML = '<i class="ti ti-bell-off"></i>Este navegador não suporta avisos'; return; }
   if (Notification.permission === 'granted') { b.disabled = true; b.innerHTML = '<i class="ti ti-bell-check"></i>Avisos ativados'; }
@@ -2475,7 +2521,7 @@ async function ativarNotif() {
   estadoBotaoNotif();
   document.querySelectorAll('#convite-avisos').forEach(n => n.remove());
   if (r === 'granted') {
-    toast('Notificações ativadas!');
+    toast('Notificações ativadas!'); destravarSom(); tocarSom();
     const opts = { body: 'Você vai receber os avisos da KJota por aqui.', icon: 'img/icon-192.png', tag: 'kj-teste' };
     if (swReg) swReg.showNotification('KJota Barbearia', opts).catch(() => {}); else try { new Notification('KJota Barbearia', opts); } catch (e) {}
   } else toast('Notificações bloqueadas. Libere nas configurações do navegador.', true);
@@ -2543,6 +2589,8 @@ const ACT = {
   'notif-fechar': () => $('notif-toast').classList.remove('show'),
   'notif-abrir': () => { $('notif-toast').classList.remove('show'); abrirAlvo(notifAlvo); },
   'apagar-msg': el => apagarMsg(Number(el.dataset.i)),
+  'alternar-som': () => { try { localStorage.setItem('kj-som', somLigado() ? '0' : '1'); } catch (e) {} estadoBotaoNotif(); if (somLigado()) { destravarSom(); tocarSom(); } },
+  'testar-som': () => { destravarSom(); setTimeout(tocarSom, 50); },
   'excluir-conversa': excluirConversa,
   'dispensar-avisos': () => { try { localStorage.setItem('kj-avisos-dispensado', '1'); } catch (e) {} document.querySelectorAll('#convite-avisos').forEach(n => n.remove()); }
 };
