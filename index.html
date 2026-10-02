@@ -254,6 +254,11 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .prod-foto.sem{display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--k-gold);}
 .prod-info{padding:.8rem;display:flex;flex-direction:column;gap:5px;flex:1;}
 .prod-info .btn{margin-top:auto;}
+.share-qr{background:#fff;border-radius:12px;padding:10px;width:220px;height:220px;margin:0 auto;display:flex;align-items:center;justify-content:center;}
+.share-qr img{width:100%;height:100%;image-rendering:pixelated;}
+.share-link{font-size:12px;color:var(--k-gold);text-align:center;margin-top:.7rem;overflow-wrap:anywhere;}
+.share-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.share-btns .btn{justify-content:center;}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -489,6 +494,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <main class="content">
     <!-- ═══ DONO ═══ -->
     <section class="section" id="s-dashboard">
+      <div class="section-head"><h1 class="section-title">Painel</h1><button class="btn btn-gold btn-sm" data-act="compartilhar-app"><i class="ti ti-qrcode"></i>Divulgar app</button></div>
       <div class="kpi-grid" id="kpi-grid"></div>
       <div id="dash-alertas"></div>
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar-event"></i>Próximos agendamentos</span><button class="btn btn-outline btn-sm" data-act="modal-ag"><i class="ti ti-plus"></i>Agendar</button></div><div class="card-body" id="dash-agenda"></div></div>
@@ -644,6 +650,11 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-star"></i>Avaliações</span></div><div class="card-body">
         <div class="form-group"><label class="form-label" for="cfg-google">Link para avaliar no Google</label><input class="form-input" type="url" id="cfg-google" placeholder="https://g.page/r/.../review"/>
           <div class="cm" style="margin-top:5px;">Quem der 5 estrelas no app é convidado a avaliar no Google. Pegue o link no Perfil da Empresa no Google → "Pedir avaliações".</div></div>
+      </div></div>
+
+      <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-share"></i>Divulgar o app</span></div><div class="card-body">
+        <p class="cm" style="margin:0 0 .7rem;">Link e QR Code que abrem direto no cadastro. Cole no Instagram, mande no WhatsApp ou imprima o cartaz para o balcão.</p>
+        <button class="btn btn-gold btn-sm" data-act="compartilhar-app"><i class="ti ti-qrcode"></i>Abrir link e QR Code</button>
       </div></div>
 
       <div class="card" id="card-migracao"><div class="card-header"><span class="card-title"><i class="ti ti-database-import"></i>Migração da versão antiga</span></div><div class="card-body">
@@ -913,6 +924,24 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   </div>
   <div class="form-group"><label class="form-label" for="vd-cli">Cliente (opcional)</label><select class="form-input" id="vd-cli"></select></div>
   <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-venda"><i class="ti ti-check"></i>Registrar venda</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-share" role="dialog" aria-modal="true" aria-labelledby="m-share-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-share-t">Divulgar o app</div></div>
+  <div class="seg" role="group" aria-label="Para onde o link leva" style="margin-bottom:.9rem;">
+    <button data-act="share-modo" data-m="cadastro" aria-pressed="true">Cadastro direto</button>
+    <button data-act="share-modo" data-m="login" aria-pressed="false">Tela de entrar</button>
+  </div>
+  <div class="share-qr" id="share-qr"></div>
+  <div class="share-link" id="share-link"></div>
+  <p class="cm" id="share-dica" style="text-align:center;margin:.4rem 0 .9rem;"></p>
+  <div class="share-btns">
+    <button class="btn btn-gold" data-act="share-enviar"><i class="ti ti-share"></i>Compartilhar</button>
+    <button class="btn btn-outline" data-act="share-copiar"><i class="ti ti-copy"></i>Copiar link</button>
+    <button class="btn btn-outline" data-act="share-qr"><i class="ti ti-qrcode"></i>Baixar QR Code</button>
+    <button class="btn btn-outline" data-act="share-cartaz"><i class="ti ti-photo"></i>Baixar cartaz</button>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Fechar</button></div>
 </div></div>
 
 <!-- UTILITÁRIOS -->
@@ -1288,6 +1317,13 @@ function sairLocal() {
 function mostrarLogin() {
   $('app').classList.remove('visible');
   $('login-screen').classList.add('visible');
+  const p = new URLSearchParams(location.search);
+  if (p.has('cadastro') || location.hash === '#cadastro') { mostrarAba('cadastro'); setTimeout(() => $('cad-nome').focus(), 100); }
+}
+function mostrarAba(qual) {
+  const login = qual === 'login';
+  $('tab-login').setAttribute('aria-selected', login); $('tab-cadastro').setAttribute('aria-selected', !login);
+  $('form-login').hidden = !login; $('form-cadastro').hidden = login;
 }
 
 /* ════════ DADOS EM TEMPO REAL ════════ */
@@ -1392,6 +1428,7 @@ const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti
 const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['produtos-cli', 'ti-package', 'Produtos'], ['planos-cli', 'ti-crown', 'Planos']];
 
 function mostrarApp() {
+  if (location.search || location.hash) try { history.replaceState(null, '', location.pathname); } catch (e) {}
   $('login-screen').classList.remove('visible');
   $('app').classList.add('visible');
   $('h-avatar').textContent = iniciais(S.nome);
@@ -2346,7 +2383,7 @@ function renderMinhaArea() {
     (CONFIG.antecedenciaH ? `<p class="cm" style="margin-top:.7rem;">Cancelamentos e remarcações pelo app até ${CONFIG.antecedenciaH} h antes do horário.</p>` : '');
 
   const wa = linkWhats(CONFIG.tel);
-  $('ma-horarios').innerHTML = `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-clock"></i>Funcionamento</span></div><div class="card-body">` +
+  $('ma-horarios').innerHTML = `<div class="note"><i class="ti ti-heart-handshake"></i><div><b>Curte a KJota?</b> Manda o app para um amigo, ele já cai direto no cadastro.<div style="margin-top:.6rem;"><button class="btn btn-outline btn-sm" data-act="indicar-amigo"><i class="ti ti-share"></i>Indicar para um amigo</button></div></div></div><div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-clock"></i>Funcionamento</span></div><div class="card-body">` +
     Object.keys(CONFIG.horarios).map(k => { const x = CONFIG.horarios[k]; return `<div class="resumo-row" style="font-size:12px;"><span>${esc(x.label || DIAS_LONGO[k])}</span><span${x.ativo ? '' : ' style="color:var(--k-red)"'}>${x.ativo ? esc(x.inicio) + ' – ' + esc(x.fim) : 'Fechado'}</span></div>`; }).join('') +
     (CONFIG.end ? `<div class="cm" style="margin-top:.7rem;"><i class="ti ti-map-pin" style="color:var(--k-gold)"></i> ${esc(CONFIG.end)}${CONFIG.cidade ? ', ' + esc(CONFIG.cidade) : ''}</div>` : '') +
     `<div class="row-actions" style="justify-content:flex-start;margin-top:.7rem;">${wa ? `<a class="btn btn-outline btn-sm" href="${wa}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>WhatsApp</a>` : ''}${CONFIG.insta ? `<a class="btn btn-ghost btn-sm" href="https://instagram.com/${esc(CONFIG.insta.replace('@', ''))}" target="_blank" rel="noopener"><i class="ti ti-brand-instagram"></i>${esc(CONFIG.insta)}</a>` : ''}</div></div></div>`;
@@ -2756,6 +2793,59 @@ async function escolherFoto(qual, file) {
   catch (e) { toast('Não foi possível ler essa imagem.', true); }
 }
 const campoFoto = qual => fotoEdit[qual] === undefined ? {} : { foto: fotoEdit[qual] };
+
+/* ════════ COMPARTILHAR O APP (link + QR Code + cartaz) ════════ */
+let shareModo = 'cadastro';
+const linkApp = modo => location.origin + location.pathname + (modo === 'cadastro' ? '?cadastro=1' : '');
+function qrDataUrl(texto, cel, margem) { const q = window.qrcode(0, 'M'); q.addData(texto); q.make(); return q.createDataURL(cel, margem); }
+function abrirCompartilhar(modo) {
+  shareModo = modo || 'cadastro';
+  renderCompartilhar();
+  openModal('m-share');
+}
+function renderCompartilhar() {
+  document.querySelectorAll('[data-act="share-modo"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === shareModo));
+  const url = linkApp(shareModo);
+  $('share-qr').innerHTML = typeof window.qrcode === 'function' ? `<img alt="QR Code do app" src="${qrDataUrl(url, 8, 2)}"/>` : '';
+  $('share-link').textContent = url;
+  $('share-dica').textContent = shareModo === 'cadastro' ? 'Abre direto na tela de cadastro. Ideal para clientes novos (balcão, Instagram, cartão).' : 'Abre na tela de entrar. Para quem já tem conta.';
+}
+async function compartilharApp() {
+  const url = linkApp(shareModo), nome = CONFIG.nome || 'KJota Barbearia';
+  const texto = `Agende seu horário na ${nome} pelo app: escolha o serviço, o dia e pague no PIX. 💈`;
+  if (navigator.share) { try { await navigator.share({ title: nome, text: texto, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  copiar(texto + '\n' + url, 'Link copiado');
+}
+function baixar(dataUrl, nome) { const a = document.createElement('a'); a.href = dataUrl; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); }
+function carregarImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function baixarQR() { baixar(qrDataUrl(linkApp(shareModo), 16, 4), 'kjota-qrcode.png'); }
+async function baixarCartaz() {
+  try {
+    await document.fonts.ready;
+    const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#0D0D0D'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = '#8A6E2E'; c.lineWidth = 6; c.strokeRect(40, 40, W - 80, H - 80);
+    const logo = await carregarImg(window.KJ_IMG.logo); c.drawImage(logo, (W - 300) / 2, 80, 300, 300);
+    c.textAlign = 'center'; c.fillStyle = '#C9A84C';
+    c.font = '96px "Bebas Neue", Impact, sans-serif'; c.fillText('AGENDE PELO APP', W / 2, 480);
+    c.fillStyle = '#F5F0E8'; c.font = '36px Inter, Arial, sans-serif';
+    c.fillText(shareModo === 'cadastro' ? 'Crie sua conta, escolha o horário e pague no PIX' : 'Entre na sua conta e agende seu horário', W / 2, 540);
+    const qr = await carregarImg(qrDataUrl(linkApp(shareModo), 16, 2));
+    const T = 560, x = (W - T) / 2, y = 590;
+    c.fillStyle = '#FFFFFF'; c.beginPath(); c.roundRect ? c.roundRect(x - 30, y - 30, T + 60, T + 60, 28) : c.rect(x - 30, y - 30, T + 60, T + 60); c.fill();
+    c.imageSmoothingEnabled = false; c.drawImage(qr, x, y, T, T);
+    c.fillStyle = '#C9A84C'; c.font = '44px "Bebas Neue", Impact, sans-serif'; c.fillText('APONTE A CÂMERA DO CELULAR', W / 2, 1250);
+    c.fillStyle = '#8E8E8E'; c.font = '26px Inter, Arial, sans-serif'; c.fillText(location.host, W / 2, 1295);
+    baixar(cv.toDataURL('image/png'), 'kjota-cartaz-agendamento.png');
+  } catch (e) { console.error(e); toast('Não foi possível gerar o cartaz.', true); }
+}
+async function indicarAmigo() {
+  const url = linkApp('cadastro'), texto = `Corto na ${CONFIG.nome || 'KJota Barbearia'} e agendo pelo app. Cria tua conta aqui: `;
+  if (navigator.share) { try { await navigator.share({ title: CONFIG.nome || 'KJota Barbearia', text: texto, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  const wa = 'https://wa.me/?text=' + encodeURIComponent(texto + url);
+  window.open(wa, '_blank', 'noopener');
+}
 
 /* ════════ BLOQUEIO DE HORÁRIO PONTUAL (DONO) ════════ */
 function abrirModalBloq() {
@@ -3250,7 +3340,7 @@ async function ativarNotif() {
 const RENDER = { 'produtos-cli': renderProdutosCli, produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
 
 const ACT = {
-  'tab': el => { const login = el.dataset.tab === 'login'; $('tab-login').setAttribute('aria-selected', login); $('tab-cadastro').setAttribute('aria-selected', !login); $('form-login').hidden = !login; $('form-cadastro').hidden = login; },
+  'tab': el => mostrarAba(el.dataset.tab),
   'toggle-pw': el => { const i = $(el.dataset.target); const mostrar = i.type === 'password'; i.type = mostrar ? 'text' : 'password'; el.innerHTML = `<i class="ti ti-eye${mostrar ? '-off' : ''}"></i>`; el.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha'); },
   'logout': doLogout,
   'instalar': instalar,
@@ -3284,6 +3374,12 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'compartilhar-app': () => abrirCompartilhar('cadastro'),
+  'share-modo': el => { shareModo = el.dataset.m; renderCompartilhar(); },
+  'share-enviar': compartilharApp,
+  'share-copiar': () => copiar(linkApp(shareModo), 'Link copiado'),
+  'share-qr': baixarQR, 'share-cartaz': baixarCartaz,
+  'indicar-amigo': indicarAmigo,
   'foto-escolher': el => $(el.dataset.q + '-foto-input').click(),
   'foto-remover': el => { fotoEdit[el.dataset.q] = ''; mostrarFotoPrev(el.dataset.q, ''); },
   'fechar-google': () => { conviteGoogle = false; renderMinhaArea(); },
