@@ -259,6 +259,16 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .share-link{font-size:12px;color:var(--k-gold);text-align:center;margin-top:.7rem;overflow-wrap:anywhere;}
 .share-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .share-btns .btn{justify-content:center;}
+.artes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;margin-bottom:1.2rem;}
+.arte-mini{background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:6px;cursor:pointer;color:var(--k-cream);display:flex;flex-direction:column;gap:6px;text-align:center;}
+.arte-mini canvas{width:100%;height:auto;border-radius:6px;display:block;}
+.arte-mini span{font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px;}
+.arte-mini span i{color:var(--k-gold);}
+.arte-mini[aria-pressed="true"]{border-color:var(--k-gold);box-shadow:0 0 0 2px rgba(201,168,76,.35);}
+.arte-editor{display:grid;grid-template-columns:minmax(0,380px) 1fr;gap:20px;align-items:start;scroll-margin-top:120px;}
+.arte-preview{position:sticky;top:130px;}
+.arte-preview canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--k-border);display:block;background:#000;}
+@media (max-width:760px){.arte-editor{grid-template-columns:1fr;}.arte-preview{position:static;max-width:340px;margin:0 auto;width:100%;}}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -574,6 +584,33 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
       <div class="section-head"><h1 class="section-title">Produtos</h1><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="modal-venda"><i class="ti ti-shopping-cart"></i>Vender</button><button class="btn btn-outline btn-sm" data-act="modal-produto"><i class="ti ti-plus"></i>Novo</button></div></div>
       <p class="cm" style="margin-bottom:1rem;">Cadastre o que a barbearia vende (pomada, óleo, shampoo...). Cada venda baixa o estoque e entra no caixa.</p>
       <div class="card"><div class="card-body" id="lista-produtos"></div></div>
+    </section>
+
+    <section class="section" id="s-artes">
+      <h1 class="section-title" style="margin-bottom:.3rem;">Artes</h1>
+      <p class="cm" style="margin-bottom:1rem;">Escolha um modelo, edite os textos e baixe ou compartilhe direto no Instagram e WhatsApp. Tudo na identidade da KJota.</p>
+      <div class="artes-grid" id="artes-modelos"></div>
+      <div class="arte-editor" id="arte-editor">
+        <div class="arte-preview">
+          <div class="seg" role="group" aria-label="Formato" style="margin-bottom:.8rem;">
+            <button data-act="arte-formato" data-f="story" aria-pressed="true">Story</button>
+            <button data-act="arte-formato" data-f="feed" aria-pressed="false">Feed</button>
+            <button data-act="arte-formato" data-f="quadrado" aria-pressed="false">Quadrado</button>
+          </div>
+          <canvas id="arte-canvas" aria-label="Prévia da arte"></canvas>
+        </div>
+        <div class="arte-form">
+          <div class="sub-title" style="justify-content:space-between;"><span><i class="ti ti-pencil"></i> <span id="arte-nome"></span></span><button class="btn btn-ghost btn-sm" data-act="arte-reset"><i class="ti ti-refresh"></i>Restaurar</button></div>
+          <div id="arte-campos"></div>
+          <input type="file" id="arte-foto-input" accept="image/*" hidden/>
+          <div class="share-btns" style="margin:.4rem 0 1rem;">
+            <button class="btn btn-gold" data-act="arte-compartilhar"><i class="ti ti-share"></i>Compartilhar</button>
+            <button class="btn btn-outline" data-act="arte-baixar"><i class="ti ti-download"></i>Baixar imagem</button>
+          </div>
+          <div class="form-group"><label class="form-label" for="arte-legenda">Legenda pronta para o post</label><textarea class="form-input" id="arte-legenda" rows="6"></textarea></div>
+          <button class="btn btn-outline btn-sm" data-act="arte-copiar-legenda"><i class="ti ti-copy"></i>Copiar legenda</button>
+        </div>
+      </div>
     </section>
 
     <section class="section" id="s-config">
@@ -1424,7 +1461,7 @@ function aplicarMarca() {
 }
 
 /* ════════ NAVEGAÇÃO ════════ */
-const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['produtos', 'ti-package', 'Produtos'], ['config', 'ti-settings', 'Config.']];
+const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['produtos', 'ti-package', 'Produtos'], ['artes', 'ti-palette', 'Artes'], ['config', 'ti-settings', 'Config.']];
 const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['produtos-cli', 'ti-package', 'Produtos'], ['planos-cli', 'ti-crown', 'Planos']];
 
 function mostrarApp() {
@@ -3175,6 +3212,300 @@ function linkLembrete(a) {
   return `<a class="btn btn-ghost btn-sm" href="${wa}?text=${msg}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>Lembrar</a>`;
 }
 
+/* ════════ ARTES PARA DIVULGAÇÃO (Instagram / WhatsApp) ════════
+   Modelos prontos na identidade da KJota: preto, dourado, Bebas Neue e a logo.
+   Tudo é desenhado no próprio celular (canvas), sem servidor. */
+const F_TIT = '"Bebas Neue", Impact, "Arial Narrow", sans-serif';
+const F_TXT = 'Inter, system-ui, -apple-system, "Segoe UI", Arial, sans-serif';
+const COR = { fundo: '#0D0D0D', ouro: '#C9A84C', ouroClaro: '#E6C76A', ouroEsc: '#8A6E2E', creme: '#F5F0E8', cinza: '#9A9A9A', vermelho: '#CF6060' };
+const FORMATOS = { story: [1080, 1920, 'Story'], feed: [1080, 1350, 'Feed'], quadrado: [1080, 1080, 'Quadrado'] };
+
+const arte = { modelo: 'aberto', formato: 'story', v: {}, foto: null, fotoUrl: '', logo: null };
+
+/* ── utilidades de desenho ── */
+function quebrar(c, texto, maxW) {
+  const linhas = [];
+  String(texto || '').split('\n').forEach(par => {
+    let linha = '';
+    par.split(/\s+/).filter(Boolean).forEach(p => {
+      const teste = linha ? linha + ' ' + p : p;
+      if (c.measureText(teste).width > maxW && linha) { linhas.push(linha); linha = p; } else linha = teste;
+    });
+    linhas.push(linha);
+  });
+  return linhas.filter((l, i, a) => l || (i > 0 && i < a.length - 1));
+}
+function espacamento(c, px) { if ('letterSpacing' in c) c.letterSpacing = px + 'px'; }
+function moedaArte(v) { const n = Number(String(v).replace(',', '.')) || 0; return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
+
+/* Blocos de conteúdo: cada um sabe sua altura e se desenha a partir de um y */
+const B = {
+  titulo: (txt, tam, cor = COR.ouro, opt = {}) => ({
+    medir(c, u, W) { c.font = `${tam * u}px ${F_TIT}`; espacamento(c, (opt.esp ?? 2) * u); this.l = quebrar(c, String(txt).toUpperCase(), W * (opt.larg || .82)); return this.l.length * tam * u * .98; },
+    desenhar(c, u, W, y) { c.font = `${tam * u}px ${F_TIT}`; espacamento(c, (opt.esp ?? 2) * u); c.fillStyle = cor; c.textAlign = 'center'; c.textBaseline = 'top';
+      if (opt.sombra) { c.shadowColor = 'rgba(201,168,76,.35)'; c.shadowBlur = 30 * u; }
+      this.l.forEach((l, i) => c.fillText(l, W / 2, y + i * tam * u * .98)); c.shadowBlur = 0; espacamento(c, 0); }
+  }),
+  texto: (txt, tam, cor = COR.creme, opt = {}) => ({
+    medir(c, u, W) { if (!txt) return 0; c.font = `${opt.peso || 500} ${tam * u}px ${F_TXT}`; this.l = quebrar(c, txt, W * (opt.larg || .78)); return this.l.length * tam * u * 1.38; },
+    desenhar(c, u, W, y) { if (!txt) return; c.font = `${opt.peso || 500} ${tam * u}px ${F_TXT}`; c.fillStyle = cor; c.textAlign = 'center'; c.textBaseline = 'top';
+      this.l.forEach((l, i) => c.fillText(l, W / 2, y + i * tam * u * 1.38)); }
+  }),
+  espaco: h => ({ medir: (c, u) => h * u, desenhar() {} }),
+  linha: (larg = 160) => ({ medir: (c, u) => 6 * u, desenhar(c, u, W, y) {
+    const w = larg * u; c.fillStyle = COR.ouro; c.fillRect(W / 2 - w / 2, y + 2 * u, w, 3 * u);
+    c.beginPath(); c.arc(W / 2 - w / 2 - 14 * u, y + 3.5 * u, 4 * u, 0, 7); c.arc(W / 2 + w / 2 + 14 * u, y + 3.5 * u, 4 * u, 0, 7); c.fill(); } }),
+  selo: (txt, opt = {}) => ({ medir: (c, u) => (opt.tam || 44) * u * 1.7, desenhar(c, u, W, y) {
+    const tam = (opt.tam || 44) * u; c.font = `${tam}px ${F_TIT}`; espacamento(c, 3 * u);
+    const w = c.measureText(String(txt).toUpperCase()).width + tam * 1.4, h = tam * 1.5, x = W / 2 - w / 2;
+    c.fillStyle = opt.cor || COR.ouro; c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, h / 2) : c.rect(x, y, w, h); c.fill();
+    c.fillStyle = opt.txt || COR.fundo; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(txt).toUpperCase(), W / 2, y + h / 2 + tam * .04); espacamento(c, 0); } }),
+  preco: (de, por, sufixo) => ({ medir: (c, u) => (de ? 60 : 0) * u + 190 * u, desenhar(c, u, W, y) {
+    c.textAlign = 'center'; c.textBaseline = 'top';
+    if (de) { c.font = `600 ${40 * u}px ${F_TXT}`; c.fillStyle = COR.cinza; const t = 'DE ' + moedaArte(de); c.fillText(t, W / 2, y); const w = c.measureText(t).width;
+      c.strokeStyle = COR.vermelho; c.lineWidth = 4 * u; c.beginPath(); c.moveTo(W / 2 - w / 2 - 6 * u, y + 24 * u); c.lineTo(W / 2 + w / 2 + 6 * u, y + 20 * u); c.stroke(); y += 60 * u; }
+    c.font = `${46 * u}px ${F_TIT}`; c.fillStyle = COR.creme; espacamento(c, 3 * u); c.fillText(de ? 'POR APENAS' : 'APENAS', W / 2, y); espacamento(c, 0);
+    c.font = `${150 * u}px ${F_TIT}`; c.fillStyle = COR.ouro; c.shadowColor = 'rgba(201,168,76,.35)'; c.shadowBlur = 30 * u;
+    c.fillText(moedaArte(por) + (sufixo || ''), W / 2, y + 44 * u); c.shadowBlur = 0; } }),
+  lista: (linhas, tam = 40) => ({ medir: (c, u) => linhas.length * tam * u * 1.75, desenhar(c, u, W, y) {
+    const x1 = W * .17, x2 = W * .83; c.textBaseline = 'middle';
+    linhas.forEach(([a, b, destaque], i) => {
+      const yy = y + i * tam * u * 1.75 + tam * u * .8;
+      c.font = `600 ${tam * u}px ${F_TXT}`; c.fillStyle = destaque ? COR.ouro : COR.creme; c.textAlign = 'left'; c.fillText(a, x1, yy);
+      c.textAlign = 'right'; c.fillStyle = b === 'Fechado' ? COR.vermelho : (destaque ? COR.ouro : COR.creme); c.font = `${b === 'Fechado' ? 600 : 700} ${tam * u}px ${F_TXT}`; c.fillText(b, x2, yy);
+      const wa = (c.font = `600 ${tam * u}px ${F_TXT}`, c.measureText(a).width), wb = c.measureText(b).width;
+      c.strokeStyle = 'rgba(201,168,76,.35)'; c.lineWidth = 2 * u; c.setLineDash([3 * u, 9 * u]); c.beginPath(); c.moveTo(x1 + wa + 16 * u, yy + tam * u * .25); c.lineTo(x2 - wb - 16 * u, yy + tam * u * .25); c.stroke(); c.setLineDash([]);
+    }); } }),
+  itens: (lista, tam = 40) => ({ medir: (c, u) => lista.length * tam * u * 1.6, desenhar(c, u, W, y) {
+    c.font = `600 ${tam * u}px ${F_TXT}`; c.textBaseline = 'middle'; c.textAlign = 'left';
+    const w = Math.max(...lista.map(t => c.measureText(t).width), 0) + tam * 1.3 * u, x = W / 2 - w / 2;
+    lista.forEach((t, i) => { const yy = y + i * tam * u * 1.6 + tam * u * .7;
+      c.fillStyle = COR.ouro; c.beginPath(); c.arc(x + tam * u * .3, yy, tam * u * .22, 0, 7); c.fill();
+      c.fillStyle = COR.creme; c.fillText(t, x + tam * u * 1.1, yy); }); } }),
+  imagem: (img, larg = 560, alt = 560) => ({ medir: (c, u) => img ? alt * u : 0, desenhar(c, u, W, y) {
+    if (!img) return; const w = larg * u, h = alt * u, x = W / 2 - w / 2, r = 28 * u;
+    c.save(); c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); c.clip();
+    const esc = Math.max(w / img.width, h / img.height); c.drawImage(img, x + (w - img.width * esc) / 2, y + (h - img.height * esc) / 2, img.width * esc, img.height * esc); c.restore();
+    c.strokeStyle = COR.ouro; c.lineWidth = 4 * u; c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); c.stroke(); } })
+};
+
+/* ── moldura, fundo, cabeçalho e rodapé (iguais em todas as artes) ── */
+function desenharFundo(c, W, H, u, img) {
+  c.fillStyle = COR.fundo; c.fillRect(0, 0, W, H);
+  if (img) {
+    const esc = Math.max(W / img.width, H / img.height);
+    c.drawImage(img, (W - img.width * esc) / 2, (H - img.height * esc) / 2, img.width * esc, img.height * esc);
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(13,13,13,.82)'); g.addColorStop(.45, 'rgba(13,13,13,.62)'); g.addColorStop(1, 'rgba(13,13,13,.9)');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+  } else {
+    const g = c.createRadialGradient(W / 2, H * .45, 10, W / 2, H * .45, Math.max(W, H) * .7);
+    g.addColorStop(0, '#2A2008'); g.addColorStop(.55, '#141109'); g.addColorStop(1, COR.fundo);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.save(); c.globalAlpha = .05; c.strokeStyle = COR.ouro; c.lineWidth = 2 * u;   // textura de linhas finas
+    for (let x = -H; x < W; x += 34 * u) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x + H, H); c.stroke(); }
+    c.restore();
+  }
+  // listras de barbearia (faixa diagonal) em cima e embaixo
+  const faixa = (y) => { c.save(); c.beginPath(); c.rect(0, y, W, 10 * u); c.clip(); c.globalAlpha = .55;
+    for (let x = -40 * u; x < W + 40 * u; x += 40 * u) { c.fillStyle = COR.ouroEsc; c.beginPath(); c.moveTo(x, y + 10 * u); c.lineTo(x + 10 * u, y); c.lineTo(x + 24 * u, y); c.lineTo(x + 14 * u, y + 10 * u); c.fill(); }
+    c.restore(); };
+  faixa(0); faixa(H - 10 * u);
+  // moldura dupla dourada
+  const m = 44 * u; c.strokeStyle = COR.ouroEsc; c.lineWidth = 3 * u; c.strokeRect(m, m, W - 2 * m, H - 2 * m);
+  c.strokeStyle = 'rgba(201,168,76,.35)'; c.lineWidth = 1.5 * u; c.strokeRect(m + 12 * u, m + 12 * u, W - 2 * m - 24 * u, H - 2 * m - 24 * u);
+  // cantos
+  c.fillStyle = COR.ouro; [[m, m], [W - m, m], [m, H - m], [W - m, H - m]].forEach(([x, y]) => { c.save(); c.translate(x, y); c.rotate(Math.PI / 4); c.fillRect(-9 * u, -9 * u, 18 * u, 18 * u); c.restore(); });
+}
+function rodapeArte(c, W, H, u) {
+  const linhas = [];
+  const contato = [CONFIG.insta ? '@' + String(CONFIG.insta).replace('@', '') : '', CONFIG.tel || ''].filter(Boolean).join('   ·   ');
+  if (contato) linhas.push([contato, COR.creme, 600, 30]);
+  linhas.push(['AGENDE PELO APP  ›  ' + location.host.toUpperCase(), COR.ouro, 700, 26]);
+  const base = H - 92 * u;
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  linhas.reverse().forEach(([t, cor, peso, tam], i) => { c.font = `${peso} ${tam * u}px ${F_TXT}`; c.fillStyle = cor; espacamento(c, peso === 700 ? 2 * u : 0); c.fillText(t, W / 2, base - i * 46 * u); });
+  espacamento(c, 0);
+  return base - linhas.length * 46 * u;
+}
+
+/* ── modelos ── */
+const hojeTxt = () => { const d = new Date(); return DIAS_LONGO[d.getDay()] + ', ' + fmtCurto(hoje()); };
+const horHoje = () => { const h = CONFIG.horarios[new Date().getDay()]; return h && h.ativo ? `${h.inicio} às ${h.fim}` : ''; };
+const svcPadrao = () => D.servicos[0] || { nome: 'Corte', preco: 40 };
+const MODELOS = {
+  aberto: { nome: 'Estamos abertos', icone: 'ti-door-enter',
+    campos: [['titulo', 'Título', 'text', 'Estamos abertos'], ['dia', 'Dia', 'text', hojeTxt], ['horario', 'Horário', 'text', () => horHoje() || '09:00 às 19:00'], ['texto', 'Frase', 'area', 'Chega mais que tem horário livre! Agende pelo app.'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => [B.selo(v.dia, { tam: 36 }), B.espaco(34), B.titulo(v.titulo, 170, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(30), B.titulo(v.horario, 92, COR.creme, { esp: 3 }), B.espaco(30), B.texto(v.texto, 36)],
+    legenda: v => `💈 ${v.titulo.toUpperCase()}! ${v.dia} · ${v.horario}\n${v.texto}` },
+  fechado: { nome: 'Fechado hoje', icone: 'ti-door-off',
+    campos: [['titulo', 'Título', 'text', 'Hoje estamos fechados'], ['motivo', 'Motivo (opcional)', 'text', ''], ['volta', 'Quando volta', 'text', 'Voltamos amanhã no horário normal'], ['texto', 'Frase', 'area', 'Garanta já seu horário pelo app!'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => [B.titulo(v.titulo, 150, COR.creme), B.espaco(16), v.motivo ? B.selo(v.motivo, { tam: 36, cor: COR.vermelho, txt: COR.creme }) : B.espaco(0), B.espaco(30), B.linha(), B.espaco(30), B.titulo(v.volta, 70, COR.ouro, { esp: 2 }), B.espaco(24), B.texto(v.texto, 36)],
+    legenda: v => `⚠️ ${v.titulo}${v.motivo ? ' — ' + v.motivo : ''}. ${v.volta}.\n${v.texto}` },
+  feriado: { nome: 'Feriado', icone: 'ti-calendar-star',
+    campos: [['feriado', 'Nome do feriado', 'text', 'Feriado'], ['data', 'Data', 'text', () => fmtCurto(addDias(hoje(), 1))], ['situacao', 'Funcionamento', 'select', 'especial', [['especial', 'Horário especial'], ['fechado', 'Fechado'], ['normal', 'Horário normal']]], ['horario', 'Horário (se abrir)', 'text', '08:00 às 14:00'], ['texto', 'Frase', 'area', 'Programe seu corte com antecedência!'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => [B.selo(v.data, { tam: 40 }), B.espaco(30), B.titulo(v.feriado, 140, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(30),
+      B.titulo(v.situacao === 'fechado' ? 'Estaremos fechados' : v.situacao === 'normal' ? 'Funcionamento normal' : 'Horário especial', 66, COR.creme, { esp: 2 }),
+      v.situacao === 'fechado' ? B.espaco(0) : B.titulo(v.horario, 100, COR.ouro, { esp: 3 }), B.espaco(26), B.texto(v.texto, 36)],
+    legenda: v => `📅 ${v.feriado} (${v.data}): ${v.situacao === 'fechado' ? 'estaremos fechados' : (v.situacao === 'normal' ? 'funcionamento normal' : 'horário especial ' + v.horario)}.\n${v.texto}` },
+  promo: { nome: 'Promoção', icone: 'ti-discount',
+    campos: [['selo', 'Etiqueta', 'text', 'Promoção'], ['servico', 'Serviço', 'svc', () => svcPadrao().nome], ['de', 'Preço normal (R$, opcional)', 'money', () => svcPadrao().preco], ['por', 'Preço da promoção (R$)', 'money', () => Math.round((Number(svcPadrao().preco) || 40) * .8)], ['validade', 'Validade', 'text', () => 'Válido até ' + fmtCurto(addDias(hoje(), 7))], ['texto', 'Frase', 'area', 'Agende pelo app e garanta o seu!'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => [B.selo(v.selo, { tam: 44 }), B.espaco(28), B.titulo(v.servico, 130, COR.creme, { sombra: false }), B.espaco(24), B.preco(Number(v.de) > Number(v.por) ? v.de : '', v.por), B.espaco(20), B.linha(), B.espaco(24), B.titulo(v.validade, 54, COR.ouro, { esp: 2 }), B.espaco(16), B.texto(v.texto, 34)],
+    legenda: v => `🔥 ${v.selo.toUpperCase()}: ${v.servico}${Number(v.de) > Number(v.por) ? ' de ' + moedaArte(v.de) : ''} por ${moedaArte(v.por)}! ${v.validade}.\n${v.texto}` },
+  combo: { nome: 'Combo', icone: 'ti-stack-2',
+    campos: [['titulo', 'Título', 'text', 'Combo da semana'], ['itens', 'Serviços (um por linha)', 'area', () => D.servicos.slice(0, 2).map(s => s.nome).join('\n') || 'Corte\nBarba'], ['de', 'Preço separado (R$, opcional)', 'money', () => D.servicos.slice(0, 2).reduce((t, s) => t + (Number(s.preco) || 0), 0) || ''], ['por', 'Preço do combo (R$)', 'money', () => Math.round(D.servicos.slice(0, 2).reduce((t, s) => t + (Number(s.preco) || 0), 0) * .85) || 60], ['texto', 'Frase', 'area', 'Saia na régua gastando menos.'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => [B.titulo(v.titulo, 140, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(34), B.itens(String(v.itens).split('\n').map(s => s.trim()).filter(Boolean), 46), B.espaco(30), B.preco(Number(v.de) > Number(v.por) ? v.de : '', v.por), B.espaco(20), B.texto(v.texto, 34)],
+    legenda: v => `✂️ ${v.titulo}: ${String(v.itens).split('\n').filter(Boolean).join(' + ')} por ${moedaArte(v.por)}!\n${v.texto}` },
+  horarios: { nome: 'Horário de funcionamento', icone: 'ti-clock',
+    campos: [['titulo', 'Título', 'text', 'Horário de funcionamento'], ['texto', 'Frase / endereço', 'area', () => CONFIG.end ? CONFIG.end + (CONFIG.cidade ? ' · ' + CONFIG.cidade : '') : 'Agende pelo app!'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => { const hojeD = new Date().getDay();
+      const linhas = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = CONFIG.horarios[d]; return [DIAS_LONGO[d], h && h.ativo ? `${h.inicio} – ${h.fim}` : 'Fechado', d === hojeD]; });
+      return [B.titulo(v.titulo, 120, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(40), B.lista(linhas, 42), B.espaco(34), B.texto(v.texto, 32, COR.cinza)]; },
+    legenda: v => `🕒 ${v.titulo}:\n` + [1, 2, 3, 4, 5, 6, 0].map(d => { const h = CONFIG.horarios[d]; return `${DIAS_LONGO[d]}: ${h && h.ativo ? h.inicio + ' às ' + h.fim : 'fechado'}`; }).join('\n') + `\n${v.texto}` },
+  ultimos: { nome: 'Últimos horários', icone: 'ti-hourglass-low',
+    campos: [['titulo', 'Título', 'text', 'Últimos horários'], ['dia', 'Dia', 'text', () => 'Hoje · ' + hojeTxt()], ['horas', 'Horários livres (separe por vírgula)', 'text', ''], ['auto', '', 'botao', 'Preencher com os horários livres de hoje'], ['texto', 'Frase', 'area', 'Corre que acaba rápido! Agende pelo app.'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => { const hs = String(v.horas || '').split(/[,;\s]+/).filter(Boolean).slice(0, 12);
+      const lin = []; for (let i = 0; i < hs.length; i += 3) lin.push(hs.slice(i, i + 3).join('   ·   '));
+      return [B.selo(v.dia, { tam: 34 }), B.espaco(30), B.titulo(v.titulo, 160, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(34),
+        lin.length ? B.titulo(lin.join('\n'), 84, COR.creme, { esp: 4 }) : B.texto('Toque em "Preencher com os horários livres de hoje"', 32, COR.cinza), B.espaco(30), B.texto(v.texto, 36)]; },
+    legenda: v => `⏳ ${v.titulo.toUpperCase()} — ${v.dia}: ${v.horas || ''}\n${v.texto}` },
+  plano: { nome: 'Plano / assinatura', icone: 'ti-crown',
+    campos: [['plano', 'Plano', 'plano', () => (D.planos[0] || {}).id || ''], ['chamada', 'Chamada', 'text', 'Assine e fique sempre na régua'], ['texto', 'Frase', 'area', 'Assine direto pelo app e pague no PIX.'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => { const p = getPlano(v.plano) || { nome: 'Plano', preco: 0, itens: [] };
+      const itens = (p.itens && p.itens.length ? p.itens : [`${Number(p.cortes) || 1} atendimento(s) por mês`]).slice(0, 5);
+      return [B.selo('Clube KJota', { tam: 38 }), B.espaco(26), B.titulo(p.nome, 130, COR.ouro, { sombra: true }), B.espaco(10), B.titulo(v.chamada, 54, COR.creme, { esp: 2 }), B.espaco(30), B.itens(itens, 40), B.espaco(26), B.preco('', p.preco, '/mês'), B.espaco(16), B.texto(v.texto, 32)]; },
+    legenda: v => { const p = getPlano(v.plano) || { nome: 'Plano', preco: 0 }; return `👑 ${p.nome}: ${moedaArte(p.preco)}/mês. ${v.chamada}!\n${v.texto}`; } },
+  aniversario: { nome: 'Feliz aniversário', icone: 'ti-cake',
+    campos: [['nome', 'Nome do cliente', 'text', () => { const a = aniversariantes().find(c => String(c.nasc).slice(8, 10) === hoje().slice(8)); return a ? primeiroNome(a.nome) : ''; }], ['texto', 'Mensagem', 'area', 'A KJota te deseja um dia incrível! Passa aqui pra ficar na régua. 🎉'], ['presente', 'Presente (opcional)', 'text', ''], ['foto', 'Foto (opcional)', 'foto']],
+    blocos: v => [B.titulo('Feliz', 90, COR.creme, { esp: 6 }), B.titulo('aniversário', 170, COR.ouro, { sombra: true }), v.nome ? B.titulo(v.nome, 110, COR.creme, { esp: 3 }) : B.espaco(0), B.espaco(20), B.linha(), B.espaco(30), B.texto(v.texto, 38), v.presente ? B.espaco(26) : B.espaco(0), v.presente ? B.selo(v.presente, { tam: 38 }) : B.espaco(0)],
+    legenda: v => `🎂 Feliz aniversário${v.nome ? ', ' + v.nome : ''}! ${v.texto}${v.presente ? '\n🎁 ' + v.presente : ''}` },
+  produto: { nome: 'Produto em destaque', icone: 'ti-package',
+    campos: [['produto', 'Produto', 'produto', () => (D.produtos[0] || {}).id || ''], ['selo', 'Etiqueta', 'text', 'Novidade na KJota'], ['texto', 'Frase', 'area', 'Disponível na barbearia. Peça pelo app!']],
+    blocos: (v, img) => { const p = D.produtos.find(x => x.id === v.produto) || { nome: 'Produto', preco: 0 };
+      return [B.selo(v.selo, { tam: 36 }), B.espaco(30), img ? B.imagem(img, 600, 600) : B.espaco(0), img ? B.espaco(34) : B.espaco(0), B.titulo(p.nome, 110, COR.creme), p.desc ? B.texto(p.desc, 34, COR.cinza) : B.espaco(0), B.espaco(10), B.titulo(moedaArte(p.preco), 130, COR.ouro, { sombra: true }), B.espaco(16), B.texto(v.texto, 34)]; },
+    legenda: v => { const p = D.produtos.find(x => x.id === v.produto) || { nome: 'Produto', preco: 0 }; return `🧴 ${p.nome} por ${moedaArte(p.preco)}. ${v.texto}`; } },
+  novidade: { nome: 'Novidade', icone: 'ti-sparkles',
+    campos: [['selo', 'Etiqueta', 'text', 'Novidade'], ['titulo', 'Título', 'text', () => (D.servicos[D.servicos.length - 1] || {}).nome || 'Novo serviço'], ['texto', 'Descrição', 'area', 'Agora disponível na KJota. Agende pelo app!'], ['foto', 'Foto (opcional)', 'foto']],
+    blocos: v => [B.selo(v.selo, { tam: 46 }), B.espaco(34), B.titulo(v.titulo, 150, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(30), B.texto(v.texto, 40)],
+    legenda: v => `✨ ${v.selo.toUpperCase()}: ${v.titulo}! ${v.texto}` },
+  aviso: { nome: 'Aviso / recado', icone: 'ti-speakerphone',
+    campos: [['titulo', 'Título', 'text', 'Aviso'], ['texto', 'Texto', 'area', 'Escreva aqui o recado para os clientes.'], ['foto', 'Foto de fundo (opcional)', 'foto']],
+    blocos: v => [B.titulo(v.titulo, 160, COR.ouro, { sombra: true }), B.espaco(20), B.linha(), B.espaco(36), B.texto(v.texto, 44, COR.creme, { peso: 600 })],
+    legenda: v => `📢 ${v.titulo.toUpperCase()}: ${v.texto}` }
+};
+
+/* ── desenho completo de uma arte ── */
+async function prepararFontes() {
+  try { await Promise.all([document.fonts.load(`100px ${F_TIT}`), document.fonts.load(`600 40px ${F_TXT}`), document.fonts.load(`700 40px ${F_TXT}`)]); } catch (e) {}
+}
+async function logoArte() { if (!arte.logo) arte.logo = await carregarImg(window.KJ_IMG.logo); return arte.logo; }
+async function desenharArte(cv, modelo, formato, v, opts = {}) {
+  const [W0, H0] = FORMATOS[formato], esc = opts.escala || 1, W = W0 * esc, H = H0 * esc;
+  cv.width = W; cv.height = H;
+  const c = cv.getContext('2d'), u0 = W / 1080, m = MODELOS[modelo];
+  const fotoFundo = m.campos.some(f => f[2] === 'foto') && modelo !== 'aniversario' && modelo !== 'novidade' ? opts.foto : null;
+  desenharFundo(c, W, H, u0, fotoFundo);
+  // cabeçalho com a logo
+  const logo = await logoArte(), tamLogo = (formato === 'story' ? 360 : formato === 'feed' ? 240 : 190) * u0, yLogo = (formato === 'story' ? 150 : 84) * u0;
+  c.drawImage(logo, (W - tamLogo) / 2, yLogo, tamLogo, tamLogo);
+  const topo = yLogo + tamLogo + 30 * u0, base = rodapeArte(c, W, H, u0) - 40 * u0;
+  // conteúdo: centraliza na área livre e encolhe se não couber
+  let img = null;
+  if (modelo === 'produto') { const p = D.produtos.find(x => x.id === v.produto); if (p && p.foto) try { img = await carregarImg(p.foto); } catch (e) {} }
+  if ((modelo === 'aniversario' || modelo === 'novidade') && opts.foto) img = opts.foto;
+  let blocos = m.blocos(v, img);
+  if ((modelo === 'aniversario' || modelo === 'novidade') && img) blocos = [B.imagem(img, 520, 520), B.espaco(36), ...blocos];
+  let u = u0, total = blocos.reduce((t, b) => t + b.medir(c, u, W), 0);
+  if (total < (base - topo) * .7) u = u0 * Math.min(1.3, (base - topo) * .78 / total);   // sobra espaço (story): aumenta
+  for (let i = 0; i < 4; i++) {
+    total = blocos.reduce((t, b) => t + b.medir(c, u, W), 0);
+    if (total <= base - topo || u < u0 * .45) break;
+    u = u * Math.max(.6, (base - topo) / total * .98);
+  }
+  let y = topo + Math.max(0, (base - topo - total) / 2);
+  for (const b of blocos) { const h = b.medir(c, u, W); b.desenhar(c, u, W, y); y += h; }
+}
+
+/* ── tela ── */
+function valoresPadrao(modelo) {
+  const v = {};
+  MODELOS[modelo].campos.forEach(([k, , tipo, def]) => { if (tipo === 'foto' || tipo === 'botao') return; v[k] = typeof def === 'function' ? def() : (def ?? ''); });
+  return v;
+}
+let miniaturasFeitas = false;
+async function renderArtes() {
+  await prepararFontes();
+  const grade = $('artes-modelos');
+  if (!miniaturasFeitas || grade.children.length !== Object.keys(MODELOS).length) {
+    grade.innerHTML = Object.entries(MODELOS).map(([k, m]) => `<button class="arte-mini" data-act="arte-modelo" data-m="${k}" aria-pressed="${k === arte.modelo}"><canvas data-mini="${k}"></canvas><span><i class="ti ${m.icone}"></i>${esc(m.nome)}</span></button>`).join('');
+    for (const k of Object.keys(MODELOS)) await desenharArte(grade.querySelector(`[data-mini="${k}"]`), k, 'feed', valoresPadrao(k), { escala: .25 });
+    miniaturasFeitas = true;
+  }
+  if (!Object.keys(arte.v).length) arte.v = valoresPadrao(arte.modelo);
+  renderFormArte();
+  atualizarArte();
+}
+function renderFormArte() {
+  document.querySelectorAll('.arte-mini').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === arte.modelo));
+  document.querySelectorAll('[data-act="arte-formato"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === arte.formato));
+  $('arte-nome').textContent = MODELOS[arte.modelo].nome;
+  $('arte-campos').innerHTML = MODELOS[arte.modelo].campos.map(([k, rotulo, tipo, def, ops]) => {
+    const val = esc(arte.v[k] ?? ''), id = 'arte-f-' + k;
+    if (tipo === 'botao') return `<button class="btn btn-outline btn-sm" data-act="arte-livres" style="margin-bottom:.85rem;"><i class="ti ti-wand"></i>${esc(def)}</button>`;
+    if (tipo === 'foto') return `<div class="form-group"><span class="form-label">${esc(rotulo)}</span><div class="row-actions" style="justify-content:flex-start"><button class="btn btn-outline btn-sm" data-act="arte-foto"><i class="ti ti-photo"></i>${arte.fotoUrl ? 'Trocar foto' : 'Escolher foto'}</button>${arte.fotoUrl ? '<button class="btn btn-ghost btn-sm" data-act="arte-sem-foto"><i class="ti ti-x"></i>Tirar foto</button>' : ''}</div></div>`;
+    let campo;
+    if (tipo === 'area') campo = `<textarea class="form-input" id="${id}" data-input="arte-campo" data-k="${k}" rows="2">${val}</textarea>`;
+    else if (tipo === 'select') campo = `<select class="form-input" id="${id}" data-change="arte-campo" data-k="${k}">${ops.map(([o, t]) => `<option value="${o}"${String(arte.v[k]) === o ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+    else if (tipo === 'svc') campo = `<input class="form-input" id="${id}" list="arte-svcs" data-input="arte-campo" data-k="${k}" value="${val}"/><datalist id="arte-svcs">${D.servicos.map(s => `<option value="${esc(s.nome)}">`).join('')}</datalist>`;
+    else if (tipo === 'plano') campo = D.planos.length ? `<select class="form-input" id="${id}" data-change="arte-campo" data-k="${k}">${D.planos.map(p => `<option value="${p.id}"${String(arte.v[k]) === String(p.id) ? ' selected' : ''}>${esc(p.nome)} — ${moeda(p.preco)}</option>`).join('')}</select>` : '<div class="cm">Crie um plano em Assinaturas primeiro.</div>';
+    else if (tipo === 'produto') campo = D.produtos.length ? `<select class="form-input" id="${id}" data-change="arte-campo" data-k="${k}">${D.produtos.map(p => `<option value="${p.id}"${arte.v[k] === p.id ? ' selected' : ''}>${esc(p.nome)} — ${moeda(p.preco)}</option>`).join('')}</select>` : '<div class="cm">Cadastre um produto (com foto) em Produtos primeiro.</div>';
+    else campo = `<input class="form-input" id="${id}" type="${tipo === 'money' ? 'number' : 'text'}"${tipo === 'money' ? ' step="0.01" min="0" inputmode="decimal"' : ''} data-input="arte-campo" data-k="${k}" value="${val}"/>`;
+    return `<div class="form-group"><label class="form-label" for="${id}">${esc(rotulo)}</label>${campo}</div>`;
+  }).join('');
+}
+let arteT = 0;
+function atualizarArte() {
+  clearTimeout(arteT);
+  arteT = setTimeout(async () => {
+    await desenharArte($('arte-canvas'), arte.modelo, arte.formato, arte.v, { foto: arte.foto });
+    $('arte-legenda').value = legendaArte();
+  }, 90);
+}
+function legendaArte() {
+  const base = MODELOS[arte.modelo].legenda(arte.v);
+  const contato = [CONFIG.insta ? '📲 ' + '@' + String(CONFIG.insta).replace('@', '') : '', CONFIG.tel ? '📞 ' + CONFIG.tel : ''].filter(Boolean).join('  ');
+  return `${base}\n\n👉 Agende pelo app: ${location.origin}${location.pathname}?cadastro=1${contato ? '\n' + contato : ''}\n\n#barbearia #barber #barbershop #${(CONFIG.nome || 'kjota').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+}
+async function escolherFotoArte(file) {
+  if (!file || !file.type.startsWith('image/')) return toast('Escolha uma imagem.', true);
+  try {
+    if (arte.fotoUrl) URL.revokeObjectURL(arte.fotoUrl);
+    const blob = await comprimir(file, 1920, .9);
+    arte.fotoUrl = URL.createObjectURL(blob); arte.foto = await carregarImg(arte.fotoUrl);
+    renderFormArte(); atualizarArte();
+  } catch (e) { toast('Não foi possível usar essa foto.', true); }
+}
+async function preencherLivres() {
+  const ds = hoje(), h = CONFIG.horarios[new Date().getDay()];
+  if (!diaAberto(ds)) return toast('Hoje a barbearia está fechada.', true);
+  const itens = await itensDoDia(ds), agoraMin = new Date().getHours() * 60 + new Date().getMinutes() + 15, livres = [];
+  for (let m = horaToMin(h.inicio); m + 30 <= horaToMin(h.fim); m += CONFIG.intervalo) if (m > agoraMin && !conflita(itens, minToHora(m), 30)) livres.push(minToHora(m));
+  if (!livres.length) return toast('Não sobrou horário livre hoje.', true);
+  arte.v.horas = livres.slice(0, 12).join(', ');
+  renderFormArte(); atualizarArte();
+  toast(`${livres.length} horário(s) livre(s) encontrados.`);
+}
+function arquivoArte() { return `kjota-${arte.modelo}-${arte.formato}.png`; }
+function baixarArte() { baixar($('arte-canvas').toDataURL('image/png'), arquivoArte()); toast('Arte baixada!'); }
+async function compartilharArte() {
+  const blob = await new Promise(r => $('arte-canvas').toBlob(r, 'image/png'));
+  const arq = new File([blob], arquivoArte(), { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+    try { await navigator.clipboard.writeText($('arte-legenda').value).catch(() => {}); await navigator.share({ files: [arq], text: $('arte-legenda').value }); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  baixarArte(); toast('Seu navegador não compartilha imagem direto. A arte foi baixada para você postar.');
+}
+
 /* ════════ CONFIGURAÇÕES ════════ */
 let cfgMes = new Date(); cfgMes.setDate(1);
 function renderConfig() {
@@ -3337,7 +3668,7 @@ async function ativarNotif() {
 }
 
 /* ════════ EVENTOS ════════ */
-const RENDER = { 'produtos-cli': renderProdutosCli, produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
+const RENDER = { artes: renderArtes, 'produtos-cli': renderProdutosCli, produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
 
 const ACT = {
   'tab': el => mostrarAba(el.dataset.tab),
@@ -3374,6 +3705,14 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'arte-modelo': el => { arte.modelo = el.dataset.m; arte.v = valoresPadrao(arte.modelo); renderFormArte(); atualizarArte(); $('arte-editor').scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  'arte-formato': el => { arte.formato = el.dataset.f; renderFormArte(); atualizarArte(); },
+  'arte-foto': () => $('arte-foto-input').click(),
+  'arte-sem-foto': () => { if (arte.fotoUrl) URL.revokeObjectURL(arte.fotoUrl); arte.foto = null; arte.fotoUrl = ''; renderFormArte(); atualizarArte(); },
+  'arte-livres': preencherLivres,
+  'arte-reset': () => { arte.v = valoresPadrao(arte.modelo); renderFormArte(); atualizarArte(); },
+  'arte-baixar': baixarArte, 'arte-compartilhar': compartilharArte,
+  'arte-copiar-legenda': () => copiar($('arte-legenda').value, 'Legenda copiada'),
   'compartilhar-app': () => abrirCompartilhar('cadastro'),
   'share-modo': el => { shareModo = el.dataset.m; renderCompartilhar(); },
   'share-enviar': compartilharApp,
@@ -3439,6 +3778,7 @@ const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
   'as-valor': preencherValorAssin,
   'vd-total': atualizarTotalVenda,
+  'arte-campo': el => { arte.v[el.dataset.k] = el.value; atualizarArte(); },
   'cfg-dia': el => { CFG_EDIT.horarios[el.dataset.d].ativo = el.checked; renderHorariosCfg(); renderCalCfg(); },
   'cfg-hora': el => { CFG_EDIT.horarios[el.dataset.d][el.dataset.k] = el.value; },
   'pix-preview': previewPix
@@ -3459,6 +3799,7 @@ document.addEventListener('input', e => {
 $('form-login').addEventListener('submit', e => { e.preventDefault(); doLogin(); });
 $('form-cadastro').addEventListener('submit', e => { e.preventDefault(); doCadastro(); });
 $('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.matchMedia('(pointer:fine)').matches) { e.preventDefault(); enviarMsg(); } });
+$('arte-foto-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) escolherFotoArte(f); });
 ['svc', 'prod'].forEach(q => $(q + '-foto-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) escolherFoto(q, f); }));
 $('file-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) enviarArquivo(f); });
 function autoAltura(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
