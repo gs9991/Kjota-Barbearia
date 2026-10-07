@@ -504,7 +504,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <main class="content">
     <!-- ═══ DONO ═══ -->
     <section class="section" id="s-dashboard">
-      <div class="section-head"><h1 class="section-title">Painel</h1><button class="btn btn-gold btn-sm" data-act="compartilhar-app"><i class="ti ti-qrcode"></i>Divulgar app</button></div>
+      <div class="section-head"><h1 class="section-title">Painel</h1><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="balcao"><i class="ti ti-walk"></i>Cliente na barbearia</button><button class="btn btn-outline btn-sm" data-act="compartilhar-app"><i class="ti ti-qrcode"></i>Divulgar app</button></div></div>
       <div class="kpi-grid" id="kpi-grid"></div>
       <div id="dash-alertas"></div>
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar-event"></i>Próximos agendamentos</span><button class="btn btn-outline btn-sm" data-act="modal-ag"><i class="ti ti-plus"></i>Agendar</button></div><div class="card-body" id="dash-agenda"></div></div>
@@ -513,7 +513,7 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
     </section>
 
     <section class="section" id="s-agenda">
-      <div class="section-head"><h1 class="section-title">Agenda</h1><button class="btn btn-outline btn-sm" data-act="modal-ag"><i class="ti ti-plus"></i>Agendar</button></div>
+      <div class="section-head"><h1 class="section-title">Agenda</h1><div class="row-actions"><button class="btn btn-gold btn-sm" data-act="balcao"><i class="ti ti-walk"></i>Cliente na barbearia</button><button class="btn btn-outline btn-sm" data-act="modal-ag"><i class="ti ti-plus"></i>Agendar</button></div></div>
       <div class="seg" role="group" aria-label="Visualização" style="margin-bottom:.8rem;">
         <button data-act="ag-modo" data-m="proximos" aria-pressed="true">Próximos</button>
         <button data-act="ag-modo" data-m="dia" aria-pressed="false">Por dia</button>
@@ -979,6 +979,32 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
     <button class="btn btn-outline" data-act="share-cartaz"><i class="ti ti-photo"></i>Baixar cartaz</button>
   </div>
   <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Fechar</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-walkin" role="dialog" aria-modal="true" aria-labelledby="m-wi-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-wi-t">Ocupar horário agora</div></div>
+  <div class="seg" role="group" aria-label="Tipo" style="margin-bottom:.9rem;">
+    <button data-act="wi-modo" data-m="cliente" aria-pressed="true">Cliente chegou</button>
+    <button data-act="wi-modo" data-m="bloqueio" aria-pressed="false">Só bloquear</button>
+  </div>
+  <div class="form-group wi-cli"><label class="form-label" for="wi-nome">Nome do cliente (opcional)</label><input class="form-input" type="text" id="wi-nome" list="wi-clientes" autocomplete="off" placeholder="Digite ou escolha um cliente"/><datalist id="wi-clientes"></datalist></div>
+  <div class="form-group wi-cli"><label class="form-label" for="wi-svc">Serviço</label><select class="form-input" id="wi-svc" data-change="wi-svc"></select></div>
+  <div class="form-group" id="wi-svc-txt-wrap" hidden><label class="form-label" for="wi-svc-txt">Descrição do serviço</label><input class="form-input" type="text" id="wi-svc-txt" placeholder="Ex: Corte + sobrancelha"/></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label" for="wi-data">Dia</label><input class="form-input" type="date" id="wi-data" data-change="wi-horas"/></div>
+    <div class="form-group"><label class="form-label" for="wi-hora">Começa</label><select class="form-input" id="wi-hora" data-change="wi-horas"></select></div>
+  </div>
+  <div class="form-row wi-cli">
+    <div class="form-group"><label class="form-label" for="wi-dur">Duração (min)</label><input class="form-input" type="number" min="5" step="5" id="wi-dur" data-change="wi-horas"/></div>
+    <div class="form-group"><label class="form-label" for="wi-preco">Valor (R$)</label><input class="form-input" type="number" min="0" step="0.01" id="wi-preco"/></div>
+  </div>
+  <div class="form-group wi-cli"><label class="form-label" for="wi-pago">Pagamento</label><select class="form-input" id="wi-pago"><option value="depois">Recebo ao concluir</option><option value="agora">Já pagou (lançar no caixa agora)</option></select></div>
+  <div class="form-row wi-bloq" hidden>
+    <div class="form-group"><label class="form-label" for="wi-dur-bloq">Bloquear por</label><select class="form-input" id="wi-dur-bloq" data-change="wi-horas"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hora</option><option value="90">1h30</option><option value="120">2 horas</option><option value="180">3 horas</option></select></div>
+    <div class="form-group"><label class="form-label" for="wi-motivo">Motivo (só você vê)</label><input class="form-input" type="text" id="wi-motivo" placeholder="Ex: Cliente no balcão"/></div>
+  </div>
+  <div class="cm" id="wi-info" style="margin:.2rem 0 .4rem;"></div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-balcao" id="wi-salvar"></button></div>
 </div></div>
 
 <!-- UTILITÁRIOS -->
@@ -1651,7 +1677,7 @@ function acoesAgDono(a) {
     (a.chatId && getChat(a.chatId) ? `<button class="btn btn-ghost btn-sm" data-act="abrir-chat" data-id="${a.chatId}"><i class="ti ti-message-circle"></i>Chat</button>` : '') +
     b('reagendar-dono', 'ti-calendar-repeat', 'Reagendar', 'btn-ghost') + b('ag-status', 'ti-x', 'Cancelar', 'btn-danger', ' data-st="cancel"');
   if (a.status === 'done') return b('desfazer-concluido', 'ti-arrow-back-up', 'Desfazer', 'btn-ghost');
-  if (a.status === 'cancel') return (a.pago && Number(a.preco) > 0 && !a.creditoGerado && !a.estornado ? b('credito-cancelado', 'ti-coins', 'Gerar crédito', 'btn-gold') : '') + b('reativar-ag', 'ti-refresh', 'Reativar', 'btn-outline') + b('excluir-ag', 'ti-trash', 'Excluir', 'btn-danger');
+  if (a.status === 'cancel') return (a.pago && Number(a.preco) > 0 && !a.creditoGerado && !a.estornado && getCliente(a.cliente) ? b('credito-cancelado', 'ti-coins', 'Gerar crédito', 'btn-gold') : '') + b('reativar-ag', 'ti-refresh', 'Reativar', 'btn-outline') + b('excluir-ag', 'ti-trash', 'Excluir', 'btn-danger');
   return '';
 }
 /* ── Cancelamento de horário já pago: crédito, devolução ou só cancelar ── */
@@ -1663,6 +1689,7 @@ function abrirModalCancelPago(a) {
   $('mcp-credito').innerHTML = `<i class="ti ti-coins"></i>Cancelar e gerar crédito de ${moeda(a.preco)}`;
   $('mcp-devolver').innerHTML = `<i class="ti ti-arrow-back-up"></i>Cancelar e devolver ${moeda(pago)}${cr ? ` (+ ${moeda(cr)} volta como crédito)` : ''}`;
   $('mcp-devolver').hidden = !pago;
+  $('mcp-credito').hidden = !getCliente(a.cliente);
   openModal('m-cancel-pago');
 }
 async function gerarCreditoAg(a, valor, jaCancelado) {
@@ -1756,6 +1783,7 @@ function linhaAgDono(a) {
     (a.pago ? '<span class="chip"><i class="ti ti-check"></i>Pago</span>' : '') +
     (reservaExpirada(a) ? '<span class="chip red">Reserva expirada</span>' : '') +
     (a.remarcadoPor === 'cliente' ? '<span class="chip">Remarcado pelo cliente</span>' : '') +
+    (a.balcao ? '<span class="chip"><i class="ti ti-walk"></i>Balcão</span>' : '') +
     (a.creditoUsado ? `<span class="chip">Usou ${moeda(a.creditoUsado)} de crédito</span>` : '') +
     (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '') + (a.avaliacao ? `<span class="chip">${estrelas(Number(a.avaliacao))}</span>` : '');
   const acoes = acoesAgDono(a);
@@ -2010,7 +2038,7 @@ function origemDe(c) {
   if (d.includes('(avulso)')) return 'avulso';
   return 'manual';
 }
-const ORIGEM_LBL = { produto: 'Venda de produtos', assinatura: 'Assinaturas', avulso: 'Serviços pagos no PIX', servico: 'Serviços no balcão', manual: 'Lançamentos manuais' };
+const ORIGEM_LBL = { balcao: 'Pagos no balcão', produto: 'Venda de produtos', assinatura: 'Assinaturas', avulso: 'Serviços pagos no PIX', servico: 'Serviços no balcão', manual: 'Lançamentos manuais' };
 function minutosAbertos(ds) { const h = CONFIG.horarios[deISO(ds).getDay()]; return diaAberto(ds) ? Math.max(0, horaToMin(h.fim) - horaToMin(h.inicio)) : 0; }
 function barras(lista, fmtVal) {
   if (!lista.length) return vazio('ti-chart-bar-off', 'Sem dados no período');
@@ -3506,6 +3534,91 @@ async function compartilharArte() {
   baixarArte(); toast('Seu navegador não compartilha imagem direto. A arte foi baixada para você postar.');
 }
 
+/* ════════ CLIENTE NA BARBEARIA (sem agendar pelo app) ════════
+   O barbeiro ocupa o horário na hora, em poucos toques, para ninguém marcar
+   por cima pelo app. Pode ser um atendimento (com cliente) ou só um bloqueio. */
+let wiModo = 'cliente';
+const agoraArred = () => { const d = new Date(); return minToHora(d.getHours() * 60 + Math.floor(d.getMinutes() / 5) * 5); };
+
+function abrirBalcao(modo) {
+  wiModo = modo || 'cliente';
+  $('wi-nome').value = ''; $('wi-svc-txt').value = ''; $('wi-motivo').value = '';
+  $('wi-clientes').innerHTML = D.clientes.map(c => `<option value="${esc(c.nome)}">`).join('');
+  $('wi-svc').innerHTML = D.servicos.map(s => `<option value="${s.id}">${esc(s.nome)} — ${moeda(s.preco)} · ${Number(s.dur) || 30} min</option>`).join('') + '<option value="">Outro (descrever)</option>';
+  $('wi-data').value = hoje();
+  $('wi-pago').value = 'depois';
+  $('wi-dur-bloq').value = '30';
+  renderBalcao(true);
+  openModal('m-walkin');
+}
+async function renderBalcao(recalcular) {
+  document.querySelectorAll('[data-act="wi-modo"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === wiModo));
+  const cli = wiModo === 'cliente';
+  document.querySelectorAll('.wi-cli').forEach(el => { el.hidden = !cli; });
+  document.querySelectorAll('.wi-bloq').forEach(el => { el.hidden = cli; });
+  $('wi-salvar').innerHTML = cli ? '<i class="ti ti-user-check"></i>Ocupar horário' : '<i class="ti ti-lock"></i>Bloquear';
+  const s = getSvc($('wi-svc').value);
+  $('wi-svc-txt-wrap').hidden = !cli || !!s;
+  if (recalcular && cli) { $('wi-dur').value = s ? (Number(s.dur) || 30) : ($('wi-dur').value || 30); $('wi-preco').value = s ? s.preco : ''; }
+  await horariosBalcao();
+}
+async function horariosBalcao() {
+  const ds = $('wi-data').value || hoje();
+  const dur = wiModo === 'cliente' ? (parseInt($('wi-dur').value) || 30) : (parseInt($('wi-dur-bloq').value) || 30);
+  const h = CONFIG.horarios[deISO(ds).getDay()];
+  const [ini, fim] = diaAberto(ds) ? [h.inicio, h.fim] : ['08:00', '20:00'];
+  const itens = await itensDoDia(ds);
+  const atual = $('wi-hora').value;
+  const opcoes = [];
+  if (ds === hoje()) { const ag = agoraArred(); opcoes.push([ag, `Agora — ${ag}${conflita(itens, ag, dur) ? ' (vai encavalar)' : ''}`]); }
+  const minAgora = ds === hoje() ? new Date().getHours() * 60 + new Date().getMinutes() : -1;
+  for (let m = horaToMin(ini); m + Math.min(dur, CONFIG.intervalo) <= horaToMin(fim); m += CONFIG.intervalo) {
+    if (m <= minAgora) continue;
+    const hh = minToHora(m); opcoes.push([hh, hh + (conflita(itens, hh, dur) ? ' (ocupado)' : '')]);
+  }
+  $('wi-hora').innerHTML = opcoes.map(([v, t], i) => `<option value="${v}"${(atual ? v === atual : i === 0) ? ' selected' : ''}>${t}</option>`).join('');
+  // mostra o que vem logo depois, para o barbeiro saber quanto tempo tem
+  const hora = $('wi-hora').value, prox = D.agendamentos.filter(a => a.data === ds && ['wait', 'conf', 'aguardando_pag'].includes(a.status) && horaToMin(a.hora) >= horaToMin(hora)).sort((a, b) => a.hora.localeCompare(b.hora))[0];
+  const livre = prox ? horaToMin(prox.hora) - horaToMin(hora) : null;
+  $('wi-info').innerHTML = prox ? `<i class="ti ti-info-circle"></i> Próximo marcado: <b>${esc(prox.hora)}</b> — ${esc(nomeCli(prox.cliente, prox.clienteNome))} (${livre} min livres)${livre < dur ? ' <span style="color:var(--k-red)">· não cabe tudo</span>' : ''}` : '<i class="ti ti-info-circle"></i> Nada marcado depois desse horário.';
+}
+async function salvarBalcao() {
+  const data = $('wi-data').value || hoje(), hora = $('wi-hora').value;
+  if (!hora) return toast('Escolha o horário.', true);
+  if (wiModo === 'bloqueio') {
+    const dur = parseInt($('wi-dur-bloq').value) || 30;
+    const b = { id: String(Date.now()), data, inicio: hora, fim: minToHora(Math.min(horaToMin(hora) + dur, 23 * 60 + 59)), motivo: $('wi-motivo').value.trim() || 'Atendimento no balcão' };
+    await comLoading('Bloqueando', async () => {
+      try { await setDoc(doc(db, 'config', 'geral'), { bloqueios: arrayUnion(b) }, { merge: true }); closeModal('m-walkin'); toast(`Horário bloqueado: ${b.inicio} às ${b.fim}.`); renderAtual(); }
+      catch (e) { toast(erroAmigavel(e), true); }
+    });
+    return;
+  }
+  const s = getSvc($('wi-svc').value), svcNome = s ? s.nome : ($('wi-svc-txt').value.trim() || 'Atendimento');
+  const nome = $('wi-nome').value.trim();
+  const cli = nome ? D.clientes.find(c => String(c.nome || '').trim().toLowerCase() === nome.toLowerCase()) : null;
+  const preco = parseFloat($('wi-preco').value) || 0, jaPagou = $('wi-pago').value === 'agora' && preco > 0;
+  const ag = { cliente: cli ? String(cli.id) : 'balcao', clienteNome: cli ? cli.nome : (nome || 'Cliente no balcão'), svc: svcNome, svcId: s ? String(s.id) : null,
+    tipo: 'avulso', data, hora, dur: parseInt($('wi-dur').value) || 30, preco, obs: 'Chegou sem agendar', status: 'conf', pago: jaPagou, origem: 'balcao', balcao: true };
+  loading('Ocupando horário');
+  try {
+    let agId;
+    try { agId = await reservar(ag); }
+    catch (e) {
+      if (e.message !== 'OCUPADO') throw e;
+      unloading();
+      const choca = D.agendamentos.filter(a => a.data === data && ['wait', 'conf', 'aguardando_pag'].includes(a.status) && conflita([{ id: 'x', hora, dur: ag.dur }], a.hora, a.dur));
+      if (!confirmar(`Esse horário encavala com ${choca.length ? choca.map(a => a.hora + ' ' + nomeCli(a.cliente, a.clienteNome)).join(', ') : 'um horário ocupado'}. Encaixar mesmo assim?`)) return;
+      loading('Ocupando horário'); agId = await reservar(ag, true);
+    }
+    if (jaPagou) await addDoc(collection(db, 'caixa'), { tipo: 'entrada', desc: `${svcNome} (balcão) — ${ag.clienteNome}`, val: preco, hora: agora(), data: hoje(), origem: 'balcao', agId, _createdAt: serverTimestamp() });
+    closeModal('m-walkin');
+    toast(`Horário ${hora} ocupado${jaPagou ? ' e pagamento lançado no caixa' : ''}!`);
+    renderAtual();
+  } catch (e) { toast(erroAmigavel(e), true); }
+  finally { unloading(); }
+}
+
 /* ════════ CONFIGURAÇÕES ════════ */
 let cfgMes = new Date(); cfgMes.setDate(1);
 function renderConfig() {
@@ -3705,6 +3818,9 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'balcao': () => abrirBalcao('cliente'),
+  'wi-modo': el => { wiModo = el.dataset.m; renderBalcao(false); },
+  'salvar-balcao': el => { el.disabled = true; salvarBalcao().finally(() => { el.disabled = false; }); },
   'arte-modelo': el => { arte.modelo = el.dataset.m; arte.v = valoresPadrao(arte.modelo); renderFormArte(); atualizarArte(); $('arte-editor').scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   'arte-formato': el => { arte.formato = el.dataset.f; renderFormArte(); atualizarArte(); },
   'arte-foto': () => $('arte-foto-input').click(),
@@ -3778,6 +3894,8 @@ const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
   'as-valor': preencherValorAssin,
   'vd-total': atualizarTotalVenda,
+  'wi-svc': () => renderBalcao(true),
+  'wi-horas': () => horariosBalcao(),
   'arte-campo': el => { arte.v[el.dataset.k] = el.value; atualizarArte(); },
   'cfg-dia': el => { CFG_EDIT.horarios[el.dataset.d].ativo = el.checked; renderHorariosCfg(); renderCalCfg(); },
   'cfg-hora': el => { CFG_EDIT.horarios[el.dataset.d][el.dataset.k] = el.value; },
