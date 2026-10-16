@@ -269,6 +269,12 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .arte-preview{position:sticky;top:130px;}
 .arte-preview canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--k-border);display:block;background:#000;}
 @media (max-width:760px){.arte-editor{grid-template-columns:1fr;}.arte-preview{position:static;max-width:340px;margin:0 auto;width:100%;}}
+.pag-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.8rem;}
+.pag-op{background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:.65rem .5rem;color:var(--k-cream);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;font:inherit;}
+.pag-op i{font-size:22px;color:var(--k-gold);}
+.pag-op b{font-size:12px;}
+.pag-op small{font-size:10px;color:var(--k-muted);}
+.pag-op[aria-pressed="true"]{border-color:var(--k-gold);background:rgba(201,168,76,.12);}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -662,6 +668,8 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
         </div>
         <div class="form-group"><label class="form-label" for="cfg-reserva">Tempo para pagar a reserva</label>
           <select class="form-input" id="cfg-reserva"><option value="30">30 min</option><option value="60">1 hora</option><option value="120">2 horas</option><option value="240">4 horas</option></select>
+          <label class="form-label" for="cfg-pagar-local" style="margin-top:.85rem;">Pagamento dos serviços avulsos</label>
+          <select class="form-input" id="cfg-pagar-local"><option value="1">PIX pelo app ou na barbearia (cliente escolhe)</option><option value="0">Só PIX pelo app</option></select>
           <div class="cm" style="margin-top:5px;">Depois desse tempo sem pagamento confirmado, o horário volta a aparecer livre para outros clientes.</div></div>
       </div></div>
 
@@ -1103,7 +1111,7 @@ const tempoMs = v => (v && typeof v.toMillis === 'function') ? v.toMillis() : (t
 const CFG_PADRAO = {
   nome: 'KJota Barbearia', tel: '', insta: '', end: '', cidade: '', cep: '',
   pixTipo: 'Telefone', pixKey: '', pixNome: 'KJota Barbearia', pixCidade: '',
-  intervalo: 30, antecedenciaH: 2, reservaMin: 60,
+  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true,
   horarios: {
     0: { ativo: false, inicio: '08:00', fim: '18:00', label: 'Domingo' },
     1: { ativo: true, inicio: '08:00', fim: '20:00', label: 'Segunda' },
@@ -1352,7 +1360,7 @@ async function doCadastro() {
     cadastrando = false;
     await entrar(cred.user);
     await dadosProntos;
-    abrirEscolhaPlano();
+    toast(`Bem-vindo, ${primeiroNome(nome)}! Agende seu horário em Serviços.`);
   } catch (e) {
     cadastrando = false;
     mostrarErro('cad-error', erroLogin(e));
@@ -1374,6 +1382,7 @@ function sairLocal() {
   document.querySelectorAll('.modal-overlay.open').forEach(el => el.classList.remove('open'));
   $('app').classList.remove('visible');
   $('login-pass').value = '';
+  mostrarAba('login');
   mostrarLogin();
 }
 
@@ -1578,7 +1587,7 @@ function tratarAgs() {
       const ant = agsAntes[a.id], quando = `${fmtCurto(a.data)} às ${a.hora}`;
       if (S.role === 'dono') {
         if (!ant && a.origem !== 'balcao' && a.status !== 'cancel')
-          avisar(a.status === 'aguardando_pag' ? '📅 Nova reserva (aguardando PIX)' : '📅 Novo agendamento', `${nomeCli(a.cliente, a.clienteNome)} · ${a.svc} · ${quando}`, a.chatId ? { chatId: a.chatId } : { sec: 'agenda', dia: a.data });
+          avisar(a.status === 'aguardando_pag' ? '📅 Nova reserva (aguardando PIX)' : (a.pagarNoLocal ? '📅 Novo agendamento (paga na barbearia)' : '📅 Novo agendamento'), `${nomeCli(a.cliente, a.clienteNome)} · ${a.svc} · ${quando}`, a.chatId ? { chatId: a.chatId } : { sec: 'agenda', dia: a.data });
         else if (ant && ant.st !== 'cancel' && a.status === 'cancel' && a.canceladoPor === 'cliente')
           avisar('❌ Cliente cancelou', `${nomeCli(a.cliente, a.clienteNome)} · ${a.svc} · ${fmtCurto(ant.d)} às ${ant.h}`, { sec: 'agenda', dia: ant.d });
         else if (ant && (ant.d !== a.data || ant.h !== a.hora) && a.remarcadoPor === 'cliente')
@@ -1784,6 +1793,7 @@ function linhaAgDono(a) {
     (reservaExpirada(a) ? '<span class="chip red">Reserva expirada</span>' : '') +
     (a.remarcadoPor === 'cliente' ? '<span class="chip">Remarcado pelo cliente</span>' : '') +
     (a.balcao ? '<span class="chip"><i class="ti ti-walk"></i>Balcão</span>' : '') +
+    (a.pagarNoLocal && !a.pago && a.status !== 'cancel' ? `<span class="chip"><i class="ti ti-building-store"></i>Paga na barbearia${valorPagoAg(a) ? ' · ' + moeda(valorPagoAg(a)) : ''}</span>` : '') +
     (a.creditoUsado ? `<span class="chip">Usou ${moeda(a.creditoUsado)} de crédito</span>` : '') +
     (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '') + (a.avaliacao ? `<span class="chip">${estrelas(Number(a.avaliacao))}</span>` : '');
   const acoes = acoesAgDono(a);
@@ -1853,8 +1863,11 @@ async function alterarStatus(id, st) {
     try {
       const b = writeBatch(db);
       b.update(doc(db, 'agendamentos', a.id), { status: 'done', concluidoEm: serverTimestamp() });
-      if (!a.pago && Number(a.preco) > 0)
-        b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: a.svc + ' — ' + nomeCli(a.cliente, a.clienteNome), val: Number(a.preco), hora: agora(), data: hoje(), origem: 'servico', agId: a.id, _createdAt: serverTimestamp() });
+      if (!a.pago && Number(a.preco) > 0) {
+        const cr = Number(a.creditoUsado) || 0, dinheiro = valorPagoAg(a);
+        if (cr > 0 && getCliente(a.cliente)) b.update(doc(db, 'clientes', String(a.cliente)), { credito: increment(-Math.min(cr, creditoDe(a.cliente))) });
+        if (dinheiro > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: a.svc + ' — ' + nomeCli(a.cliente, a.clienteNome) + (a.pagarNoLocal ? ' (pago na barbearia)' : '') + (cr ? ' · crédito ' + moeda(cr) : ''), val: dinheiro, hora: agora(), data: hoje(), origem: a.pagarNoLocal ? 'balcao' : 'servico', agId: a.id, _createdAt: serverTimestamp() });
+      }
       if (getCliente(a.cliente)) b.update(doc(db, 'clientes', String(a.cliente)), { visitas: increment(1) });
       await b.commit();
       toast('Atendimento concluído!');
@@ -2238,9 +2251,9 @@ async function confirmarNoDia(agId, data, hora, dur) {
 }
 
 /* ════════ TELA DE AGENDAMENTO (CLIENTE) ════════ */
-const agS = { modo: null, svc: null, planoId: null, ag: null, mes: null, data: null, hora: null, dur: 30, preco: 0 };
+const agS = { modo: null, svc: null, planoId: null, ag: null, mes: null, data: null, hora: null, dur: 30, preco: 0, pag: null };
 function abrirAgenda({ modo, svc, planoId, ag }) {
-  Object.assign(agS, { modo, svc, planoId: planoId || null, ag: ag || null, data: null, hora: null });
+  Object.assign(agS, { pag: null,  modo, svc, planoId: planoId || null, ag: ag || null, data: null, hora: null });
   agS.dur = ag ? (Number(ag.dur) || 30) : (Number(svc.dur) || 30);
   agS.preco = modo === 'plano-svc' ? 0 : (ag ? Number(ag.preco) || 0 : Number(svc.preco) || 0);
   const m = new Date(); m.setDate(1); agS.mes = m;
@@ -2323,9 +2336,18 @@ function escolherHoraAg(hh) {
     if (cr > 0 && falta <= 0) {
       nota = `<i class="ti ti-coins"></i><div>Seu crédito de <b>${moeda(creditoDe(S.cid))}</b> cobre esse agendamento. Não precisa pagar nada: a barbearia só confirma o horário.</div>`;
       botao = 'Reservar com crédito';
-    } else
-    nota = `<i class="ti ti-clock-dollar"></i><div>${cr > 0 ? `Usando <b>${moeda(cr)}</b> do seu crédito, falta pagar <b>${moeda(falta)}</b>. ` : ''}${temPlano ? 'Os itens do plano não são cobrados; você paga só o restante. ' : ''}O horário fica reservado por <b>${CONFIG.reservaMin >= 60 ? (CONFIG.reservaMin / 60) + ' h' : CONFIG.reservaMin + ' min'}</b>. Pague o PIX e envie o comprovante no chat para confirmar.</div>`;
-    if (!(cr > 0 && falta <= 0)) botao = 'Reservar e pagar';
+    } else {
+      const podeLocal = CONFIG.pagarLocal !== false, temPix = !!chavePixFormatada(CONFIG.pixTipo, CONFIG.pixKey);
+      if (!podeLocal) agS.pag = 'pix'; else if (!temPix) agS.pag = 'local'; else if (!agS.pag) agS.pag = 'pix';
+      const escolha = podeLocal && temPix ? `<div class="pag-opcoes" role="group" aria-label="Forma de pagamento">
+        <button class="pag-op" data-act="ag-pag" data-p="pix" aria-pressed="${agS.pag === 'pix'}"><i class="ti ti-qrcode"></i><b>PIX pelo app</b><small>Paga agora e já garante</small></button>
+        <button class="pag-op" data-act="ag-pag" data-p="local" aria-pressed="${agS.pag === 'local'}"><i class="ti ti-building-store"></i><b>Na barbearia</b><small>Dinheiro, cartão ou PIX no dia</small></button></div>` : '';
+      const pre = `${cr > 0 ? `Usando <b>${moeda(cr)}</b> do seu crédito, falta pagar <b>${moeda(falta)}</b>. ` : ''}${temPlano ? 'Os itens do plano não são cobrados; você paga só o restante. ' : ''}`;
+      nota = agS.pag === 'local'
+        ? `<i class="ti ti-building-store"></i><div>${pre}Você paga <b>${moeda(falta)}</b> na barbearia, no dia do atendimento. A barbearia confirma seu horário pelo app.${escolha}</div>`
+        : `<i class="ti ti-clock-dollar"></i><div>${pre}O horário fica reservado por <b>${CONFIG.reservaMin >= 60 ? (CONFIG.reservaMin / 60) + ' h' : CONFIG.reservaMin + ' min'}</b>. Pague o PIX e envie o comprovante no chat para confirmar.${escolha}</div>`;
+      botao = agS.pag === 'local' ? 'Agendar e pagar na barbearia' : 'Reservar e pagar';
+    }
   } else if (agS.modo === 'plano-svc') {
     const p = getPlano(agS.planoId), usado = usoPlano(S.cid, agS.data.slice(0, 7)), lim = Number(p && p.cortes) || 0;
     nota = `<i class="ti ti-crown"></i><div>Sem cobrança: incluso no <b>${esc(p ? p.nome : 'seu plano')}</b>.${lim ? ` Uso em ${MESES[deISO(agS.data).getMonth()].toLowerCase()}: <b>${usado} de ${lim}</b>.` : ''}</div>`;
@@ -2370,6 +2392,12 @@ async function confirmarAgendaCli() {
     }
     // avulso (ou combo com parte paga): reserva o horário e abre o chat de pagamento
     const creditoUsado = Math.min(creditoDe(S.cid), agS.preco), falta = agS.preco - creditoUsado;
+    if (falta > 0 && agS.pag === 'local' && CONFIG.pagarLocal !== false) {   // pagar na barbearia: sem PIX, sem prazo de reserva
+      await reservar({ cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'avulso', data: agS.data, hora: agS.hora, dur: agS.dur, preco: agS.preco, creditoUsado, obs: '', status: 'wait', pago: false, pagarNoLocal: true });
+      limparEsperaDoDia(agS.data); limparSelecao(); esconderTela('agenda-screen');
+      toast(`Agendado! Pague ${moeda(falta)} na barbearia no dia.`); goTo('minha-area');
+      return;
+    }
     const ag = { cliente: S.cid, clienteNome: S.nome, svc: agS.svc.nome, ...extra, tipo: 'avulso', data: agS.data, hora: agS.hora, dur: agS.dur, preco: agS.preco, creditoUsado, obs: '', status: 'aguardando_pag', pago: false };
     const agId = await reservar(ag);
     const lista = itens.map(i => `• ${i.nome}${i.plano ? ' (incluso no plano)' : ' · ' + moeda(i.preco)}`).join('\n');
@@ -2441,7 +2469,7 @@ function renderMinhaArea() {
     let acoes = '';
     if (podeAlterar(a)) acoes = `<button class="btn btn-outline btn-sm" data-act="remarcar" data-id="${a.id}"><i class="ti ti-calendar-repeat"></i>Remarcar</button><button class="btn btn-danger btn-sm" data-act="cancelar-meu" data-id="${a.id}">Cancelar</button>`;
     if (a.status === 'aguardando_pag') { const ch = a.chatId || (D.chats.find(c => c.agId === a.id) || {}).id; if (ch) acoes = `<button class="btn btn-gold btn-sm" data-act="abrir-chat" data-id="${ch}"><i class="ti ti-qrcode"></i>Pagar</button>` + acoes; }
-    return `<div class="row-item wrap-sm"${a.status === 'cancel' ? ' style="opacity:.55"' : ''}><div class="agenda-time">${esc(a.hora)}</div><div class="row-main"><div class="cn">${esc(a.svc)}</div><div class="cm">${DIAS_CURTO[deISO(a.data).getDay()]}, ${fmt(a.data)}${reservaExpirada(a) ? ' · reserva expirada' : ''}</div></div><div class="row-end">${badgeSt(a.status)}${acoes ? `<div class="row-actions">${acoes}</div>` : ''}</div></div>`;
+    return `<div class="row-item wrap-sm"${a.status === 'cancel' ? ' style="opacity:.55"' : ''}><div class="agenda-time">${esc(a.hora)}</div><div class="row-main"><div class="cn">${esc(a.svc)}</div><div class="cm">${DIAS_CURTO[deISO(a.data).getDay()]}, ${fmt(a.data)}${reservaExpirada(a) ? ' · reserva expirada' : ''}${a.pagarNoLocal && !a.pago && a.status !== 'cancel' && a.status !== 'done' ? ` · <b style="color:var(--k-gold)">pagar ${moeda(valorPagoAg(a))} na barbearia</b>` : ''}</div></div><div class="row-end">${badgeSt(a.status)}${acoes ? `<div class="row-actions">${acoes}</div>` : ''}</div></div>`;
   };
   $('meus-ags').innerHTML = (futuros.length ? futuros.map(linha).join('') : vazio('ti-calendar-plus', 'Nenhum horário marcado. Vá em Serviços para agendar.')) +
     (passados.length ? `<div class="divider"></div><div class="cm" style="margin-bottom:.3rem;">Histórico</div>` + passados.map(linha).join('') : '') +
@@ -3628,7 +3656,7 @@ function renderConfig() {
   f('cfg-cidade', CFG_EDIT.cidade); f('cfg-cep', CFG_EDIT.cep); f('cfg-pix-tipo', CFG_EDIT.pixTipo); f('cfg-pix-key', CFG_EDIT.pixKey);
   f('cfg-pix-nome', CFG_EDIT.pixNome); f('cfg-pix-cidade', CFG_EDIT.pixCidade);
   f('cfg-google', CFG_EDIT.googleUrl);
-  f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin));
+  f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1');
   renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif();
 }
 function renderHorariosCfg() {
@@ -3663,7 +3691,7 @@ function cfgDoFormulario() {
   return { ...CFG_EDIT, nome: g('cfg-nome') || 'KJota Barbearia', tel: g('cfg-tel'), insta: g('cfg-insta'), end: g('cfg-end'), cidade: g('cfg-cidade'), cep: g('cfg-cep'),
     pixTipo: $('cfg-pix-tipo').value, pixKey: g('cfg-pix-key'), pixNome: g('cfg-pix-nome'), pixCidade: g('cfg-pix-cidade'),
     googleUrl: g('cfg-google'),
-    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60 };
+    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0' };
 }
 function previewPix() {
   const cfg = cfgDoFormulario();
@@ -3818,6 +3846,7 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'ag-pag': el => { agS.pag = el.dataset.p; escolherHoraAg(agS.hora); },
   'balcao': () => abrirBalcao('cliente'),
   'wi-modo': el => { wiModo = el.dataset.m; renderBalcao(false); },
   'salvar-balcao': el => { el.disabled = true; salvarBalcao().finally(() => { el.disabled = false; }); },
