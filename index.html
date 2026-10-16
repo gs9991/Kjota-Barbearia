@@ -747,6 +747,25 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
         <button class="btn btn-gold btn-sm" data-act="compartilhar-app"><i class="ti ti-qrcode"></i>Abrir link e QR Code</button>
       </div></div>
 
+      <div class="card" id="card-backup"><div class="card-header"><span class="card-title"><i class="ti ti-database-export"></i>Backup e planilhas</span></div><div class="card-body">
+        <p class="cm" style="margin:0 0 .7rem;line-height:1.6;">Baixe uma cópia de segurança de tudo (guarde no Google Drive ou no computador) ou planilhas para abrir no Excel.</p>
+        <button class="btn btn-gold btn-sm" data-act="backup"><i class="ti ti-download"></i>Baixar backup completo</button>
+        <p class="cm" id="bk-info" style="margin:.5rem 0 .9rem;"></p>
+        <span class="form-label">Planilhas (Excel)</span>
+        <div class="row-actions" style="justify-content:flex-start">
+          <button class="btn btn-outline btn-sm" data-act="exportar" data-c="clientes">Clientes</button>
+          <button class="btn btn-outline btn-sm" data-act="exportar" data-c="agendamentos">Agendamentos</button>
+          <button class="btn btn-outline btn-sm" data-act="exportar" data-c="caixa">Caixa</button>
+          <button class="btn btn-outline btn-sm" data-act="exportar" data-c="assinantes">Assinantes</button>
+          <button class="btn btn-outline btn-sm" data-act="exportar" data-c="produtos">Produtos</button>
+          <button class="btn btn-outline btn-sm" data-act="exportar" data-c="giros">Roleta</button>
+        </div>
+        <div class="divider"></div>
+        <span class="form-label">Manutenção</span>
+        <p class="cm" style="margin:0 0 .6rem;line-height:1.6;">Confere a tabela de horários ocupados com os agendamentos reais (corrige horário "fantasma" ocupado ou liberado) e atualiza a última visita dos clientes. Rode se algo parecer estranho na agenda, ou uma vez por mês.</p>
+        <button class="btn btn-outline btn-sm" data-act="reparar"><i class="ti ti-tool"></i>Reparar agenda e histórico</button>
+      </div></div>
+
       <div class="card" id="card-migracao"><div class="card-header"><span class="card-title"><i class="ti ti-database-import"></i>Migração da versão antiga</span></div><div class="card-body">
         <p class="cm" style="margin:0 0 .7rem;line-height:1.6;">Cria o login seguro de cada cliente antigo (mesmo usuário e senha de antes), apaga as senhas que estavam salvas no banco e prepara a agenda para o bloqueio de horários. Pode rodar mais de uma vez sem duplicar nada.</p>
         <button class="btn btn-gold btn-sm" data-act="migrar"><i class="ti ti-player-play"></i>Rodar migração</button>
@@ -1474,13 +1493,13 @@ function iniciarOuvintes() {
   if (S.role === 'dono') {
     lista('clientes', 'clientes', collection(db, 'clientes'), (a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
     lista('assinantes', 'assinantes', collection(db, 'assinantes'));
-    ouvir('agendamentos', collection(db, 'agendamentos'), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
-    lista('caixa', 'caixa', collection(db, 'caixa'), (a, b) => (b.data || '').localeCompare(a.data || '') || (b.hora || '').localeCompare(a.hora || ''));
-    ouvir('chats', collection(db, 'chats'), snap => tratarChats(snap, 'naoLidasDono'));
+    ouvir('agendamentos', query(collection(db, 'agendamentos'), where('data', '>=', addDias(hoje(), -JANELA_AGS))), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
+    lista('caixa', 'caixa', query(collection(db, 'caixa'), where('data', '>=', addMeses(hoje().slice(0, 8) + '01', -1))), (a, b) => (b.data || '').localeCompare(a.data || '') || (b.hora || '').localeCompare(a.hora || ''));
+    ouvir('chats', query(collection(db, 'chats'), where('atualizadoEm', '>=', new Date(Date.now() - JANELA_CHATS * 864e5))), snap => tratarChats(snap, 'naoLidasDono'));
     lista('produtos', 'produtos', collection(db, 'produtos'), (a, b) => String(a.nome).localeCompare(String(b.nome)));
     lista('espera', 'espera', collection(db, 'espera'));
     lista('custos', 'custos', collection(db, 'custos'));
-    ouvir('giros', collection(db, 'giros'), snap => { D.giros = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarGiros(); });
+    ouvir('giros', query(collection(db, 'giros'), where('criadoEm', '>=', new Date(Date.now() - JANELA_GIROS * 864e5))), snap => { D.giros = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarGiros(); });
   } else {
     const cid = S.cid;
     let creditoAntes = null;
@@ -1702,6 +1721,7 @@ function renderDash() {
   if (aniv.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-clientes" data-f="aniv"><i class="ti ti-cake"></i><div><b>${aniv.length} aniversariante${aniv.length > 1 ? 's' : ''} este mês${anivHoje.length ? ` (${anivHoje.map(c => primeiroNome(c.nome)).join(', ')} hoje!)` : ''}.</b> Toque para mandar parabéns ou dar um crédito de presente.</div></button>`;
   const sum = sumidos();
   if (sum.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-clientes" data-f="sumidos"><i class="ti ti-user-question"></i><div><b>${sum.length} cliente${sum.length > 1 ? 's' : ''} sumido${sum.length > 1 ? 's' : ''}</b> há mais de ${DIAS_SUMIDO} dias. Toque para chamar no WhatsApp.</div></button>`;
+  alertas += lembreteBackup();
   const premiosPend = D.giros.filter(g => g.status === 'pendente' && !giroExpirado(g)).length;
   if (premiosPend) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="roleta"><i class="ti ti-gift"></i><div><b>${premiosPend} prêmio${premiosPend > 1 ? 's' : ''} da roleta para resgatar.</b> Confira o código do cliente e confirme.</div></button>`;
   const baixos = D.produtos.filter(estoqueBaixo);
@@ -1848,7 +1868,8 @@ function linhaAgDono(a) {
     (a.balcao ? '<span class="chip"><i class="ti ti-walk"></i>Balcão</span>' : '') +
     (a.pagarNoLocal && !a.pago && a.status !== 'cancel' ? `<span class="chip"><i class="ti ti-building-store"></i>Paga na barbearia${valorPagoAg(a) ? ' · ' + moeda(valorPagoAg(a)) : ''}</span>` : '') +
     (a.creditoUsado ? `<span class="chip">Usou ${moeda(a.creditoUsado)} de crédito</span>` : '') +
-    (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '') + (a.avaliacao ? `<span class="chip">${estrelas(Number(a.avaliacao))}</span>` : '');
+    (a.creditoGerado ? `<span class="chip">Virou crédito</span>` : '') + (a.estornado ? '<span class="chip red">Devolvido</span>' : '') + (a.avaliacao ? `<span class="chip">${estrelas(Number(a.avaliacao))}</span>` : '') +
+    alertasAg(a).map(t => `<span class="chip red"><i class="ti ti-alert-triangle"></i>${esc(t)}</span>`).join('');
   const acoes = acoesAgDono(a);
   return `<div class="row-item ag-dono"${a.status === 'cancel' ? ' style="opacity:.55"' : ''}><div class="agenda-time">${esc(a.hora)}</div><div class="row-main"><div class="cn">${esc(nomeCli(a.cliente, a.clienteNome))}${chips}</div>` +
     `<div class="cm">${esc(a.svc)} · ${Number(a.dur) || 30} min${a.preco ? ' · ' + moeda(a.preco) : ''}${a.obs ? ' · ' + esc(a.obs) : ''}${wa ? ` · <a href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div>` +
@@ -1885,6 +1906,7 @@ function renderAgendaDia() {
   $('ag-dia-label').textContent = (agDia === t ? 'Hoje — ' : DIAS_LONGO[deISO(agDia).getDay()] + ', ') + fmt(agDia);
   const ags = D.agendamentos.filter(a => a.data === agDia).sort((a, b) => (a.hora || '').localeCompare(b.hora || '') || (a.status === 'cancel') - (b.status === 'cancel'));
   const el = $('lista-agenda');
+  if (agDia < addDias(hoje(), -JANELA_AGS)) { el.innerHTML = vazio('ti-archive', `Para deixar o app rápido, a agenda mostra os últimos ${JANELA_AGS} dias. Para ver datas antigas, use Config. → Backup → Agendamentos (planilha).`); return; }
   const bloqs = bloqueiosDoDia(agDia).map(b => ({ bloqueio: true, ...b }));
   const linhas = [...ags, ...bloqs].sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
   const esp = D.espera.filter(e => e.data === agDia);
@@ -1909,6 +1931,7 @@ async function alterarStatus(id, st) {
     return;
   }
   if (st === 'conf') {
+    if (alertasAg(a).length && !confirmar(avisoSeg(a) + 'Confirmar esse horário mesmo assim?')) return;
     await comLoading('Confirmando', async () => { try { await updateDoc(doc(db, 'agendamentos', a.id), { status: 'conf', confirmadoEm: serverTimestamp() }); toast('Horário confirmado! O cliente foi avisado.'); } catch (e) { toast(erroAmigavel(e), true); } });
     return;
   }
@@ -1921,7 +1944,7 @@ async function alterarStatus(id, st) {
         if (cr > 0 && getCliente(a.cliente)) b.update(doc(db, 'clientes', String(a.cliente)), { credito: increment(-Math.min(cr, creditoDe(a.cliente))) });
         if (dinheiro > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: a.svc + ' — ' + nomeCli(a.cliente, a.clienteNome) + (a.pagarNoLocal ? ' (pago na barbearia)' : '') + (cr ? ' · crédito ' + moeda(cr) : ''), val: dinheiro, hora: agora(), data: hoje(), origem: a.pagarNoLocal ? 'balcao' : 'servico', agId: a.id, _createdAt: serverTimestamp() });
       }
-      if (getCliente(a.cliente)) b.update(doc(db, 'clientes', String(a.cliente)), { visitas: increment(1) });
+      if (getCliente(a.cliente)) b.update(doc(db, 'clientes', String(a.cliente)), { visitas: increment(1), ...((getCliente(a.cliente).ultimaVisita || '') < a.data ? { ultimaVisita: a.data } : {}) });
       await b.commit();
       toast('Atendimento concluído!');
     } catch (e) { toast(erroAmigavel(e), true); }
@@ -2261,8 +2284,9 @@ async function reservar(ag, forcar) {
   const agRef = doc(collection(db, 'agendamentos'));
   await runTransaction(db, async tx => {
     const snap = await tx.get(diaRef(ag.data));
-    const itens = itensValidos(snap.exists() ? snap.data().itens : []);
-    if (!forcar && conflita(itens.concat(bloqueiosDoDia(ag.data)), ag.hora, ag.dur)) throw new Error('OCUPADO');
+    const base = snap.exists() ? (snap.data().itens || []) : [];
+    if (!forcar && conflita(itensValidos(base).concat(bloqueiosDoDia(ag.data)), ag.hora, ag.dur)) throw new Error('OCUPADO');
+    const itens = S.role === 'dono' ? itensValidos(base) : base.slice();   // cliente não pode apagar itens de outros
     itens.push({ id: agRef.id, hora: ag.hora, dur: Number(ag.dur) || 30, st: ag.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
     tx.set(diaRef(ag.data), { itens });
     tx.set(agRef, { ...ag, criadoEm: serverTimestamp() });
@@ -2282,7 +2306,7 @@ async function remarcarAg(ag, data, hora) {
     const sVelho = await tx.get(diaRef(ag.data));
     const sNovo = mesmoDia ? sVelho : await tx.get(diaRef(data));
     const velhos = (sVelho.exists() ? sVelho.data().itens : []).filter(i => i.id !== ag.id);
-    const novos = mesmoDia ? velhos : itensValidos(sNovo.exists() ? sNovo.data().itens : []);
+    const novos = mesmoDia ? velhos : (sNovo.exists() ? (sNovo.data().itens || []) : []).slice();
     if (conflita(itensValidos(novos).concat(S.role === 'dono' ? [] : bloqueiosDoDia(data)), hora, ag.dur, ag.id)) throw new Error('OCUPADO');
     novos.push({ id: ag.id, hora, dur: Number(ag.dur) || 30, st: ag.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
     if (!mesmoDia) tx.set(diaRef(ag.data), { itens: velhos });
@@ -2814,7 +2838,7 @@ async function confirmarPagAg(id) {
   const a = getAg(id); if (!a || a.status !== 'aguardando_pag') return;
   const ch = a.chatId && getChat(a.chatId);
   if (ch && ch.status === 'pendente') return confirmarPagamento(ch.id);
-  if (!confirmar(valorPagoAg(a) > 0 ? `Confirmar o pagamento de ${moeda(valorPagoAg(a))} de ${nomeCli(a.cliente, a.clienteNome)}?${a.creditoUsado ? ` (+ ${moeda(a.creditoUsado)} de crédito)` : ''}` : `Confirmar o horário de ${nomeCli(a.cliente, a.clienteNome)} pago com ${moeda(a.creditoUsado)} de crédito?`)) return;
+  if (!confirmar(avisoSeg(a) + (valorPagoAg(a) > 0 ? `Confirmar o pagamento de ${moeda(valorPagoAg(a))} de ${nomeCli(a.cliente, a.clienteNome)}?${a.creditoUsado ? ` (+ ${moeda(a.creditoUsado)} de crédito)` : ''}` : `Confirmar o horário de ${nomeCli(a.cliente, a.clienteNome)} pago com ${moeda(a.creditoUsado)} de crédito?`))) return;
   await comLoading('Confirmando', async () => {
     try {
       await confirmarNoDia(a.id, a.data, a.hora, a.dur);
@@ -2829,7 +2853,7 @@ async function confirmarPagAg(id) {
 async function confirmarPagamento(chatId) {
   const c = getChat(chatId || S.chatId); if (!c || c.status !== 'pendente') return;
   const nome = c.clienteNome || nomeCli(c.clienteId);
-  if (!confirmar(totalChat(c) > 0 ? `Confirmar o pagamento de ${moeda(totalChat(c))} de ${nome}?${c.creditoUsado ? ` (+ ${moeda(c.creditoUsado)} de crédito)` : ''}` : `Confirmar o horário de ${nome} pago com ${moeda(c.creditoUsado)} de crédito?`)) return;
+  if (!confirmar(avisoSeg(c.agId && getAg(c.agId)) + (totalChat(c) > 0 ? `Confirmar o pagamento de ${moeda(totalChat(c))} de ${nome}?${c.creditoUsado ? ` (+ ${moeda(c.creditoUsado)} de crédito)` : ''}` : `Confirmar o horário de ${nome} pago com ${moeda(c.creditoUsado)} de crédito?`))) return;
   loading('Confirmando pagamento');
   try {
     if (c.tipo === 'avulso') {
@@ -3022,7 +3046,9 @@ async function removerBloq(bid) {
 let cliFiltro = 'todos';
 const DIAS_SUMIDO = 45;
 function ultimaVisita(cid) {
-  return D.agendamentos.filter(a => String(a.cliente) === String(cid) && a.status === 'done').map(a => a.data).sort().pop() || null;
+  const c = getCliente(cid), carregada = D.agendamentos.filter(a => String(a.cliente) === String(cid) && a.status === 'done').map(a => a.data).sort().pop() || '';
+  const salva = (c && c.ultimaVisita) || '';
+  return (carregada > salva ? carregada : salva) || null;
 }
 function temFuturo(cid) { const t = hoje(); return D.agendamentos.some(a => String(a.cliente) === String(cid) && a.data >= t && ['wait', 'conf', 'aguardando_pag'].includes(a.status)); }
 function aniversariantes(mes) {
@@ -3710,7 +3736,7 @@ function renderConfig() {
   f('cfg-pix-nome', CFG_EDIT.pixNome); f('cfg-pix-cidade', CFG_EDIT.pixCidade);
   f('cfg-google', CFG_EDIT.googleUrl);
   f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1');
-  renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif();
+  renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif(); renderInfoBackup();
 }
 function renderHorariosCfg() {
   $('cfg-horarios').innerHTML = Object.keys(CFG_EDIT.horarios).map(d => {
@@ -3820,6 +3846,7 @@ async function migrar() {
       if (c.naoLidasDono == null) up.naoLidasDono = 0;
       if (c.naoLidasCliente == null) up.naoLidasCliente = 0;
       if (!c.tipo) up.tipo = 'plano';
+      if (!c.atualizadoEm) up.atualizadoEm = serverTimestamp();
       if (Object.keys(up).length) { await updateDoc(doc(db, 'chats', c.id), up); nChats++; }
     }
     logMig(`   ✓ ${nChats} chat(s) atualizados`);
@@ -4037,7 +4064,7 @@ function renderGanhadores() {
     const exp = giroExpirado(g);
     const acoes = g.status === 'pendente' && !exp ? `<button class="btn btn-gold btn-sm" data-act="rl-resgatar" data-id="${g.id}"><i class="ti ti-check"></i>${g.tipo === 'credito' ? 'Dar crédito' : 'Resgatar'}</button><button class="btn btn-ghost btn-sm" data-act="rl-recusar" data-id="${g.id}" aria-label="Recusar"><i class="ti ti-x"></i></button>` : '';
     return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(g.clienteNome))}</div><div class="row-main"><div class="cn">${esc(g.clienteNome || nomeCli(g.cliente))} · ${esc(descPremio(g))}</div>` +
-      `<div class="cm">Código <b style="color:var(--k-gold)">${esc(g.codigo || '')}</b> · ${g.status === 'resgatado' ? 'resgatado' : g.status === 'recusado' ? 'recusado' : exp ? 'expirou ' + fmtCurto(g.validade) : 'vale até ' + fmtCurto(g.validade)}</div></div>` +
+      alertasGiro(g).map(t => `<span class="chip red"><i class="ti ti-alert-triangle"></i>${esc(t)}</span>`).join('') + `<div class="cm">Código <b style="color:var(--k-gold)">${esc(g.codigo || '')}</b> · ${g.status === 'resgatado' ? 'resgatado' : g.status === 'recusado' ? 'recusado' : exp ? 'expirou ' + fmtCurto(g.validade) : 'vale até ' + fmtCurto(g.validade)}</div></div>` +
       `<div class="row-end"><div class="row-actions">${acoes}</div></div></div>`;
   }).join('') : vazio('ti-gift-off', 'Ninguém ganhou prêmio ainda.');
 }
@@ -4056,7 +4083,8 @@ async function salvarRoleta() {
 async function resgatarGiro(id) {
   const g = D.giros.find(x => x.id === id); if (!g || g.status !== 'pendente') return;
   const cli = getCliente(g.cliente);
-  if (!confirmar(`Confirmar o prêmio "${descPremio(g)}" de ${g.clienteNome || 'cliente'} (código ${g.codigo})?${g.tipo === 'credito' ? `\n${moeda(g.valor)} entram como crédito na conta dele.` : ''}`)) return;
+  const ag = alertasGiro(g);
+  if (!confirmar((ag.length ? '⚠ ATENÇÃO: ' + ag.join(' · ') + '\n\n' : '') + `Confirmar o prêmio "${descPremio(g)}" de ${g.clienteNome || 'cliente'} (código ${g.codigo})?${g.tipo === 'credito' ? `\n${moeda(g.valor)} entram como crédito na conta dele.` : ''}`)) return;
   await comLoading('Resgatando', async () => {
     try {
       const b = writeBatch(db);
@@ -4076,6 +4104,135 @@ function tratarGiros() {
   const ids = new Set(D.giros.map(g => g.id));
   if (girosAntes && S.role === 'dono') D.giros.filter(g => !girosAntes.has(g.id) && g.status === 'pendente').forEach(g => avisar('🎁 Prêmio na roleta', `${g.clienteNome || 'Cliente'} ganhou ${descPremio(g)} (código ${g.codigo})`, { sec: 'roleta' }));
   girosAntes = ids;
+}
+
+/* ════════ BACKUP, EXPORTAÇÃO E MANUTENÇÃO (DONO) ════════ */
+const JANELA_AGS = 90, JANELA_GIROS = 120, JANELA_CHATS = 60;   // dias carregados em tempo real (o resto fica no banco)
+const COLS_BACKUP = ['config', 'servicos', 'planos', 'clientes', 'assinantes', 'agendamentos', 'caixa', 'chats', 'produtos', 'custos', 'espera', 'giros', 'perfis', 'agenda_dias'];
+const EXPORTS = {
+  clientes: { nome: 'Clientes', cols: [['nome', 'Nome'], ['tel', 'WhatsApp'], ['nasc', 'Aniversário'], ['user', 'Usuário'], ['visitas', 'Atendimentos'], ['ultimaVisita', 'Última visita'], ['credito', 'Crédito (R$)'], ['obs', 'Observação']] },
+  agendamentos: { nome: 'Agendamentos', cols: [['data', 'Data'], ['hora', 'Hora'], ['clienteNome', 'Cliente'], ['svc', 'Serviço'], ['dur', 'Duração (min)'], ['preco', 'Valor (R$)'], ['creditoUsado', 'Crédito usado'], ['status', 'Status'], ['tipo', 'Tipo'], ['pago', 'Pago'], ['pagarNoLocal', 'Paga na barbearia'], ['avaliacao', 'Avaliação'], ['obs', 'Observação']] },
+  caixa: { nome: 'Caixa', cols: [['data', 'Data'], ['hora', 'Hora'], ['tipo', 'Tipo'], ['desc', 'Descrição'], ['val', 'Valor (R$)'], ['origem', 'Origem']] },
+  assinantes: { nome: 'Assinantes', cols: [['cliente', 'Cliente'], ['plano', 'Plano'], ['inicio', 'Início'], ['vencimento', 'Vencimento'], ['meses', 'Meses'], ['val', 'Valor/mês'], ['status', 'Status']] },
+  produtos: { nome: 'Produtos', cols: [['nome', 'Produto'], ['preco', 'Preço'], ['estoque', 'Estoque'], ['estoqueMin', 'Estoque mínimo']] },
+  giros: { nome: 'Roleta', cols: [['clienteNome', 'Cliente'], ['nome', 'Prêmio'], ['tipo', 'Tipo'], ['valor', 'Valor'], ['codigo', 'Código'], ['status', 'Status'], ['validade', 'Validade']] }
+};
+const ST_TXT = { wait: 'Aguardando', conf: 'Confirmado', aguardando_pag: 'Aguardando PIX', done: 'Concluído', cancel: 'Cancelado' };
+function valorSimples(v) {
+  if (v == null) return '';
+  if (typeof v.toDate === 'function') return v.toDate().toISOString();
+  if (typeof v === 'object' && typeof v.seconds === 'number') return new Date(v.seconds * 1000).toISOString();
+  if (typeof v === 'object') return JSON.stringify(v);
+  return v;
+}
+function paraJSON(v) {   // Timestamps viram texto ISO; fotos e comprovantes grandes ficam fora do backup
+  if (v == null || typeof v !== 'object') return typeof v === 'string' && v.startsWith('data:') && v.length > 2000 ? '[imagem]' : v;
+  if (typeof v.toDate === 'function') return v.toDate().toISOString();
+  if (Array.isArray(v)) return v.map(paraJSON);
+  const o = {}; for (const [k, x] of Object.entries(v)) o[k] = paraJSON(x); return o;
+}
+async function lerTudo(col) { const s = await getDocs(collection(db, col)); return s.docs.map(d => ({ id: d.id, ...d.data() })); }
+function baixarTexto(texto, nome, tipo) {
+  const url = URL.createObjectURL(new Blob([texto], { type: tipo }));
+  const a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+async function exportarCSV(col) {
+  const def = EXPORTS[col]; if (!def) return;
+  await comLoading('Exportando', async () => {
+    try {
+      let linhas = await lerTudo(col);
+      const nomesCli = Object.fromEntries(D.clientes.map(c => [String(c.id), c.nome]));
+      const nomesPlano = Object.fromEntries(D.planos.map(p => [String(p.id), p.nome]));
+      linhas = linhas.map(l => ({ ...l, clienteNome: l.clienteNome || nomesCli[String(l.cliente)] || '', status: col === 'agendamentos' ? (ST_TXT[l.status] || l.status) : l.status,
+        cliente: col === 'assinantes' ? (nomesCli[String(l.cliente)] || l.cliente) : l.cliente, plano: nomesPlano[String(l.plano)] || l.plano }));
+      if (col === 'agendamentos' || col === 'caixa') linhas.sort((a, b) => String(b.data).localeCompare(String(a.data)) || String(b.hora).localeCompare(String(a.hora)));
+      const celula = v => { v = valorSimples(v); if (typeof v === 'boolean') v = v ? 'Sim' : 'Não'; if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) v = fmt(v); if (typeof v === 'number') v = String(v).replace('.', ','); v = String(v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      const csv = '﻿' + [def.cols.map(c => c[1]).join(';'), ...linhas.map(l => def.cols.map(([k]) => celula(l[k])).join(';'))].join('\r\n');
+      baixarTexto(csv, `kjota-${col}-${hoje()}.csv`, 'text/csv;charset=utf-8');
+      toast(`${linhas.length} registro(s) exportado(s).`);
+    } catch (e) { toast(erroAmigavel(e, 'Não foi possível exportar.'), true); }
+  });
+}
+async function backupCompleto() {
+  await comLoading('Gerando backup', async () => {
+    try {
+      const dados = { app: 'KJota Barbearia', geradoEm: new Date().toISOString(), colecoes: {} };
+      for (const col of COLS_BACKUP) dados.colecoes[col] = paraJSON(await lerTudo(col).catch(() => []));
+      baixarTexto(JSON.stringify(dados, null, 1), `kjota-backup-${hoje()}.json`, 'application/json');
+      try { localStorage.setItem('kj-ultimo-backup', hoje()); } catch (e) {}
+      const total = Object.values(dados.colecoes).reduce((t, l) => t + l.length, 0);
+      toast(`Backup salvo (${total} registros). Guarde o arquivo no Google Drive ou no computador.`);
+      renderInfoBackup();
+    } catch (e) { toast(erroAmigavel(e, 'Não foi possível gerar o backup.'), true); }
+  });
+}
+function ultimoBackup() { try { return localStorage.getItem('kj-ultimo-backup') || ''; } catch (e) { return ''; } }
+function renderInfoBackup() {
+  const el = $('bk-info'); if (!el) return;
+  const u = ultimoBackup();
+  el.innerHTML = u ? `Último backup neste aparelho: <b style="color:var(--k-cream)">${fmt(u)}</b>` : '<span style="color:var(--k-red)">Nenhum backup feito neste aparelho ainda.</span>';
+}
+function lembreteBackup() {
+  const u = ultimoBackup(), dias = u ? Math.round((deISO(hoje()) - deISO(u)) / 864e5) : 999;
+  if (dias < 30) return '';
+  return `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-backup"><i class="ti ti-database-export"></i><div><b>${u ? `Seu último backup foi há ${dias} dias.` : 'Você ainda não fez nenhum backup.'}</b> Toque para baixar uma cópia de segurança dos dados (leva poucos segundos).</div></button>`;
+}
+
+/* Reparar: refaz a tabela de horários ocupados a partir dos agendamentos reais e atualiza a última visita dos clientes */
+async function repararDados() {
+  if (!confirmar('Reparar agora? O app confere todos os horários futuros e o histórico de visitas. Leva alguns segundos.')) return;
+  loading('Reparando');
+  try {
+    const t = hoje(), ags = await lerTudo('agendamentos');
+    const verdade = {};
+    ags.filter(a => a.data >= t && a.hora && ['wait', 'conf', 'aguardando_pag'].includes(a.status) && !reservaExpirada(a)).forEach(a => {
+      (verdade[a.data] = verdade[a.data] || []).push({ id: a.id, hora: a.hora, dur: Number(a.dur) || 30, st: a.status === 'aguardando_pag' ? 'p' : 'c', em: Date.now() });
+    });
+    const dias = new Set([...Object.keys(verdade), ...(await getDocs(collection(db, 'agenda_dias'))).docs.map(d => d.id).filter(id => id >= t)]);
+    let corrigidos = 0;
+    for (const ds of dias) {
+      const atual = await getDoc(diaRef(ds)), itens = verdade[ds] || [];
+      const antes = JSON.stringify((atual.exists() ? atual.data().itens || [] : []).filter(i => itensValidos([i]).length).map(i => i.id + i.hora + i.dur).sort());
+      if (antes !== JSON.stringify(itens.map(i => i.id + i.hora + i.dur).sort())) corrigidos++;
+      await setDoc(diaRef(ds), { itens });
+    }
+    const ultima = {};
+    ags.filter(a => a.status === 'done').forEach(a => { const k = String(a.cliente); if (!ultima[k] || a.data > ultima[k]) ultima[k] = a.data; });
+    const b = writeBatch(db); let nCli = 0;
+    D.clientes.forEach(c => { const u = ultima[String(c.id)]; if (u && u !== c.ultimaVisita) { b.update(doc(db, 'clientes', String(c.id)), { ultimaVisita: u }); nCli++; } });
+    if (nCli) await b.commit();
+    toast(`Pronto! ${dias.size} dia(s) conferido(s), ${corrigidos} corrigido(s), ${nCli} cliente(s) atualizado(s).`);
+  } catch (e) { toast(erroAmigavel(e, 'Não foi possível reparar.'), true); }
+  finally { unloading(); }
+}
+
+/* ════════ CONFERÊNCIA DE SEGURANÇA (o que o cliente mandou x o que está cadastrado) ════════ */
+const avisoSeg = a => { const l = a ? alertasAg(a) : []; return l.length ? '⚠ ATENÇÃO: ' + l.join(' · ') + '\n\n' : ''; };
+const feitoPeloCliente = a => !a.balcao && a.origem !== 'balcao';
+function precoEsperado(a) {
+  if (a.itens && a.itens.length) return a.itens.reduce((t, i) => t + (i.plano ? 0 : (getSvc(i.id) ? Number(getSvc(i.id).preco) || 0 : Number(i.preco) || 0)), 0);
+  const s = a.svcId && getSvc(a.svcId); return s ? Number(s.preco) || 0 : null;
+}
+function alertasAg(a) {
+  if (!feitoPeloCliente(a) || a.status === 'cancel') return [];
+  const out = [];
+  const esp = a.tipo === 'avulso' ? precoEsperado(a) : null;
+  if (esp != null && Number(a.preco || 0) + 0.01 < esp) out.push(`Valor diferente do cadastro (cadastro: ${moeda(esp)})`);
+  if ((a.tipo === 'plano-svc' || a.usaPlano) && !D.assinantes.some(s => String(s.cliente) === String(a.cliente) && s.status === 'ativo' && (!s.vencimento || s.vencimento >= a.data))) out.push('Cliente sem plano ativo');
+  if (Number(a.creditoUsado) > 0 && !a.pago && creditoDe(a.cliente) + 0.01 < Number(a.creditoUsado)) out.push(`Crédito insuficiente (tem ${moeda(creditoDe(a.cliente))})`);
+  return out;
+}
+function chaveDe(prefixo, ms) {
+  const d = new Date(ms), iso = dataISO(d);
+  return prefixo === 'd' ? 'd' + iso : prefixo === 'm' ? 'm' + iso.slice(0, 7) : prefixo === 's' ? 's' + semanaISO(d) : null;
+}
+function alertasGiro(g) {
+  const out = [], p = roletaCfg().premios.find(x => x.id === g.premioId);
+  if (!p || p.tipo !== g.tipo || Number(p.valor || 0) !== Number(g.valor || 0)) out.push('Prêmio não confere com a roleta');
+  const ms = tempoMs(g.criadoEm), pre = String(g.periodo || '')[0];
+  if (ms && ['d', 's', 'm'].includes(pre) && chaveDe(pre, ms) !== g.periodo) out.push('Giro fora do período');
+  return out;
 }
 
 /* ════════ EVENTOS ════════ */
@@ -4116,6 +4273,8 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'backup': backupCompleto, 'exportar': el => exportarCSV(el.dataset.c), 'reparar': repararDados,
+  'ir-backup': () => { goTo('config'); setTimeout(() => $('card-backup').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); },
   'girar': girarRoleta,
   'rl-add': () => { roletaEdit.premios.push({ id: 'p' + Date.now(), nome: '', tipo: 'brinde', valor: 0, chance: 10 }); renderRoletaDono(); },
   'rl-rem': el => { roletaEdit.premios.splice(Number(el.dataset.i), 1); renderRoletaDono(); },
