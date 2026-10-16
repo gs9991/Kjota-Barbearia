@@ -275,6 +275,23 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 .pag-op b{font-size:12px;}
 .pag-op small{font-size:10px;color:var(--k-muted);}
 .pag-op[aria-pressed="true"]{border-color:var(--k-gold);background:rgba(201,168,76,.12);}
+.so-dono,.so-cli{display:none;}
+body.papel-dono .so-dono,body.papel-cliente .so-cli{display:block;}
+.roleta-wrap{position:relative;width:min(88vw,380px);margin:0 auto;}
+.roleta-wrap canvas{width:100%;height:auto;display:block;filter:drop-shadow(0 8px 24px rgba(201,168,76,.18));}
+.roleta-ponteiro{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:34px solid var(--k-cream);z-index:2;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+.roleta-ganhou{text-align:center;background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:14px;padding:1.2rem;margin:1rem auto 0;max-width:380px;animation:fadeIn .4s;}
+.roleta-confete{font-size:40px;}
+.roleta-premio{font-family:var(--font-display);font-size:38px;color:var(--k-gold);letter-spacing:1px;line-height:1.1;}
+.roleta-codigo{display:inline-block;font-family:var(--font-display);font-size:34px;letter-spacing:6px;color:#0D0D0D;background:var(--k-gold);border-radius:10px;padding:.2rem 1rem;}
+.roleta-chamada{width:100%;text-align:left;cursor:pointer;color:inherit;border-color:var(--k-gold-dim);}
+.rl-head,.rl-premio{display:grid;grid-template-columns:1.6fr 1.1fr .7fr .9fr auto;gap:6px;align-items:center;}
+.rl-head{font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.rl-premio{margin-bottom:6px;}
+.rl-premio .form-input{padding:.4rem .5rem;font-size:13px;min-height:36px;}
+.rl-chance{display:flex;align-items:center;gap:4px;}
+.rl-chance span{font-size:11px;min-width:38px;}
+@media (max-width:640px){.rl-head{display:none;}.rl-premio{grid-template-columns:1fr 1fr;background:var(--k-card);padding:8px;border-radius:8px;}.rl-premio input[data-k="nome"]{grid-column:1/-1;}}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -616,6 +633,34 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
           <div class="form-group"><label class="form-label" for="arte-legenda">Legenda pronta para o post</label><textarea class="form-input" id="arte-legenda" rows="6"></textarea></div>
           <button class="btn btn-outline btn-sm" data-act="arte-copiar-legenda"><i class="ti ti-copy"></i>Copiar legenda</button>
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="s-roleta">
+      <div class="so-dono">
+        <div class="section-head"><h1 class="section-title">Roleta de prêmios</h1><span class="cm" id="rl-resumo"></span></div>
+        <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-settings"></i>Configuração</span>
+          <label class="toggle" title="Ativar roleta"><input type="checkbox" id="rl-ativa" aria-label="Roleta ativada"/><span class="toggle-slider"></span></label></div><div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="rl-freq">Cada cliente gira</label><select class="form-input" id="rl-freq"><option value="dia">1x por dia</option><option value="semana">1x por semana</option><option value="mes">1x por mês</option><option value="visita">1x a cada atendimento concluído</option></select></div>
+            <div class="form-group"><label class="form-label" for="rl-validade">Prêmio vale por (dias)</label><input class="form-input" type="number" min="1" id="rl-validade"/></div>
+          </div>
+          <span class="form-label">Prêmios e chances</span>
+          <p class="cm" style="margin:0 0 .6rem;">A chance é um peso: o app mostra a porcentagem real ao lado. Inclua um "Não foi dessa vez" para controlar quantos ganham.</p>
+          <div class="rl-head cm"><span>Prêmio</span><span>Tipo</span><span>Valor</span><span>Chance</span><span></span></div>
+          <div id="rl-premios"></div>
+          <div class="row-actions" style="justify-content:space-between;margin-top:.8rem;">
+            <button class="btn btn-outline btn-sm" data-act="rl-add"><i class="ti ti-plus"></i>Prêmio</button>
+            <div class="row-actions"><button class="btn btn-ghost btn-sm" data-act="rl-desfazer">Desfazer</button><button class="btn btn-gold btn-sm" data-act="rl-salvar"><i class="ti ti-device-floppy"></i>Salvar roleta</button></div>
+          </div>
+        </div></div>
+        <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-gift"></i>Prêmios ganhos</span></div><div class="card-body" id="rl-ganhadores"></div></div>
+      </div>
+      <div class="so-cli">
+        <h1 class="section-title" style="margin-bottom:.3rem;text-align:center;">Roleta de prêmios</h1>
+        <p class="cm" style="text-align:center;margin-bottom:1rem;">Gire e ganhe desconto, crédito ou brindes da KJota!</p>
+        <div id="roleta-area"></div>
+        <div id="roleta-meus" style="margin-top:1.2rem;"></div>
       </div>
     </section>
 
@@ -1127,7 +1172,7 @@ let CONFIG = structuredClone(CFG_PADRAO);
 let CFG_EDIT = null; // cópia em edição na tela de Configurações
 
 const S = { uid: null, role: null, cid: null, nome: '', user: '', secao: null, chatId: null };
-const D = { clientes: [], planos: [], servicos: [], assinantes: [], agendamentos: [], caixa: [], chats: [], espera: [], produtos: [], custos: [] };
+const D = { clientes: [], planos: [], servicos: [], assinantes: [], agendamentos: [], caixa: [], chats: [], espera: [], produtos: [], custos: [], giros: [] };
 let unsubs = [];
 let cadastrando = false;
 let prontoResolver = null, dadosProntos = null;
@@ -1375,6 +1420,7 @@ async function doLogout() {
 
 function sairLocal() {
   pararOuvintes();
+  girosAntes = null; roletaEdit = null;
   Object.assign(S, { uid: null, role: null, cid: null, nome: '', user: '', secao: null, chatId: null });
   for (const k of Object.keys(D)) D[k] = [];
   selSvc.clear();
@@ -1434,6 +1480,7 @@ function iniciarOuvintes() {
     lista('produtos', 'produtos', collection(db, 'produtos'), (a, b) => String(a.nome).localeCompare(String(b.nome)));
     lista('espera', 'espera', collection(db, 'espera'));
     lista('custos', 'custos', collection(db, 'custos'));
+    ouvir('giros', collection(db, 'giros'), snap => { D.giros = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarGiros(); });
   } else {
     const cid = S.cid;
     let creditoAntes = null;
@@ -1448,6 +1495,7 @@ function iniciarOuvintes() {
     ouvir('agendamentos', query(collection(db, 'agendamentos'), where('cliente', '==', cid)), snap => { D.agendamentos = snap.docs.map(d => ({ ...d.data(), id: d.id })); tratarAgs(); });
     ouvir('chats', query(collection(db, 'chats'), where('clienteId', '==', cid)), snap => tratarChats(snap, 'naoLidasCliente'));
     lista('produtos', 'produtos', collection(db, 'produtos'), (a, b) => String(a.nome).localeCompare(String(b.nome)));
+    ouvir('giros', query(collection(db, 'giros'), where('cliente', '==', cid)), snap => { D.giros = snap.docs.map(d => ({ ...d.data(), id: d.id })); });
     ouvir('espera', query(collection(db, 'espera'), where('cliente', '==', cid)), snap => { D.espera = snap.docs.map(d => ({ ...d.data(), id: d.id })); sincronizarEspera(); });
   }
 }
@@ -1491,13 +1539,14 @@ function renderAtual() {
 }
 
 function aplicarMarca() {
+  if (typeof atualizarNavRoleta === 'function') atualizarNavRoleta();
   const nome = (CONFIG.nome || 'KJota').split(' ')[0].toUpperCase();
   $('h-brand').textContent = nome;
 }
 
 /* ════════ NAVEGAÇÃO ════════ */
-const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['produtos', 'ti-package', 'Produtos'], ['artes', 'ti-palette', 'Artes'], ['config', 'ti-settings', 'Config.']];
-const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['produtos-cli', 'ti-package', 'Produtos'], ['planos-cli', 'ti-crown', 'Planos']];
+const NAV_DONO = [['dashboard', 'ti-layout-dashboard', 'Painel'], ['agenda', 'ti-calendar', 'Agenda'], ['clientes', 'ti-users', 'Clientes'], ['servicos', 'ti-scissors', 'Serviços'], ['assinaturas', 'ti-crown', 'Assinaturas'], ['chats', 'ti-message-circle', 'Chats'], ['caixa', 'ti-cash', 'Caixa'], ['produtos', 'ti-package', 'Produtos'], ['artes', 'ti-palette', 'Artes'], ['roleta', 'ti-gift', 'Roleta'], ['config', 'ti-settings', 'Config.']];
+const NAV_CLI = [['minha-area', 'ti-user', 'Minha Área'], ['svc-cli', 'ti-scissors', 'Serviços'], ['produtos-cli', 'ti-package', 'Produtos'], ['roleta', 'ti-gift', 'Roleta'], ['planos-cli', 'ti-crown', 'Planos']];
 
 function mostrarApp() {
   if (location.search || location.hash) try { history.replaceState(null, '', location.pathname); } catch (e) {}
@@ -1506,9 +1555,11 @@ function mostrarApp() {
   $('h-avatar').textContent = iniciais(S.nome);
   $('h-username').textContent = S.nome;
   $('h-role').textContent = S.role === 'dono' ? 'Dono' : 'Cliente';
+  document.body.classList.toggle('papel-dono', S.role === 'dono'); document.body.classList.toggle('papel-cliente', S.role !== 'dono');
   const itens = S.role === 'dono' ? NAV_DONO : NAV_CLI;
   $('main-nav').innerHTML = itens.map(([id, ic, lb]) =>
     `<button class="nav-btn" data-act="nav" data-sec="${id}"><i class="ti ${ic}"></i>${lb}${id === 'chats' || id === 'minha-area' ? ' <span class="nav-badge" id="badge-' + id + '" hidden></span>' : ''}</button>`).join('');
+  atualizarNavRoleta();
   goTo(itens[0][0]);
 }
 
@@ -1651,6 +1702,8 @@ function renderDash() {
   if (aniv.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-clientes" data-f="aniv"><i class="ti ti-cake"></i><div><b>${aniv.length} aniversariante${aniv.length > 1 ? 's' : ''} este mês${anivHoje.length ? ` (${anivHoje.map(c => primeiroNome(c.nome)).join(', ')} hoje!)` : ''}.</b> Toque para mandar parabéns ou dar um crédito de presente.</div></button>`;
   const sum = sumidos();
   if (sum.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ir-clientes" data-f="sumidos"><i class="ti ti-user-question"></i><div><b>${sum.length} cliente${sum.length > 1 ? 's' : ''} sumido${sum.length > 1 ? 's' : ''}</b> há mais de ${DIAS_SUMIDO} dias. Toque para chamar no WhatsApp.</div></button>`;
+  const premiosPend = D.giros.filter(g => g.status === 'pendente' && !giroExpirado(g)).length;
+  if (premiosPend) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="roleta"><i class="ti ti-gift"></i><div><b>${premiosPend} prêmio${premiosPend > 1 ? 's' : ''} da roleta para resgatar.</b> Confira o código do cliente e confirme.</div></button>`;
   const baixos = D.produtos.filter(estoqueBaixo);
   if (baixos.length) alertas += `<button class="note warn" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="produtos"><i class="ti ti-package"></i><div><b>Estoque baixo:</b> ${baixos.map(p => esc(p.nome) + ' (' + (Number(p.estoque) || 0) + ')').join(', ')}.</div></button>`;
   $('dash-alertas').innerHTML = blocoAvisos() + alertas;
@@ -2452,7 +2505,7 @@ function renderMinhaArea() {
   }
   const cr = creditoDe(S.cid);
   if (cr > 0) h = `<div class="note ok"><i class="ti ti-coins"></i><div><b>Você tem ${moeda(cr)} de crédito.</b> Ele é descontado automaticamente no seu próximo agendamento avulso.</div></div>` + h;
-  $('ma-assin').innerHTML = blocoAvisos() + h;
+  $('ma-assin').innerHTML = blocoAvisos() + blocoRoletaCli() + h;
 
   const abertos = D.chats.filter(c => c.status === 'pendente' || (Number(c.naoLidasCliente) || 0) > 0);
   $('ma-pagamentos').innerHTML = blocoGoogle() + blocoAvaliar() + blocoEspera() + (abertos.length ? `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-message-circle"></i>Pagamentos e mensagens</span></div><div class="card-body">` +
@@ -3808,8 +3861,225 @@ async function ativarNotif() {
   } else toast('Notificações bloqueadas. Libere nas configurações do navegador.', true);
 }
 
+/* ════════ ROLETA DE PRÊMIOS ════════
+   O dono cadastra os prêmios e as chances; o cliente gira 1 vez por período.
+   O prêmio só vale depois que o dono confirma o resgate (crédito entra na conta nesse momento). */
+const ROLETA_PADRAO = { ativa: false, frequencia: 'semana', validadeDias: 30, premios: [
+  { id: 'p1', nome: '10% de desconto', tipo: 'desconto', valor: 10, chance: 25 },
+  { id: 'p2', nome: 'R$ 5 de crédito', tipo: 'credito', valor: 5, chance: 20 },
+  { id: 'p3', nome: 'Pomada grátis', tipo: 'brinde', valor: 0, chance: 5 },
+  { id: 'p4', nome: 'Não foi dessa vez', tipo: 'nada', valor: 0, chance: 50 }
+] };
+const FREQ_LBL = { dia: 'uma vez por dia', semana: 'uma vez por semana', mes: 'uma vez por mês', visita: 'uma vez a cada atendimento concluído' };
+const TIPO_LBL = { desconto: 'Desconto (%)', credito: 'Crédito (R$)', brinde: 'Brinde', nada: 'Sem prêmio' };
+const roletaCfg = () => { const r = CONFIG.roleta || {}; return { ...ROLETA_PADRAO, ...r, premios: Array.isArray(r.premios) && r.premios.length ? r.premios : ROLETA_PADRAO.premios }; };
+function semanaISO(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dia = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dia); const ini = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return t.getUTCFullYear() + '-S' + pad(Math.ceil(((t - ini) / 864e5 + 1) / 7)); }
+function chavePeriodo() {
+  const f = roletaCfg().frequencia, d = new Date();
+  if (f === 'dia') return 'd' + hoje();
+  if (f === 'mes') return 'm' + hoje().slice(0, 7);
+  if (f === 'visita') return 'v' + (Number((getCliente(S.cid) || {}).visitas) || 0);
+  return 's' + semanaISO(d);
+}
+const idGiro = () => S.cid + '_' + chavePeriodo();
+const jaGirou = () => D.giros.some(g => g.id === idGiro());
+const giroExpirado = g => g.status === 'pendente' && g.validade && g.validade < hoje();
+function descPremio(p) {
+  if (p.tipo === 'credito') return `${moeda(p.valor)} de crédito`;
+  if (p.tipo === 'desconto') return `${Number(p.valor) || 0}% de desconto`;
+  return p.nome;
+}
+function proximoGiroTxt() {
+  const f = roletaCfg().frequencia;
+  if (f === 'dia') return 'amanhã';
+  if (f === 'mes') return 'no próximo mês';
+  if (f === 'visita') return 'depois do seu próximo atendimento';
+  return 'na próxima semana';
+}
+
+/* ── desenho da roleta ── */
+const CORES_FATIA = ['#C9A84C', '#1A1A1A', '#8A6E2E', '#262626'];
+let roletaAng = 0, girando = false;
+function desenharRoleta(ang) {
+  const cv = $('roleta-canvas'); if (!cv) return;
+  const premios = roletaCfg().premios, n = premios.length, D2 = 640;
+  cv.width = D2; cv.height = D2;
+  const c = cv.getContext('2d'), r = D2 / 2 - 14, cx = D2 / 2, cy = D2 / 2, fatia = Math.PI * 2 / n;
+  c.clearRect(0, 0, D2, D2);
+  c.beginPath(); c.arc(cx, cy, r + 10, 0, Math.PI * 2); c.fillStyle = '#8A6E2E'; c.fill();
+  premios.forEach((p, i) => {
+    const a0 = ang + i * fatia - Math.PI / 2, cor = (i === n - 1 && n % 2) ? '#3A3A3A' : CORES_FATIA[i % 4];
+    c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, r, a0, a0 + fatia); c.closePath(); c.fillStyle = cor; c.fill();
+    c.strokeStyle = 'rgba(13,13,13,.6)'; c.lineWidth = 2; c.stroke();
+    c.save(); c.translate(cx, cy); c.rotate(a0 + fatia / 2);
+    const claro = cor === '#C9A84C' || cor === '#8A6E2E';
+    c.fillStyle = claro ? '#0D0D0D' : '#F5F0E8'; c.textAlign = 'right'; c.textBaseline = 'middle';
+    let tam = n > 8 ? 22 : 28; c.font = `${tam}px "Bebas Neue", Impact, sans-serif`;
+    const txt = String(p.nome).toUpperCase(); while (c.measureText(txt).width > r - 125 && tam > 14) { tam--; c.font = `${tam}px "Bebas Neue", Impact, sans-serif`; }
+    c.fillText(txt, r - 22, 0); c.restore();
+  });
+  // pinos
+  for (let i = 0; i < n; i++) { const a = ang + i * fatia - Math.PI / 2; c.beginPath(); c.arc(cx + Math.cos(a) * (r + 2), cy + Math.sin(a) * (r + 2), 5, 0, Math.PI * 2); c.fillStyle = '#F5F0E8'; c.fill(); }
+  // miolo com a logo
+  c.beginPath(); c.arc(cx, cy, 78, 0, Math.PI * 2); c.fillStyle = '#0D0D0D'; c.fill(); c.lineWidth = 6; c.strokeStyle = '#C9A84C'; c.stroke();
+  if (arte.logo) c.drawImage(arte.logo, cx - 66, cy - 66, 132, 132);
+}
+function sortearPremio() {
+  const premios = roletaCfg().premios, total = premios.reduce((t, p) => t + Math.max(0, Number(p.chance) || 0), 0);
+  const rnd = (crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * total;
+  let acc = 0;
+  for (let i = 0; i < premios.length; i++) { acc += Math.max(0, Number(premios[i].chance) || 0); if (rnd < acc) return i; }
+  return premios.length - 1;
+}
+async function girarRoleta() {
+  if (girando) return;
+  const cfg = roletaCfg();
+  if (!cfg.ativa) return toast('A roleta está desativada no momento.', true);
+  if (jaGirou()) return toast(`Você já girou. Volte ${proximoGiroTxt()}!`, true);
+  if (cfg.frequencia === 'visita' && !(Number((getCliente(S.cid) || {}).visitas) > 0) && D.giros.length) return toast('Você ganha um novo giro a cada atendimento concluído.', true);
+  girando = true; $('roleta-btn').disabled = true;
+  destravarSom();
+  const idx = sortearPremio(), p = cfg.premios[idx], n = cfg.premios.length, fatia = Math.PI * 2 / n;
+  // posição final: centro da fatia sorteada embaixo do ponteiro (topo), com um desvio pequeno e 6 voltas
+  const desvio = (Math.random() - .5) * fatia * .6;
+  const alvo = -(idx * fatia + fatia / 2) + desvio;
+  const inicio = roletaAng, voltas = Math.PI * 2 * 6;
+  const volta = Math.PI * 2, fim = inicio + voltas + ((((alvo - inicio) % volta) + volta) % volta);   // termina exatamente na fatia sorteada
+  const dur = 5200, t0 = performance.now();
+  let ultimaFatia = -1;
+  await new Promise(res => {
+    const passo = agoraT => {
+      const k = Math.min(1, (agoraT - t0) / dur), e = 1 - Math.pow(1 - k, 4);
+      roletaAng = inicio + (fim - inicio) * e; desenharRoleta(roletaAng);
+      const f = Math.floor(((-roletaAng % (Math.PI * 2)) + Math.PI * 4) % (Math.PI * 2) / fatia);
+      if (f !== ultimaFatia) { ultimaFatia = f; tique(); }
+      if (k < 1) requestAnimationFrame(passo); else res();
+    };
+    requestAnimationFrame(passo);
+  });
+  const ganhou = p.tipo !== 'nada';
+  const giro = { cliente: S.cid, clienteNome: S.nome, premioId: p.id, nome: p.nome, tipo: p.tipo, valor: Number(p.valor) || 0,
+    status: ganhou ? 'pendente' : 'nada', periodo: chavePeriodo(), validade: ganhou ? addDias(hoje(), Number(cfg.validadeDias) || 30) : null,
+    codigo: ganhou ? Math.random().toString(36).slice(2, 7).toUpperCase() : null, criadoEm: serverTimestamp() };
+  try {
+    await setDoc(doc(db, 'giros', idGiro()), giro);
+    mostrarResultado(giro);
+    if (ganhou) { tocarSom(); try { navigator.vibrate && navigator.vibrate([100, 60, 100, 60, 250]); } catch (e) {} }
+  } catch (e) { toast(e.code === 'permission-denied' ? `Você já girou. Volte ${proximoGiroTxt()}!` : erroAmigavel(e), true); }
+  finally { girando = false; renderRoletaCli(); }
+}
+function tique() {
+  if (!audioCtx || !somLigado()) return;
+  try { const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'triangle'; o.frequency.value = 1400;
+    g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.0001, t + .04); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + .05); } catch (e) {}
+}
+function mostrarResultado(g) {
+  const ganhou = g.tipo !== 'nada';
+  $('roleta-resultado').innerHTML = ganhou
+    ? `<div class="roleta-ganhou"><div class="roleta-confete">🎉</div><div class="cm">Você ganhou</div><div class="roleta-premio">${esc(descPremio(g))}</div>
+       <div class="cm" style="margin:.4rem 0 .6rem;">Mostre este código na barbearia até <b style="color:var(--k-cream)">${fmt(g.validade)}</b>:</div><div class="roleta-codigo">${esc(g.codigo)}</div>
+       <div class="cm" style="margin-top:.6rem;">${g.tipo === 'credito' ? 'O crédito entra na sua conta quando a barbearia confirmar.' : 'A barbearia aplica o prêmio no seu atendimento.'}</div></div>`
+    : `<div class="roleta-ganhou"><div class="roleta-confete">😅</div><div class="roleta-premio" style="font-size:30px;">${esc(g.nome)}</div><div class="cm">Tente de novo ${proximoGiroTxt()}!</div></div>`;
+  $('roleta-resultado').hidden = false;
+}
+
+/* ── tela do cliente ── */
+async function renderRoletaCli() {
+  const cfg = roletaCfg();
+  if (!cfg.ativa) { $('roleta-area').innerHTML = vazio('ti-lock', 'A roleta de prêmios não está disponível no momento.'); $('roleta-meus').innerHTML = ''; return; }
+  if (!$('roleta-canvas')) {
+    $('roleta-area').innerHTML = `<div class="roleta-wrap"><div class="roleta-ponteiro" aria-hidden="true"></div><canvas id="roleta-canvas" aria-label="Roleta de prêmios"></canvas></div>
+      <button class="btn btn-gold btn-block" id="roleta-btn" data-act="girar" style="max-width:320px;margin:1rem auto 0;"><i class="ti ti-rotate-clockwise"></i>Girar a roleta</button>
+      <p class="cm" id="roleta-regra" style="text-align:center;margin-top:.6rem;"></p><div id="roleta-resultado" hidden></div>`;
+  }
+  try { await logoArte(); await document.fonts.load('28px "Bebas Neue"'); } catch (e) {}
+  if (!girando) desenharRoleta(roletaAng);
+  const ja = jaGirou();
+  if (!girando) { $('roleta-btn').disabled = ja; $('roleta-btn').innerHTML = ja ? `<i class="ti ti-clock"></i>Volte ${proximoGiroTxt()}` : '<i class="ti ti-rotate-clockwise"></i>Girar a roleta'; }
+  $('roleta-regra').textContent = `Você pode girar ${FREQ_LBL[cfg.frequencia] || FREQ_LBL.semana}. Os prêmios valem por ${Number(cfg.validadeDias) || 30} dias.`;
+  const ganhos = D.giros.filter(g => g.status !== 'nada').sort((a, b) => tempoMs(b.criadoEm) - tempoMs(a.criadoEm));
+  $('roleta-meus').innerHTML = ganhos.length ? `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-gift"></i>Meus prêmios</span></div><div class="card-body">` +
+    ganhos.map(g => { const exp = giroExpirado(g);
+      return `<div class="row-item"><div class="row-main"><div class="cn">${esc(descPremio(g))}</div><div class="cm">${g.status === 'resgatado' ? 'Resgatado' : exp ? 'Expirou em ' + fmt(g.validade) : `Código <b style="color:var(--k-gold)">${esc(g.codigo)}</b> · válido até ${fmt(g.validade)}`}</div></div>` +
+        `<span class="badge ${g.status === 'resgatado' ? 'badge-done' : exp || g.status === 'recusado' ? 'badge-cancel' : 'badge-wait'}">${g.status === 'resgatado' ? 'Usado' : g.status === 'recusado' ? 'Recusado' : exp ? 'Expirado' : 'Disponível'}</span></div>`; }).join('') + '</div></div>' : '';
+}
+function blocoRoletaCli() {
+  const cfg = roletaCfg(); if (!cfg.ativa) return '';
+  const ja = jaGirou(), disp = D.giros.filter(g => g.status === 'pendente' && !giroExpirado(g)).length;
+  if (ja && !disp) return '';
+  return `<button class="note roleta-chamada" data-act="nav" data-sec="roleta"><i class="ti ti-gift"></i><div><b>${ja ? `Você tem ${disp} prêmio${disp > 1 ? 's' : ''} para usar!` : 'Gire a roleta e ganhe prêmios!'}</b> ${ja ? 'Mostre o código na barbearia.' : 'Desconto, crédito e brindes. Toque para girar.'}</div></button>`;
+}
+function atualizarNavRoleta() {
+  const b = document.querySelector('.nav-btn[data-sec="roleta"]');
+  if (b && S.role === 'cliente') b.hidden = !roletaCfg().ativa;
+}
+
+/* ── tela do dono ── */
+let roletaEdit = null;
+function renderRoletaDono() {
+  if (!roletaEdit) roletaEdit = structuredClone(roletaCfg());
+  $('rl-ativa').checked = !!roletaEdit.ativa;
+  $('rl-freq').value = roletaEdit.frequencia; $('rl-validade').value = roletaEdit.validadeDias;
+  const total = roletaEdit.premios.reduce((t, p) => t + Math.max(0, Number(p.chance) || 0), 0) || 1;
+  $('rl-premios').innerHTML = roletaEdit.premios.map((p, i) => `<div class="rl-premio">
+    <input class="form-input" type="text" value="${esc(p.nome)}" data-input="rl-campo" data-i="${i}" data-k="nome" aria-label="Nome do prêmio" placeholder="Ex: 10% de desconto"/>
+    <select class="form-input" data-change="rl-campo" data-i="${i}" data-k="tipo" aria-label="Tipo">${Object.entries(TIPO_LBL).map(([k, t]) => `<option value="${k}"${p.tipo === k ? ' selected' : ''}>${t}</option>`).join('')}</select>
+    <input class="form-input" type="number" min="0" step="0.01" value="${Number(p.valor) || 0}" data-input="rl-campo" data-i="${i}" data-k="valor" aria-label="Valor"${p.tipo === 'credito' || p.tipo === 'desconto' ? '' : ' disabled'}/>
+    <div class="rl-chance"><input class="form-input" type="number" min="0" step="1" value="${Number(p.chance) || 0}" data-input="rl-campo" data-i="${i}" data-k="chance" aria-label="Peso da chance"/><span class="cm">${Math.round((Math.max(0, Number(p.chance) || 0) / total) * 1000) / 10}%</span></div>
+    <button class="btn btn-danger btn-sm" data-act="rl-rem" data-i="${i}" aria-label="Remover prêmio"><i class="ti ti-trash"></i></button></div>`).join('');
+  renderGanhadores();
+}
+function renderGanhadores() {
+  const lista = D.giros.filter(g => g.status !== 'nada').sort((a, b) => (a.status === 'pendente' ? 0 : 1) - (b.status === 'pendente' ? 0 : 1) || tempoMs(b.criadoEm) - tempoMs(a.criadoEm)).slice(0, 60);
+  const giros = D.giros.length, pend = lista.filter(g => g.status === 'pendente' && !giroExpirado(g)).length;
+  $('rl-resumo').textContent = `${giros} giro${giros !== 1 ? 's' : ''} · ${pend} prêmio${pend !== 1 ? 's' : ''} para resgatar`;
+  $('rl-ganhadores').innerHTML = lista.length ? lista.map(g => {
+    const exp = giroExpirado(g);
+    const acoes = g.status === 'pendente' && !exp ? `<button class="btn btn-gold btn-sm" data-act="rl-resgatar" data-id="${g.id}"><i class="ti ti-check"></i>${g.tipo === 'credito' ? 'Dar crédito' : 'Resgatar'}</button><button class="btn btn-ghost btn-sm" data-act="rl-recusar" data-id="${g.id}" aria-label="Recusar"><i class="ti ti-x"></i></button>` : '';
+    return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(g.clienteNome))}</div><div class="row-main"><div class="cn">${esc(g.clienteNome || nomeCli(g.cliente))} · ${esc(descPremio(g))}</div>` +
+      `<div class="cm">Código <b style="color:var(--k-gold)">${esc(g.codigo || '')}</b> · ${g.status === 'resgatado' ? 'resgatado' : g.status === 'recusado' ? 'recusado' : exp ? 'expirou ' + fmtCurto(g.validade) : 'vale até ' + fmtCurto(g.validade)}</div></div>` +
+      `<div class="row-end"><div class="row-actions">${acoes}</div></div></div>`;
+  }).join('') : vazio('ti-gift-off', 'Ninguém ganhou prêmio ainda.');
+}
+async function salvarRoleta() {
+  const r = roletaEdit;
+  r.ativa = $('rl-ativa').checked; r.frequencia = $('rl-freq').value; r.validadeDias = Number($('rl-validade').value) || 30;
+  r.premios = r.premios.map(p => ({ ...p, nome: String(p.nome || '').trim(), valor: Number(p.valor) || 0, chance: Math.max(0, Number(p.chance) || 0) })).filter(p => p.nome);
+  if (r.premios.length < 2) return toast('Cadastre pelo menos 2 prêmios (pode ser um "Não foi dessa vez").', true);
+  if (r.premios.length > 12) return toast('Máximo de 12 prêmios na roleta.', true);
+  if (!r.premios.some(p => p.chance > 0)) return toast('Coloque chance em pelo menos um prêmio.', true);
+  await comLoading('Salvando', async () => {
+    try { await setDoc(doc(db, 'config', 'geral'), { roleta: r }, { merge: true }); CONFIG.roleta = structuredClone(r); toast(r.ativa ? 'Roleta salva e ativada!' : 'Roleta salva (desativada).'); renderRoletaDono(); }
+    catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+async function resgatarGiro(id) {
+  const g = D.giros.find(x => x.id === id); if (!g || g.status !== 'pendente') return;
+  const cli = getCliente(g.cliente);
+  if (!confirmar(`Confirmar o prêmio "${descPremio(g)}" de ${g.clienteNome || 'cliente'} (código ${g.codigo})?${g.tipo === 'credito' ? `\n${moeda(g.valor)} entram como crédito na conta dele.` : ''}`)) return;
+  await comLoading('Resgatando', async () => {
+    try {
+      const b = writeBatch(db);
+      b.update(doc(db, 'giros', id), { status: 'resgatado', resgatadoEm: serverTimestamp() });
+      if (g.tipo === 'credito' && g.valor > 0 && cli) b.update(doc(db, 'clientes', String(g.cliente)), { credito: increment(g.valor) });
+      await b.commit(); toast('Prêmio resgatado!');
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+async function recusarGiro(id) {
+  if (!confirmar('Recusar esse prêmio? O cliente verá como recusado.')) return;
+  try { await updateDoc(doc(db, 'giros', id), { status: 'recusado' }); toast('Prêmio recusado.'); } catch (e) { toast(erroAmigavel(e), true); }
+}
+/* aviso para o dono quando alguém ganha */
+let girosAntes = null;
+function tratarGiros() {
+  const ids = new Set(D.giros.map(g => g.id));
+  if (girosAntes && S.role === 'dono') D.giros.filter(g => !girosAntes.has(g.id) && g.status === 'pendente').forEach(g => avisar('🎁 Prêmio na roleta', `${g.clienteNome || 'Cliente'} ganhou ${descPremio(g)} (código ${g.codigo})`, { sec: 'roleta' }));
+  girosAntes = ids;
+}
+
 /* ════════ EVENTOS ════════ */
-const RENDER = { artes: renderArtes, 'produtos-cli': renderProdutosCli, produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
+const RENDER = { roleta: () => (S.role === 'dono' ? renderRoletaDono() : renderRoletaCli()), artes: renderArtes, 'produtos-cli': renderProdutosCli, produtos: renderProdutos, dashboard: renderDash, agenda: renderAgenda, clientes: renderClientes, servicos: renderServicos, assinaturas: renderAssinaturas, chats: renderChats, caixa: renderCaixa, config: renderConfig, 'minha-area': renderMinhaArea, 'svc-cli': renderSvcCli, 'planos-cli': renderPlanosCli };
 
 const ACT = {
   'tab': el => mostrarAba(el.dataset.tab),
@@ -3846,6 +4116,13 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'girar': girarRoleta,
+  'rl-add': () => { roletaEdit.premios.push({ id: 'p' + Date.now(), nome: '', tipo: 'brinde', valor: 0, chance: 10 }); renderRoletaDono(); },
+  'rl-rem': el => { roletaEdit.premios.splice(Number(el.dataset.i), 1); renderRoletaDono(); },
+  'rl-salvar': salvarRoleta,
+  'rl-desfazer': () => { roletaEdit = null; renderRoletaDono(); },
+  'rl-resgatar': el => resgatarGiro(el.dataset.id),
+  'rl-recusar': el => recusarGiro(el.dataset.id),
   'ag-pag': el => { agS.pag = el.dataset.p; escolherHoraAg(agS.hora); },
   'balcao': () => abrirBalcao('cliente'),
   'wi-modo': el => { wiModo = el.dataset.m; renderBalcao(false); },
@@ -3923,6 +4200,9 @@ const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
   'as-valor': preencherValorAssin,
   'vd-total': atualizarTotalVenda,
+  'rl-campo': el => { const p = roletaEdit.premios[Number(el.dataset.i)]; p[el.dataset.k] = el.value;
+    if (el.dataset.k === 'tipo') { if (el.value === 'nada') p.nome = p.nome || 'Não foi dessa vez'; renderRoletaDono(); }
+    else if (el.dataset.k === 'chance') { const total = roletaEdit.premios.reduce((t, x) => t + Math.max(0, Number(x.chance) || 0), 0) || 1; document.querySelectorAll('.rl-chance span').forEach((sp, i) => { sp.textContent = Math.round(Math.max(0, Number(roletaEdit.premios[i].chance) || 0) / total * 1000) / 10 + '%'; }); } },
   'wi-svc': () => renderBalcao(true),
   'wi-horas': () => horariosBalcao(),
   'arte-campo': el => { arte.v[el.dataset.k] = el.value; atualizarArte(); },
