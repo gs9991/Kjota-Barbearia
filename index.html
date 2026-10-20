@@ -360,6 +360,12 @@ body[data-tema="anonovo"] #splash{background:radial-gradient(90% 60% at 50% 40%,
 body[data-tema="natal"] .spl-bar,body[data-tema="anonovo"] .spl-bar{width:180px;height:8px;border-radius:8px;}
 body[data-tema="natal"] .spl-fill{background:repeating-linear-gradient(45deg,#D32F2F 0 8px,#fff 8px 16px);}
 body[data-tema="anonovo"] .spl-fill{background:linear-gradient(90deg,#8A6E2E,#FFF3C4,#C9A84C);}
+.as-meses-rap{display:flex;gap:6px;flex-wrap:wrap;margin:-.3rem 0 .9rem;}
+.as-meses-rap .btn[aria-pressed="true"]{background:var(--k-gold);color:#111;border-color:var(--k-gold);}
+.as-resumo{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:10px;padding:.75rem .9rem;margin-bottom:.9rem;font-size:13px;line-height:1.5;}
+.as-resumo b{color:var(--k-gold);}
+.as-cortesia small{display:block;}
+.chip.cortesia{background:rgba(201,168,76,.15);color:var(--k-gold);}
 .noel-foto{display:block;width:230px;height:230px;object-fit:cover;-webkit-mask-image:radial-gradient(closest-side at 50% 50%,#000 72%,transparent 100%);mask-image:radial-gradient(closest-side at 50% 50%,#000 72%,transparent 100%);animation:noelBalanca 3.2s ease-in-out infinite;transform-origin:50% 90%;filter:drop-shadow(0 0 18px rgba(201,168,76,.25));}
 #noel-login{display:flex;justify-content:center;margin:-.4rem 0 -.6rem;}
 #noel-login .noel-foto{width:190px;height:190px;}
@@ -1086,14 +1092,18 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
 
 <div class="modal-overlay" id="m-assin" role="dialog" aria-modal="true" aria-labelledby="m-assin-t"><div class="modal">
   <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-assin-t">Adicionar assinante</div></div>
-  <div class="form-group"><label class="form-label" for="as-cli">Cliente</label><select class="form-input" id="as-cli"></select></div>
+  <div class="form-group"><label class="form-label" for="as-cli">Cliente</label><select class="form-input" id="as-cli" data-change="as-cli"></select></div>
+  <div id="as-atual" class="note" hidden></div>
   <div class="form-group"><label class="form-label" for="as-plano">Plano</label><select class="form-input" id="as-plano" data-change="as-valor"></select></div>
   <div class="form-row">
-    <div class="form-group"><label class="form-label" for="as-ini">Início</label><input class="form-input" type="date" id="as-ini"/></div>
-    <div class="form-group"><label class="form-label" for="as-meses">Meses pagos</label><select class="form-input" id="as-meses" data-change="as-valor"><option>1</option><option>2</option><option>3</option><option>6</option><option>12</option></select></div>
+    <div class="form-group"><label class="form-label" for="as-ini">Início</label><input class="form-input" type="date" id="as-ini" data-change="as-resumo"/></div>
+    <div class="form-group"><label class="form-label" for="as-meses">Quantos meses</label><input class="form-input" type="number" min="1" max="36" step="1" id="as-meses" data-input="as-resumo"/></div>
   </div>
-  <div class="form-group"><label class="form-label" for="as-val">Valor por mês (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="as-val"/></div>
-  <div class="form-group"><label class="check-item" style="background:none;padding:0;"><input type="checkbox" id="as-caixa" checked/>Lançar o valor total no caixa</label></div>
+  <div class="as-meses-rap" role="group" aria-label="Meses rápidos"><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="1">1 mês</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="3">3 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="6">6 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="12">12 meses</button></div>
+  <div class="form-group"><label class="check-item as-cortesia"><input type="checkbox" id="as-cortesia" data-change="as-cortesia"/><span><i class="ti ti-gift"></i> Cortesia<small>Plano de presente, sem cobrança e sem lançar no caixa</small></span></label></div>
+  <div class="form-group" id="as-val-grupo"><label class="form-label" for="as-val">Valor por mês (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="as-val" data-input="as-resumo"/></div>
+  <div id="as-resumo" class="as-resumo"></div>
+  <div class="form-group" id="as-caixa-grupo"><label class="check-item" style="background:none;padding:0;"><input type="checkbox" id="as-caixa" checked/>Lançar o valor total no caixa</label></div>
   <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-assin"><i class="ti ti-check"></i>Confirmar</button></div>
 </div></div>
 
@@ -2098,13 +2108,14 @@ function renderClientes() {
   if (!lista.length) { el.innerHTML = vazio('ti-user-off', f ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'); return; }
   el.innerHTML = lista.map(c => {
     const as = assinAtiva(c.id), wa = linkWhats(c.tel);
-    return `<div class="row-item"><div class="av" aria-hidden="true">${esc(iniciais(c.nome))}</div><div class="row-main">` +
-      `<div class="cn">${esc(c.nome)}${as ? `<span class="chip${vencida(as) ? ' red' : ''}"><i class="ti ti-crown"></i>${esc(nomePlano(as.plano))}${vencida(as) ? ' · vencido' : ''}</span>` : ''}</div>` +
+    return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(c.nome))}</div><div class="row-main">` +
+      `<div class="cn">${esc(c.nome)}${as ? `<span class="chip${vencida(as) ? ' red' : ''}"><i class="ti ti-crown"></i>${esc(nomePlano(as.plano))}${as.cortesia ? ' · cortesia' : ''}${vencida(as) ? ' · vencido' : ''}</span>` : ''}</div>` +
       `<div class="cm">${esc(c.tel || 'sem telefone')}${c.user ? ' · login: <b style="color:var(--k-gold)">' + esc(c.user) + '</b>' : ''}${c.uid ? '' : (c.user ? ' · <span style="color:var(--k-red)">acesso não migrado</span>' : '')}</div></div>` +
-      `<div class="row-end"><span class="cm" title="Atendimentos concluídos"><i class="ti ti-scissors"></i> ${Number(c.visitas) || 0}</span>` +
+      `<div class="row-end"><span class="cm" title="Atendimentos concluídos"><i class="ti ti-scissors"></i> ${Number(c.visitas) || 0}</span><div class="row-actions">` +
       `<button class="btn btn-ghost btn-sm" data-act="editar-cli" data-id="${c.id}" aria-label="Editar ${esc(c.nome)}"><i class="ti ti-pencil"></i></button>` +
+      `<button class="btn ${as && !vencida(as) ? 'btn-ghost' : 'btn-outline'} btn-sm" data-act="assin-cli" data-id="${c.id}" title="Assinatura do cliente"><i class="ti ti-crown"></i>${as && !vencida(as) ? 'Renovar' : 'Plano'}</button>` +
       `<button class="btn ${creditoDe(c.id) ? 'btn-gold' : 'btn-ghost'} btn-sm" data-act="ajustar-credito" data-id="${c.id}" title="Crédito do cliente"><i class="ti ti-coins"></i>${creditoDe(c.id) ? moeda(creditoDe(c.id)) : 'Crédito'}</button>`+
-      `${wa ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp de ${esc(c.nome)}"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></div>`;
+      `${wa ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp de ${esc(c.nome)}"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></div></div>`;
   }).join('');
 }
 
@@ -2158,7 +2169,7 @@ function renderAssinaturas() {
   $('lista-assinantes').innerHTML = ativos.length ? ativos.map(a => {
     const venc = a.vencimento ? (vencida(a) ? `<span class="chip red">vencida em ${fmtCurto(a.vencimento)}</span>` : `<span class="chip">vence ${fmtCurto(a.vencimento)}</span>`) : '';
     return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(nomeCli(a.cliente)))}</div><div class="row-main"><div class="cn">${esc(nomeCli(a.cliente))}${venc}</div><div class="cm">${esc(nomePlano(a.plano))} · desde ${fmt(a.inicio)}</div></div>` +
-      `<div class="row-end"><span class="fluxo-val" style="color:var(--k-gold)">${moeda(a.val)}/mês</span><button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}"><i class="ti ti-x"></i>Cancelar</button></div></div>`;
+      `<div class="row-end"><span class="fluxo-val" style="color:var(--k-gold)">${a.cortesia ? '🎁 Cortesia' : moeda(a.val) + '/mês'}</span><button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}"><i class="ti ti-x"></i>Cancelar</button></div></div>`;
   }).join('') : vazio('ti-crown-off', 'Nenhum assinante ativo');
 }
 
@@ -2197,27 +2208,75 @@ async function excluirPlano(id) {
   await comLoading('Removendo', async () => { try { await deleteDoc(doc(db, 'planos', id)); toast('Plano removido.'); } catch (e) { toast(erroAmigavel(e), true); } });
 }
 
-function abrirModalAssin() {
-  if (!D.planos.length) return toast('Crie um plano primeiro.', true);
-  $('as-cli').innerHTML = D.clientes.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+function abrirModalAssin(cid) {
+  if (!D.planos.length) return toast('Crie um plano primeiro em Assinaturas.', true);
+  if (!D.clientes.length) return toast('Nenhum cliente cadastrado ainda.', true);
+  const daLista = typeof cid === 'string' && !!getCliente(cid);
+  $('as-cli').innerHTML = [...D.clientes].sort((a, b) => String(a.nome).localeCompare(String(b.nome))).map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   $('as-plano').innerHTML = D.planos.map(p => `<option value="${p.id}">${esc(p.nome)} — ${moeda(p.preco)}/mês</option>`).join('');
-  $('as-ini').value = hoje(); $('as-meses').value = '1';
-  preencherValorAssin();
+  if (daLista) $('as-cli').value = cid;
+  $('as-cli').disabled = daLista;
+  $('as-meses').value = '1'; $('as-cortesia').checked = false; aplicarCortesiaUI();
+  assinPrepararCliente();
   openModal('m-assin');
 }
-function preencherValorAssin() { const p = getPlano($('as-plano').value); if (p) $('as-val').value = p.preco; }
+/* Mesmo plano em dia = renova (só estende o vencimento). Plano diferente = troca a partir de hoje. */
+function modoAssin() {
+  const cid = $('as-cli').value, pid = $('as-plano').value, atual = assinAtiva(cid);
+  const emDia = !!(atual && !vencida(atual));
+  return { cid, pid, atual, emDia, mesmo: emDia && String(atual.plano) === String(pid) };
+}
+function assinPrepararCliente() {
+  const atual = assinAtiva($('as-cli').value);
+  if (atual && getPlano(atual.plano)) $('as-plano').value = String(atual.plano);
+  preencherValorAssin();
+}
+function preencherValorAssin() {
+  const p = getPlano($('as-plano').value); if (p) $('as-val').value = p.preco;
+  const m = modoAssin(), c = getCliente(m.cid), nome = esc(primeiroNome(c ? c.nome : ''));
+  $('m-assin-t').textContent = m.mesmo ? 'Renovar assinatura' : m.emDia ? 'Trocar de plano' : 'Ativar assinatura';
+  $('as-ini').value = m.mesmo ? m.atual.vencimento : hoje();
+  $('as-ini').disabled = m.mesmo;
+  $('as-atual').hidden = !m.atual;
+  $('as-atual').innerHTML = !m.atual ? '' : m.mesmo
+    ? `<i class="ti ti-crown"></i><div>${nome} já tem o <b>${esc(nomePlano(m.atual.plano))}</b> até <b>${fmt(m.atual.vencimento)}</b>. Os meses novos são somados depois dessa data.</div>`
+    : m.emDia
+      ? `<i class="ti ti-switch-horizontal"></i><div>${nome} tem o <b>${esc(nomePlano(m.atual.plano))}</b> até ${fmt(m.atual.vencimento)}. Ao confirmar, ele é encerrado e o plano novo começa hoje.</div>`
+      : `<i class="ti ti-crown-off"></i><div>O <b>${esc(nomePlano(m.atual.plano))}</b> de ${nome} <b style="color:var(--k-red)">venceu em ${fmt(m.atual.vencimento)}</b>. O novo período começa hoje.</div>`;
+  resumoAssin();
+}
+function aplicarCortesiaUI() {
+  const c = $('as-cortesia').checked;
+  $('as-val-grupo').hidden = c; $('as-caixa-grupo').hidden = c;
+}
+function resumoAssin() {
+  const n = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), ini = $('as-ini').value || hoje(), val = parseFloat($('as-val').value) || 0;
+  document.querySelectorAll('[data-act="as-meses"]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.n) === n)));
+  const m = modoAssin();
+  $('as-resumo').innerHTML = `<b>${esc(nomePlano(m.pid))}</b> por ${m.mesmo ? 'mais ' : ''}${n} ${n === 1 ? 'mês' : 'meses'}<br>` +
+    (m.mesmo ? `Vencimento: ${fmt(m.atual.vencimento)} → <b>${fmt(addMeses(ini, n))}</b>` : `Vale de <b>${fmt(ini)}</b> até <b>${fmt(addMeses(ini, n))}</b>`) +
+    ($('as-cortesia').checked ? '<br>🎁 <b>Cortesia</b>: sem cobrança' : `<br>Total: <b>${moeda(val * n)}</b>${n > 1 ? ` (${moeda(val)}/mês)` : ''}`);
+}
 async function salvarAssin() {
-  const cid = $('as-cli').value, pid = $('as-plano').value, ini = $('as-ini').value || hoje();
-  const meses = parseInt($('as-meses').value) || 1, val = parseFloat($('as-val').value) || 0;
-  if (!cid || !pid) return toast('Escolha cliente e plano', true);
-  await comLoading('Ativando assinatura', async () => {
+  const m = modoAssin(), ini = m.mesmo ? m.atual.vencimento : ($('as-ini').value || hoje());
+  const cortesia = $('as-cortesia').checked;
+  const meses = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), val = cortesia ? 0 : (parseFloat($('as-val').value) || 0);
+  if (!m.cid || !m.pid) return toast('Escolha cliente e plano', true);
+  if (val < 0) return toast('Valor inválido.', true);
+  const venc = addMeses(ini, meses);
+  await comLoading(m.mesmo ? 'Renovando assinatura' : 'Ativando assinatura', async () => {
     try {
       const b = writeBatch(db);
-      D.assinantes.filter(a => String(a.cliente) === String(cid) && a.status === 'ativo').forEach(a => b.update(doc(db, 'assinantes', a.id), { status: 'cancelado', canceladoEm: serverTimestamp() }));
-      b.set(doc(collection(db, 'assinantes')), { cliente: String(cid), plano: String(pid), inicio: ini, vencimento: addMeses(ini, meses), meses, val, status: 'ativo', _createdAt: serverTimestamp() });
-      if ($('as-caixa').checked && val > 0)
-        b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Assinatura ${nomePlano(pid)} (${meses}x) — ${nomeCli(cid)}`, val: val * meses, hora: agora(), data: hoje(), origem: 'assinatura', _createdAt: serverTimestamp() });
-      await b.commit(); closeModal('m-assin'); toast('Assinante adicionado!');
+      if (m.mesmo) {
+        b.update(doc(db, 'assinantes', m.atual.id), { vencimento: venc, meses: (Number(m.atual.meses) || 1) + meses, val, cortesia, renovadoEm: serverTimestamp() });
+      } else {
+        D.assinantes.filter(a => String(a.cliente) === String(m.cid) && a.status === 'ativo').forEach(a => b.update(doc(db, 'assinantes', a.id), { status: 'cancelado', canceladoEm: serverTimestamp() }));
+        b.set(doc(collection(db, 'assinantes')), { cliente: String(m.cid), plano: String(m.pid), inicio: ini, vencimento: venc, meses, val, cortesia, status: 'ativo', ativadoPeloDono: true, _createdAt: serverTimestamp() });
+      }
+      if (!cortesia && $('as-caixa').checked && val > 0)
+        b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Assinatura ${nomePlano(m.pid)} (${meses}x) — ${nomeCli(m.cid)}`, val: Math.round(val * meses * 100) / 100, hora: agora(), data: hoje(), origem: 'assinatura', _createdAt: serverTimestamp() });
+      await b.commit(); closeModal('m-assin');
+      toast(`${cortesia ? '🎁 Cortesia ' + (m.mesmo ? 'renovada' : 'ativada') : m.mesmo ? 'Assinatura renovada' : 'Assinatura ativada'} para ${primeiroNome(nomeCli(m.cid))} até ${fmt(venc)}. Já aparece na conta do cliente!`);
     } catch (e) { toast(erroAmigavel(e), true); }
   });
 }
@@ -2678,7 +2737,7 @@ function renderMinhaArea() {
     const p = getPlano(as.plano), lim = Number(p && p.cortes) || 0, usado = usoPlano(S.cid, t.slice(0, 7));
     const dias = as.vencimento ? Math.round((deISO(as.vencimento) - deISO(t)) / 864e5) : null;
     h += `<div class="minha-assin"><div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem;"><i class="ti ti-crown" style="color:var(--k-gold);font-size:20px;"></i><div class="minha-assin-nome">${esc(p ? p.nome : 'Assinatura ativa')}</div></div>` +
-      `<div class="minha-assin-info">Desde ${fmt(as.inicio)} · ${moeda(as.val)}/mês${as.vencimento ? ` · válido até <b style="color:var(--k-cream)">${fmt(as.vencimento)}</b>` : ''}</div>` +
+      `<div class="minha-assin-info">Desde ${fmt(as.inicio)} · ${as.cortesia ? '🎁 Cortesia da casa' : moeda(as.val) + '/mês'}${as.vencimento ? ` · válido até <b style="color:var(--k-cream)">${fmt(as.vencimento)}</b>` : ''}</div>` +
       (lim ? `<div class="uso"><div class="uso-top"><span>Atendimentos em ${MESES[deISO(t).getMonth()].toLowerCase()}</span><b>${usado} de ${lim}</b></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, usado / lim * 100)}%"></div></div></div>` : '') +
       (dias !== null && dias <= 7 ? `<div class="note warn" style="margin:.8rem 0 0;"><i class="ti ti-alert-triangle"></i><div><b>Vence em ${dias} dia${dias !== 1 ? 's' : ''}.</b> Renove para não perder os benefícios.</div></div>` : '') +
       `<div class="row-actions" style="justify-content:flex-start;margin-top:.8rem;"><button class="btn btn-gold btn-sm" data-act="nav" data-sec="svc-cli"><i class="ti ti-calendar-plus"></i>Agendar pelo plano</button><button class="btn btn-outline btn-sm" data-act="contratar" data-id="${as.plano}"><i class="ti ti-refresh"></i>Renovar</button></div></div>`;
@@ -4308,7 +4367,7 @@ const EXPORTS = {
   clientes: { nome: 'Clientes', cols: [['nome', 'Nome'], ['tel', 'WhatsApp'], ['nasc', 'Aniversário'], ['user', 'Usuário'], ['visitas', 'Atendimentos'], ['ultimaVisita', 'Última visita'], ['credito', 'Crédito (R$)'], ['obs', 'Observação']] },
   agendamentos: { nome: 'Agendamentos', cols: [['data', 'Data'], ['hora', 'Hora'], ['clienteNome', 'Cliente'], ['svc', 'Serviço'], ['dur', 'Duração (min)'], ['preco', 'Valor (R$)'], ['creditoUsado', 'Crédito usado'], ['status', 'Status'], ['tipo', 'Tipo'], ['pago', 'Pago'], ['pagarNoLocal', 'Paga na barbearia'], ['avaliacao', 'Avaliação'], ['obs', 'Observação']] },
   caixa: { nome: 'Caixa', cols: [['data', 'Data'], ['hora', 'Hora'], ['tipo', 'Tipo'], ['desc', 'Descrição'], ['val', 'Valor (R$)'], ['origem', 'Origem']] },
-  assinantes: { nome: 'Assinantes', cols: [['cliente', 'Cliente'], ['plano', 'Plano'], ['inicio', 'Início'], ['vencimento', 'Vencimento'], ['meses', 'Meses'], ['val', 'Valor/mês'], ['status', 'Status']] },
+  assinantes: { nome: 'Assinantes', cols: [['cliente', 'Cliente'], ['plano', 'Plano'], ['inicio', 'Início'], ['vencimento', 'Vencimento'], ['meses', 'Meses'], ['val', 'Valor/mês'], ['cortesia', 'Cortesia'], ['status', 'Status']] },
   produtos: { nome: 'Produtos', cols: [['nome', 'Produto'], ['preco', 'Preço'], ['estoque', 'Estoque'], ['estoqueMin', 'Estoque mínimo']] },
   giros: { nome: 'Roleta', cols: [['clienteNome', 'Cliente'], ['nome', 'Prêmio'], ['tipo', 'Tipo'], ['valor', 'Valor'], ['codigo', 'Código'], ['status', 'Status'], ['validade', 'Validade']] }
 };
@@ -4725,7 +4784,7 @@ const ACT = {
   'modal-plano': () => abrirModalPlano(), 'editar-plano': el => abrirModalPlano(el.dataset.id), 'salvar-plano': salvarPlano, 'excluir-plano': el => excluirPlano(el.dataset.id),
   'pl-add-item': () => $('pl-itens').insertAdjacentHTML('beforeend', linhaItemPlano('')),
   'pl-rem-item': el => { if ($('pl-itens').children.length > 1) el.closest('.item-edit-row').remove(); else el.closest('.item-edit-row').querySelector('input').value = ''; },
-  'modal-assin': abrirModalAssin, 'salvar-assin': salvarAssin, 'cancelar-assin': el => cancelarAssin(el.dataset.id),
+  'modal-assin': () => abrirModalAssin(), 'assin-cli': el => abrirModalAssin(el.dataset.id), 'as-meses': el => { $('as-meses').value = el.dataset.n; resumoAssin(); }, 'salvar-assin': salvarAssin, 'cancelar-assin': el => cancelarAssin(el.dataset.id),
   'modal-cx': () => openModal('m-cx'), 'salvar-cx': salvarCx, 'excluir-cx': el => excluirCx(el.dataset.id),
   'cx-periodo': el => { cxPeriodo = el.dataset.p; renderCaixa(); },
   'chat-filtro': el => { chatFiltro = el.dataset.f; document.querySelectorAll('[data-act="chat-filtro"]').forEach(b => b.setAttribute('aria-pressed', b === el)); renderChats(); },
@@ -4775,7 +4834,7 @@ const ACT = {
 };
 const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
-  'as-valor': preencherValorAssin,
+  'as-valor': preencherValorAssin, 'as-resumo': resumoAssin, 'as-cortesia': () => { aplicarCortesiaUI(); resumoAssin(); }, 'as-cli': assinPrepararCliente,
   'vd-total': atualizarTotalVenda,
   'cfg-janela': () => renderLiberacoes(),
   'rl-campo': el => { const p = roletaEdit.premios[Number(el.dataset.i)]; p[el.dataset.k] = el.value;
