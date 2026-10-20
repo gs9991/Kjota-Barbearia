@@ -292,6 +292,18 @@ body.papel-dono .so-dono,body.papel-cliente .so-cli{display:block;}
 .rl-chance{display:flex;align-items:center;gap:4px;}
 .rl-chance span{font-size:11px;min-width:38px;}
 @media (max-width:640px){.rl-head{display:none;}.rl-premio{grid-template-columns:1fr 1fr;background:var(--k-card);padding:8px;border-radius:8px;}.rl-premio input[data-k="nome"]{grid-column:1/-1;}}
+.dias-mes{font-family:var(--font-display);font-size:16px;letter-spacing:1px;color:var(--k-gold);margin:.4rem 0 .5rem;}
+.dias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin-bottom:.8rem;}
+.dia-btn{background:var(--k-dark);border:1px solid var(--k-border);border-radius:10px;padding:.5rem .2rem;color:var(--k-cream);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;font:inherit;}
+.dia-btn b{font-family:var(--font-display);font-size:26px;font-weight:400;line-height:1;color:var(--k-cream);}
+.dia-btn small{font-size:10px;color:var(--k-muted);}
+.dia-btn small:first-child{color:var(--k-gold);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.dia-btn:hover:not(:disabled){border-color:var(--k-gold);background:rgba(201,168,76,.08);}
+.dia-btn.hoje{border-color:var(--k-gold-dim);}
+.dia-btn.sel{background:var(--k-gold);border-color:var(--k-gold);}
+.dia-btn.sel b,.dia-btn.sel small{color:#0D0D0D!important;}
+.dia-btn.off{opacity:.4;cursor:not-allowed;}
+.dia-btn.off small:last-child{color:var(--k-red);}
 .plano-ativo-card{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;}
 
 /* ── TELAS SOBREPOSTAS ── */
@@ -718,6 +730,21 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
           <div class="cm" style="margin-top:5px;">Depois desse tempo sem pagamento confirmado, o horário volta a aparecer livre para outros clientes.</div></div>
       </div></div>
 
+      <div class="card" id="card-liberar"><div class="card-header"><span class="card-title"><i class="ti ti-calendar-share"></i>Datas liberadas para os clientes</span></div><div class="card-body">
+        <div class="form-group"><label class="form-label" for="cfg-janela">O cliente vê os próximos</label>
+          <select class="form-input" id="cfg-janela" data-change="cfg-janela"><option value="7">7 dias</option><option value="8">8 dias</option><option value="10">10 dias</option><option value="14">14 dias</option><option value="15">15 dias</option><option value="21">21 dias</option><option value="30">30 dias</option><option value="60">60 dias</option></select>
+          <div class="cm" style="margin-top:5px;">Essa janela anda sozinha todo dia. Salve em "Salvar configurações".</div></div>
+        <span class="form-label">Liberar datas a mais</span>
+        <div class="row-actions" style="justify-content:flex-start;margin-bottom:.6rem;" id="lib-rapidos"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label" for="lib-ini">De</label><input class="form-input" type="date" id="lib-ini"/></div>
+          <div class="form-group"><label class="form-label" for="lib-fim">Até</label><input class="form-input" type="date" id="lib-fim"/></div>
+        </div>
+        <button class="btn btn-outline btn-sm" data-act="lib-add"><i class="ti ti-plus"></i>Liberar esse período</button>
+        <div id="lib-lista" style="margin-top:.8rem;"></div>
+        <div class="note" style="margin:.8rem 0 0;" id="lib-resumo"></div>
+      </div></div>
+
       <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-calendar-off"></i>Folgas e datas fechadas</span></div><div class="card-body">
         <div class="cal-nav">
           <button class="btn btn-outline btn-sm" data-act="cfg-mes" data-d="-1" aria-label="Mês anterior"><i class="ti ti-chevron-left"></i></button>
@@ -834,12 +861,12 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <div class="agenda-body">
     <div id="ag-step-cal">
       <div class="sub-title">Escolha a data</div>
-      <div class="cal-nav">
+      <div class="cal-nav" id="ag-cal-nav">
         <button class="btn btn-outline btn-sm" data-act="ag-mes" data-d="-1" aria-label="Mês anterior"><i class="ti ti-chevron-left"></i></button>
         <div class="cal-title" id="ag-cal-label"></div>
         <button class="btn btn-outline btn-sm" data-act="ag-mes" data-d="1" aria-label="Próximo mês"><i class="ti ti-chevron-right"></i></button>
       </div>
-      <div class="cal-grid" id="ag-cal-grid"></div>
+      <div id="ag-cal-grid"></div>
     </div>
     <div id="ag-step-hora" hidden>
       <div class="sub-title">Horários — <span id="ag-hora-data-label" style="color:var(--k-gold);"></span></div>
@@ -1175,7 +1202,7 @@ const tempoMs = v => (v && typeof v.toMillis === 'function') ? v.toMillis() : (t
 const CFG_PADRAO = {
   nome: 'KJota Barbearia', tel: '', insta: '', end: '', cidade: '', cep: '',
   pixTipo: 'Telefone', pixKey: '', pixNome: 'KJota Barbearia', pixCidade: '',
-  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true,
+  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true, janelaDias: 8, liberacoes: [],
   horarios: {
     0: { ativo: false, inicio: '08:00', fim: '18:00', label: 'Domingo' },
     1: { ativo: true, inicio: '08:00', fim: '20:00', label: 'Segunda' },
@@ -1203,6 +1230,8 @@ function mergeConfig(dados) {
   if (dados && dados.horarios) for (const k of Object.keys(c.horarios)) Object.assign(c.horarios[k], dados.horarios[k] || {});
   c.folgas = Array.isArray(dados && dados.folgas) ? dados.folgas : [];
   c.bloqueios = Array.isArray(dados && dados.bloqueios) ? dados.bloqueios : [];
+  c.liberacoes = Array.isArray(dados && dados.liberacoes) ? dados.liberacoes : [];
+  c.janelaDias = Math.max(1, Number(c.janelaDias) || 8);
   c.intervalo = Number(c.intervalo) || 30;
   c.antecedenciaH = Number(c.antecedenciaH ?? 2);
   c.reservaMin = Number(c.reservaMin) || 60;
@@ -1239,6 +1268,15 @@ function bloqueiosDoDia(ds, cfg = CONFIG) {
   (cfg.bloqueios || []).filter(b => b.data === ds && b.inicio && b.fim && horaToMin(b.fim) > horaToMin(b.inicio))
     .forEach(b => out.push({ id: 'bloq-' + b.id, hora: b.inicio, dur: horaToMin(b.fim) - horaToMin(b.inicio), st: 'c', bloq: true, motivo: b.motivo || 'Bloqueado', bid: b.id }));
   return out;
+}
+/* ── Até onde o cliente pode agendar: os próximos N dias + períodos que o dono liberou ── */
+const fimJanela = (base = hoje(), cfg = CONFIG) => addDias(base, (Number(cfg.janelaDias) || 8) - 1);
+function dataLiberada(ds, base = hoje(), cfg = CONFIG) {
+  if (ds < base) return false;
+  return ds <= fimJanela(base, cfg) || (cfg.liberacoes || []).some(l => ds >= l.ini && ds <= l.fim);
+}
+function ultimoDiaLiberado(cfg = CONFIG) {
+  return [fimJanela(hoje(), cfg), ...(cfg.liberacoes || []).filter(l => l.fim >= hoje()).map(l => l.fim)].sort().pop();
 }
 function diaAberto(ds, cfg = CONFIG) {
   const h = cfg.horarios[deISO(ds).getDay()];
@@ -2354,6 +2392,8 @@ function limitePlano() { // último dia em que o plano permite agendar
   const as = assinAtiva(S.cid); return as && as.vencimento ? as.vencimento : null;
 }
 function renderCalAg() {
+  $('ag-cal-nav').hidden = S.role !== 'dono';
+  if (S.role !== 'dono') return renderDiasCli();
   const ano = agS.mes.getFullYear(), mes = agS.mes.getMonth(), t = hoje(), lim = limitePlano();
   $('ag-cal-label').textContent = MESES[mes] + ' ' + ano;
   let h = DIAS_CURTO.map(d => `<div class="cal-head">${d}</div>`).join('');
@@ -2370,6 +2410,25 @@ function renderCalAg() {
     h += `<button class="${cls}" ${dis ? 'disabled' : `data-act="ag-dia" data-ds="${ds}"`} aria-label="${d} de ${MESES[mes]}${fechado ? ', fechado' : ''}">${d}</button>`;
   }
   $('ag-cal-grid').innerHTML = h;
+}
+function renderDiasCli() {
+  const t = hoje(), lim = limitePlano(), ate = ultimoDiaLiberado();
+  const agoraMin = new Date().getHours() * 60 + new Date().getMinutes();
+  let h = '', mesAtual = '', n = 0;
+  for (let ds = t; ds <= ate && n < 400; ds = addDias(ds, 1), n++) {
+    if (!dataLiberada(ds)) continue;
+    const mes = ds.slice(0, 7);
+    if (mes !== mesAtual) { if (mesAtual) h += '</div>'; mesAtual = mes; h += `<div class="dias-mes">${MESES[deISO(ds).getMonth()]} ${ds.slice(0, 4)}</div><div class="dias-grid">`; }
+    const hj = CONFIG.horarios[deISO(ds).getDay()];
+    const encerrado = ds === t && hj && (agoraMin + 15 + agS.dur > horaToMin(hj.fim));
+    const fechado = !diaAberto(ds), foraPlano = lim && ds > lim, dis = fechado || foraPlano || encerrado;
+    const cls = 'dia-btn' + (dis ? ' off' : '') + (ds === agS.data ? ' sel' : '') + (ds === t ? ' hoje' : '');
+    h += `<button class="${cls}" ${dis ? 'disabled' : `data-act="ag-dia" data-ds="${ds}"`} aria-label="${DIAS_LONGO[deISO(ds).getDay()]}, ${fmt(ds)}${fechado ? ', fechado' : ''}">` +
+      `<small>${ds === t ? 'Hoje' : ds === addDias(t, 1) ? 'Amanhã' : DIAS_CURTO[deISO(ds).getDay()]}</small><b>${ds.slice(8)}</b><small>${fechado ? 'Fechado' : encerrado ? 'Encerrado' : foraPlano ? 'Após plano' : MESES[deISO(ds).getMonth()].slice(0, 3).toLowerCase()}</small></button>`;
+  }
+  if (mesAtual) h += '</div>';
+  $('ag-cal-grid').innerHTML = (h || vazio('ti-calendar-off', 'Nenhuma data liberada no momento.')) +
+    `<p class="cm" style="margin-top:.8rem;text-align:center;">Agenda aberta até <b style="color:var(--k-cream)">${fmt(ate)}</b>. Novas datas são liberadas pela barbearia.</p>`;
 }
 async function escolherDiaAg(ds) {
   agS.data = ds; agS.hora = null; renderCalAg();
@@ -2442,6 +2501,7 @@ async function confirmarAgendaCli() {
   loading('Reservando');
   try {
     if (agS.modo === 'remarcar') {
+      if (S.role !== 'dono' && !dataLiberada(agS.data)) throw Object.assign(new Error('DATA'), { amigavel: 'Essa data ainda não está liberada para agendamento.' });
       await remarcarAg(agS.ag, agS.data, agS.hora);
       if (S.role === 'dono') {
         const ch = agS.ag.chatId && getChat(agS.ag.chatId);
@@ -2452,6 +2512,7 @@ async function confirmarAgendaCli() {
       esconderTela('agenda-screen'); toast('Horário remarcado!'); goTo('minha-area');
       return;
     }
+    if (S.role !== 'dono' && !dataLiberada(agS.data)) throw Object.assign(new Error('DATA'), { amigavel: 'Essa data ainda não está liberada para agendamento.' });
     const itens = agS.svc.itens || [{ id: String(agS.svc.id), nome: agS.svc.nome, preco: Number(agS.svc.preco) || 0, dur: agS.dur, plano: agS.modo === 'plano-svc' }];
     const extra = { itens, svcId: String(itens[0].id) };
     if (agS.planoId) { // combo com itens do plano: confere plano ativo e limite do mês
@@ -3735,6 +3796,7 @@ function renderConfig() {
   f('cfg-cidade', CFG_EDIT.cidade); f('cfg-cep', CFG_EDIT.cep); f('cfg-pix-tipo', CFG_EDIT.pixTipo); f('cfg-pix-key', CFG_EDIT.pixKey);
   f('cfg-pix-nome', CFG_EDIT.pixNome); f('cfg-pix-cidade', CFG_EDIT.pixCidade);
   f('cfg-google', CFG_EDIT.googleUrl);
+  f('cfg-janela', String(CFG_EDIT.janelaDias)); renderLiberacoes();
   f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1');
   renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif(); renderInfoBackup();
 }
@@ -3770,7 +3832,7 @@ function cfgDoFormulario() {
   return { ...CFG_EDIT, nome: g('cfg-nome') || 'KJota Barbearia', tel: g('cfg-tel'), insta: g('cfg-insta'), end: g('cfg-end'), cidade: g('cfg-cidade'), cep: g('cfg-cep'),
     pixTipo: $('cfg-pix-tipo').value, pixKey: g('cfg-pix-key'), pixNome: g('cfg-pix-nome'), pixCidade: g('cfg-pix-cidade'),
     googleUrl: g('cfg-google'),
-    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0' };
+    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0', janelaDias: Number($('cfg-janela').value) || 8 };
 }
 function previewPix() {
   const cfg = cfgDoFormulario();
@@ -3785,6 +3847,7 @@ async function salvarConfig() {
   for (const k of Object.keys(cfg.horarios)) { const h = cfg.horarios[k]; if (h.ativo && horaToMin(h.fim) <= horaToMin(h.inicio)) return toast(`${h.label}: o horário de fechar precisa ser depois do de abrir.`, true);
     if ((h.pausaIni && !h.pausaFim) || (!h.pausaIni && h.pausaFim) || (h.pausaIni && horaToMin(h.pausaFim) <= horaToMin(h.pausaIni))) return toast(`${h.label}: confira o intervalo (início e fim).`, true); }
   cfg.bloqueios = (cfg.bloqueios || []).filter(b => b.data >= hoje());
+  cfg.liberacoes = (cfg.liberacoes || []).filter(l => l.fim >= hoje());
   if (cfg.pixKey && !chavePixFormatada(cfg.pixTipo, cfg.pixKey)) return toast('Chave PIX inválida para o tipo escolhido.', true);
   cfg.folgas = cfg.folgas.filter(d => d >= addDias(hoje(), -60)).sort();
   await comLoading('Salvando', async () => {
@@ -4219,6 +4282,8 @@ function alertasAg(a) {
   const out = [];
   const esp = a.tipo === 'avulso' ? precoEsperado(a) : null;
   if (esp != null && Number(a.preco || 0) + 0.01 < esp) out.push(`Valor diferente do cadastro (cadastro: ${moeda(esp)})`);
+  const criado = tempoMs(a.criadoEm) ? dataISO(new Date(tempoMs(a.criadoEm))) : null;
+  if (criado && ['wait', 'conf', 'aguardando_pag'].includes(a.status) && !dataLiberada(a.data, criado) && !dataLiberada(a.data)) out.push('Data fora do período liberado');
   if ((a.tipo === 'plano-svc' || a.usaPlano) && !D.assinantes.some(s => String(s.cliente) === String(a.cliente) && s.status === 'ativo' && (!s.vencimento || s.vencimento >= a.data))) out.push('Cliente sem plano ativo');
   if (Number(a.creditoUsado) > 0 && !a.pago && creditoDe(a.cliente) + 0.01 < Number(a.creditoUsado)) out.push(`Crédito insuficiente (tem ${moeda(creditoDe(a.cliente))})`);
   return out;
@@ -4233,6 +4298,34 @@ function alertasGiro(g) {
   const ms = tempoMs(g.criadoEm), pre = String(g.periodo || '')[0];
   if (ms && ['d', 's', 'm'].includes(pre) && chaveDe(pre, ms) !== g.periodo) out.push('Giro fora do período');
   return out;
+}
+
+/* ════════ LIBERAR DATAS PARA OS CLIENTES (DONO) ════════ */
+function cfgJanelaAtual() { return { ...CFG_EDIT, janelaDias: Number($('cfg-janela').value) || CFG_EDIT.janelaDias }; }
+function renderLiberacoes() {
+  const t = hoje(), lista = (CFG_EDIT.liberacoes || []).filter(l => l.fim >= t).sort((a, b) => a.ini.localeCompare(b.ini));
+  const mesQue = n => { const d = deISO(t.slice(0, 8) + '01'); d.setMonth(d.getMonth() + n); return d; };
+  const rapido = n => { const d = mesQue(n), ini = dataISO(d), fim = dataISO(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    const ja = lista.some(l => l.ini <= ini && l.fim >= fim);
+    return `<button class="btn ${ja ? 'btn-ghost' : 'btn-gold'} btn-sm" data-act="lib-mes" data-ini="${n === 0 ? t : ini}" data-fim="${fim}"${ja ? ' disabled' : ''}><i class="ti ti-${ja ? 'check' : 'calendar-plus'}"></i>${ja ? MESES[d.getMonth()] + ' liberado' : (n === 0 ? 'Resto de ' : 'Liberar ') + MESES[d.getMonth()]}</button>`; };
+  $('lib-rapidos').innerHTML = rapido(0) + rapido(1) + rapido(2);
+  $('lib-lista').innerHTML = lista.length ? lista.map(l => `<div class="row-item"><i class="ti ti-calendar-check" style="color:var(--k-gold);font-size:20px;"></i><div class="row-main"><div class="cn">${fmt(l.ini)} até ${fmt(l.fim)}</div><div class="cm">${Math.round((deISO(l.fim) - deISO(l.ini)) / 864e5) + 1} dias liberados</div></div><button class="btn btn-danger btn-sm" data-act="lib-rem" data-id="${esc(l.id)}"><i class="ti ti-lock"></i>Fechar</button></div>`).join('')
+    : '<p class="cm" style="margin:0;">Nenhum período extra liberado.</p>';
+  const cfg = cfgJanelaAtual();
+  $('lib-resumo').innerHTML = `<i class="ti ti-eye"></i><div>Hoje os clientes conseguem agendar de <b>${fmt(t)}</b> até <b>${fmt(fimJanela(t, cfg))}</b>${lista.length ? ', mais os períodos liberados acima' : ''}. Última data disponível: <b>${fmt(ultimoDiaLiberado(cfg))}</b>.</div>`;
+}
+async function salvarLiberacoes(lista) {
+  CFG_EDIT.liberacoes = lista.filter(l => l.fim >= hoje());
+  await comLoading('Salvando', async () => {
+    try { await setDoc(doc(db, 'config', 'geral'), { liberacoes: CFG_EDIT.liberacoes }, { merge: true }); CONFIG.liberacoes = structuredClone(CFG_EDIT.liberacoes); renderLiberacoes(); toast('Datas atualizadas para os clientes!'); }
+    catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+function liberarPeriodo(ini, fim) {
+  ini = ini < hoje() ? hoje() : ini;
+  if (!ini || !fim || fim < ini) return toast('Confira as datas (o "até" precisa ser depois do "de").', true);
+  if (fim > addDias(hoje(), 366)) return toast('Libere no máximo 1 ano para frente.', true);
+  salvarLiberacoes([...(CFG_EDIT.liberacoes || []), { id: String(Date.now()), ini, fim }]);
 }
 
 /* ════════ EVENTOS ════════ */
@@ -4273,6 +4366,9 @@ const ACT = {
   'vender-produto': el => abrirModalVenda(el.dataset.id), 'modal-venda': () => abrirModalVenda(), 'salvar-venda': salvarVenda,
   'avaliar': el => avaliar(el.dataset.id, Number(el.dataset.n)),
   'quero-produto': el => queroProduto(el.dataset.id),
+  'lib-mes': el => liberarPeriodo(el.dataset.ini, el.dataset.fim),
+  'lib-add': () => liberarPeriodo($('lib-ini').value, $('lib-fim').value),
+  'lib-rem': el => { if (confirmar('Fechar esse período? Quem já agendou nele continua agendado.')) salvarLiberacoes((CFG_EDIT.liberacoes || []).filter(l => l.id !== el.dataset.id)); },
   'backup': backupCompleto, 'exportar': el => exportarCSV(el.dataset.c), 'reparar': repararDados,
   'ir-backup': () => { goTo('config'); setTimeout(() => $('card-backup').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); },
   'girar': girarRoleta,
@@ -4359,6 +4455,7 @@ const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
   'as-valor': preencherValorAssin,
   'vd-total': atualizarTotalVenda,
+  'cfg-janela': () => renderLiberacoes(),
   'rl-campo': el => { const p = roletaEdit.premios[Number(el.dataset.i)]; p[el.dataset.k] = el.value;
     if (el.dataset.k === 'tipo') { if (el.value === 'nada') p.nome = p.nome || 'Não foi dessa vez'; renderRoletaDono(); }
     else if (el.dataset.k === 'chance') { const total = roletaEdit.premios.reduce((t, x) => t + Math.max(0, Number(x.chance) || 0), 0) || 1; document.querySelectorAll('.rl-chance span').forEach((sp, i) => { sp.textContent = Math.round(Math.max(0, Number(roletaEdit.premios[i].chance) || 0) / total * 1000) / 10 + '%'; }); } },
