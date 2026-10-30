@@ -365,6 +365,15 @@ body[data-tema="anonovo"] .spl-fill{background:linear-gradient(90deg,#8A6E2E,#FF
 .as-resumo{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:10px;padding:.75rem .9rem;margin-bottom:.9rem;font-size:13px;line-height:1.5;}
 .as-resumo b{color:var(--k-gold);}
 .as-cortesia small{display:block;}
+.renovar-aviso{display:flex;gap:10px;align-items:flex-start;background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:.9rem;margin-bottom:1rem;font-size:14px;line-height:1.5;}
+.renovar-aviso > i{color:var(--k-gold);font-size:24px;}
+.renovar-aviso b{color:var(--k-gold);}
+.renovar-perg{font-weight:600;margin-bottom:.6rem;}
+.renovar-ops{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.4rem;}
+.renovar-op{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:.9rem .6rem;border-radius:12px;border:1px solid var(--k-gold-dim);background:var(--k-card,#161616);color:inherit;cursor:pointer;font:inherit;}
+.renovar-op i{font-size:26px;color:var(--k-gold);}
+.renovar-op small{color:var(--k-gray,#999);font-size:11.5px;line-height:1.35;}
+.renovar-op:hover,.renovar-op:focus-visible{border-color:var(--k-gold);background:#1F1A0C;}
 .chip.cortesia{background:rgba(201,168,76,.15);color:var(--k-gold);}
 .noel-foto{display:block;width:230px;height:230px;object-fit:cover;-webkit-mask-image:radial-gradient(closest-side at 50% 50%,#000 72%,transparent 100%);mask-image:radial-gradient(closest-side at 50% 50%,#000 72%,transparent 100%);animation:noelBalanca 3.2s ease-in-out infinite;transform-origin:50% 90%;filter:drop-shadow(0 0 18px rgba(201,168,76,.25));}
 #noel-login{display:flex;justify-content:center;margin:-.4rem 0 -.6rem;}
@@ -821,6 +830,8 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
           <select class="form-input" id="cfg-reserva"><option value="30">30 min</option><option value="60">1 hora</option><option value="120">2 horas</option><option value="240">4 horas</option></select>
           <label class="form-label" for="cfg-pagar-local" style="margin-top:.85rem;">Pagamento dos serviços avulsos</label>
           <select class="form-input" id="cfg-pagar-local"><option value="1">PIX pelo app ou na barbearia (cliente escolhe)</option><option value="0">Só PIX pelo app</option></select>
+          <label class="form-label" for="cfg-aviso-plano" style="margin-top:.85rem;">Avisar o cliente que o plano vai vencer</label>
+          <select class="form-input" id="cfg-aviso-plano"><option value="3">3 dias antes</option><option value="5">5 dias antes</option><option value="7">7 dias antes</option><option value="10">10 dias antes</option><option value="15">15 dias antes</option></select>
           <div class="cm" style="margin-top:5px;">Depois desse tempo sem pagamento confirmado, o horário volta a aparecer livre para outros clientes.</div></div>
       </div></div>
 
@@ -1096,15 +1107,36 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
   <div id="as-atual" class="note" hidden></div>
   <div class="form-group"><label class="form-label" for="as-plano">Plano</label><select class="form-input" id="as-plano" data-change="as-valor"></select></div>
   <div class="form-row">
-    <div class="form-group"><label class="form-label" for="as-ini">Início</label><input class="form-input" type="date" id="as-ini" data-change="as-resumo"/></div>
-    <div class="form-group"><label class="form-label" for="as-meses">Quantos meses</label><input class="form-input" type="number" min="1" max="36" step="1" id="as-meses" data-input="as-resumo"/></div>
+    <div class="form-group"><label class="form-label" for="as-ini">Início</label><input class="form-input" type="date" id="as-ini" data-change="as-ini"/></div>
+    <div class="form-group"><label class="form-label" for="as-meses">Quantos meses</label><input class="form-input" type="number" min="1" max="36" step="1" id="as-meses" data-input="as-meses-in"/></div>
   </div>
   <div class="as-meses-rap" role="group" aria-label="Meses rápidos"><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="1">1 mês</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="3">3 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="6">6 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="12">12 meses</button></div>
+  <div class="form-group"><label class="form-label" for="as-venc">Vence em</label><input class="form-input" type="date" id="as-venc" data-change="as-venc"/><div class="cm" style="margin-top:.35rem;">Já vem calculado pelos meses. Se quiser, escolha outra data.</div></div>
   <div class="form-group"><label class="check-item as-cortesia"><input type="checkbox" id="as-cortesia" data-change="as-cortesia"/><span><i class="ti ti-gift"></i> Cortesia<small>Plano de presente, sem cobrança e sem lançar no caixa</small></span></label></div>
   <div class="form-group" id="as-val-grupo"><label class="form-label" for="as-val">Valor por mês (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="as-val" data-input="as-resumo"/></div>
   <div id="as-resumo" class="as-resumo"></div>
   <div class="form-group" id="as-caixa-grupo"><label class="check-item" style="background:none;padding:0;"><input type="checkbox" id="as-caixa" checked/>Lançar o valor total no caixa</label></div>
   <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-assin"><i class="ti ti-check"></i>Confirmar</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-venc" role="dialog" aria-modal="true" aria-labelledby="m-venc-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-venc-t">Data de vencimento</div></div>
+  <div id="vc-info" class="note"></div>
+  <div class="form-group"><label class="form-label" for="vc-data">O plano vence em</label><input class="form-input" type="date" id="vc-data"/></div>
+  <div class="as-meses-rap" role="group" aria-label="Somar meses"><button type="button" class="btn btn-outline btn-sm" data-act="vc-mais" data-n="1">+1 mês</button><button type="button" class="btn btn-outline btn-sm" data-act="vc-mais" data-n="3">+3 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="vc-mais" data-n="6">+6 meses</button></div>
+  <div class="cm" style="margin-bottom:.9rem;">Só muda a data. Nada é lançado no caixa.</div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-venc"><i class="ti ti-check"></i>Salvar data</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-renovar" role="dialog" aria-modal="true" aria-labelledby="m-renovar-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-renovar-t">Seu plano está acabando</div></div>
+  <div class="renovar-aviso"><i class="ti ti-crown"></i><div id="rn-txt"></div></div>
+  <div class="renovar-perg">Quer renovar? Escolha como prefere pagar:</div>
+  <div class="renovar-ops">
+    <button class="renovar-op" data-act="renovar-chat" id="rn-chat"><i class="ti ti-message-circle"></i><b>Pelo chat</b><small>Paga por PIX aqui no app e envia o comprovante</small></button>
+    <button class="renovar-op" data-act="renovar-loja" id="rn-loja"><i class="ti ti-building-store"></i><b>Na barbearia</b><small>Paga direto no balcão, na sua próxima visita</small></button>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="renovar-depois">Agora não</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-cx" role="dialog" aria-modal="true" aria-labelledby="m-cx-t"><div class="modal">
@@ -1309,7 +1341,7 @@ const tempoMs = v => (v && typeof v.toMillis === 'function') ? v.toMillis() : (t
 const CFG_PADRAO = {
   nome: 'KJota Barbearia', tel: '', insta: '', end: '', cidade: '', cep: '',
   pixTipo: 'Telefone', pixKey: '', pixNome: 'KJota Barbearia', pixCidade: '',
-  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true, janelaDias: 8, liberacoes: [],
+  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true, avisoPlanoDias: 7, janelaDias: 8, liberacoes: [],
   horarios: {
     0: { ativo: false, inicio: '08:00', fim: '18:00', label: 'Domingo' },
     1: { ativo: true, inicio: '08:00', fim: '20:00', label: 'Segunda' },
@@ -1857,11 +1889,13 @@ function renderDash() {
     (resumoAvaliacoes().av.length ? `<div class="kpi"><div class="kpi-label">Avaliação</div><div class="kpi-value">${resumoAvaliacoes().media.toFixed(1).replace('.', ',')}★</div><div class="kpi-sub">${resumoAvaliacoes().av.length} avaliações</div></div>` : '') +
     `<div class="kpi"><div class="kpi-label">Assinantes</div><div class="kpi-value">${ativos.length}</div><div class="kpi-sub">${moeda(ativos.reduce((s, a) => s + (Number(a.val) || 0), 0))}/mês</div></div>`;
 
-  const lim7 = addDias(t, 7);
+  const diasAviso = Number(CONFIG.avisoPlanoDias) || 7, lim7 = addDias(t, diasAviso);
   const vencendo = D.assinantes.filter(a => a.status === 'ativo' && a.vencimento && a.vencimento >= t && a.vencimento <= lim7);
   let alertas = '';
   if (pendPag.length) alertas += `<button class="note warn" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="chats"><i class="ti ti-receipt"></i><div><b>${pendPag.length} comprovante${pendPag.length > 1 ? 's' : ''} para conferir.</b> Toque para abrir os chats e confirmar os pagamentos.</div></button>`;
-  if (vencendo.length) alertas += `<div class="note"><i class="ti ti-calendar-due"></i><div><b>${vencendo.length} assinatura${vencendo.length > 1 ? 's vencem' : ' vence'} nos próximos 7 dias:</b> ${vencendo.map(a => esc(nomeCli(a.cliente)) + ' (' + fmtCurto(a.vencimento) + ')').join(', ')}.</div></div>`;
+  if (vencendo.length) alertas += `<div class="note"><i class="ti ti-calendar-due"></i><div><b>${vencendo.length} assinatura${vencendo.length > 1 ? 's vencem' : ' vence'} nos próximos ${diasAviso} dias:</b> ${vencendo.map(a => esc(nomeCli(a.cliente)) + ' (' + fmtCurto(a.vencimento) + ')').join(', ')}.</div></div>`;
+  const renovLoja = D.chats.filter(c => c.tipo !== 'avulso' && c.pagarNoLocal && c.status === 'pendente');
+  if (renovLoja.length) alertas += `<button class="note warn" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="nav" data-sec="chats"><i class="ti ti-building-store"></i><div><b>${renovLoja.length} cliente${renovLoja.length > 1 ? 's querem' : ' quer'} renovar o plano pagando na barbearia:</b> ${renovLoja.map(c => esc(primeiroNome(c.clienteNome || nomeCli(c.clienteId)))).join(', ')}. Quando ${renovLoja.length > 1 ? 'pagarem' : 'pagar'}, abra o chat e toque em Confirmar pagamento.</div></button>`;
   const amanha = addDias(t, 1), agsAmanha = D.agendamentos.filter(a => a.data === amanha && ['wait', 'conf'].includes(a.status));
   if (agsAmanha.length) alertas += `<button class="note" style="width:100%;text-align:left;cursor:pointer;color:inherit;" data-act="ver-dia" data-ds="${amanha}"><i class="ti ti-brand-whatsapp"></i><div><b>${agsAmanha.length} cliente${agsAmanha.length > 1 ? 's' : ''} amanhã.</b> Toque para abrir a agenda de amanhã e mandar os lembretes pelo WhatsApp (botão Lembrar).</div></button>`;
   const aniv = aniversariantes(), anivHoje = aniv.filter(c => String(c.nasc).slice(8, 10) === t.slice(8));
@@ -2169,7 +2203,7 @@ function renderAssinaturas() {
   $('lista-assinantes').innerHTML = ativos.length ? ativos.map(a => {
     const venc = a.vencimento ? (vencida(a) ? `<span class="chip red">vencida em ${fmtCurto(a.vencimento)}</span>` : `<span class="chip">vence ${fmtCurto(a.vencimento)}</span>`) : '';
     return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(nomeCli(a.cliente)))}</div><div class="row-main"><div class="cn">${esc(nomeCli(a.cliente))}${venc}</div><div class="cm">${esc(nomePlano(a.plano))} · desde ${fmt(a.inicio)}</div></div>` +
-      `<div class="row-end"><span class="fluxo-val" style="color:var(--k-gold)">${a.cortesia ? '🎁 Cortesia' : moeda(a.val) + '/mês'}</span><button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}"><i class="ti ti-x"></i>Cancelar</button></div></div>`;
+      `<div class="row-end"><span class="fluxo-val" style="color:var(--k-gold)">${a.cortesia ? '🎁 Cortesia' : moeda(a.val) + '/mês'}</span><button class="btn btn-outline btn-sm" data-act="assin-venc" data-id="${a.id}" title="Mudar a data de vencimento"><i class="ti ti-calendar-event"></i>Vencimento</button><button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}"><i class="ti ti-x"></i>Cancelar</button></div></div>`;
   }).join('') : vazio('ti-crown-off', 'Nenhum assinante ativo');
 }
 
@@ -2216,7 +2250,7 @@ function abrirModalAssin(cid) {
   $('as-plano').innerHTML = D.planos.map(p => `<option value="${p.id}">${esc(p.nome)} — ${moeda(p.preco)}/mês</option>`).join('');
   if (daLista) $('as-cli').value = cid;
   $('as-cli').disabled = daLista;
-  $('as-meses').value = '1'; $('as-cortesia').checked = false; aplicarCortesiaUI();
+  $('as-meses').value = '1'; $('as-cortesia').checked = false; vencManual = false; aplicarCortesiaUI();
   assinPrepararCliente();
   openModal('m-assin');
 }
@@ -2249,12 +2283,19 @@ function aplicarCortesiaUI() {
   const c = $('as-cortesia').checked;
   $('as-val-grupo').hidden = c; $('as-caixa-grupo').hidden = c;
 }
+let vencManual = false;   // true quando o dono escolheu a data de vencimento na mão
+function vencEscolhido() {
+  const n = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), ini = $('as-ini').value || hoje();
+  return (vencManual && $('as-venc').value) || addMeses(ini, n);
+}
 function resumoAssin() {
   const n = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), ini = $('as-ini').value || hoje(), val = parseFloat($('as-val').value) || 0;
+  if (!vencManual) $('as-venc').value = addMeses(ini, n);
+  const venc = vencEscolhido(), dataTxt = vencManual ? ' <small>(data escolhida)</small>' : '';
   document.querySelectorAll('[data-act="as-meses"]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.n) === n)));
   const m = modoAssin();
   $('as-resumo').innerHTML = `<b>${esc(nomePlano(m.pid))}</b> por ${m.mesmo ? 'mais ' : ''}${n} ${n === 1 ? 'mês' : 'meses'}<br>` +
-    (m.mesmo ? `Vencimento: ${fmt(m.atual.vencimento)} → <b>${fmt(addMeses(ini, n))}</b>` : `Vale de <b>${fmt(ini)}</b> até <b>${fmt(addMeses(ini, n))}</b>`) +
+    (m.mesmo ? `Vencimento: ${fmt(m.atual.vencimento)} → <b>${fmt(venc)}</b>${dataTxt}` : `Vale de <b>${fmt(ini)}</b> até <b>${fmt(venc)}</b>${dataTxt}`) +
     ($('as-cortesia').checked ? '<br>🎁 <b>Cortesia</b>: sem cobrança' : `<br>Total: <b>${moeda(val * n)}</b>${n > 1 ? ` (${moeda(val)}/mês)` : ''}`);
 }
 async function salvarAssin() {
@@ -2263,7 +2304,9 @@ async function salvarAssin() {
   const meses = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), val = cortesia ? 0 : (parseFloat($('as-val').value) || 0);
   if (!m.cid || !m.pid) return toast('Escolha cliente e plano', true);
   if (val < 0) return toast('Valor inválido.', true);
-  const venc = addMeses(ini, meses);
+  const venc = vencEscolhido();
+  if (venc < hoje()) return toast('A data de vencimento não pode ser no passado.', true);
+  if (!m.mesmo && venc <= ini) return toast('A data de vencimento precisa ser depois do início.', true);
   await comLoading(m.mesmo ? 'Renovando assinatura' : 'Ativando assinatura', async () => {
     try {
       const b = writeBatch(db);
@@ -2280,6 +2323,73 @@ async function salvarAssin() {
     } catch (e) { toast(erroAmigavel(e), true); }
   });
 }
+/* ── Dono: mudar só a data de vencimento ── */
+let vencEditId = null;
+function abrirVenc(id) {
+  const a = D.assinantes.find(x => x.id === id); if (!a) return;
+  vencEditId = id;
+  $('vc-info').innerHTML = `<i class="ti ti-crown"></i><div><b>${esc(nomeCli(a.cliente))}</b> · ${esc(nomePlano(a.plano))}${a.cortesia ? ' · cortesia' : ''}<br>Vence hoje em: <b>${a.vencimento ? fmt(a.vencimento) : 'sem data'}</b></div>`;
+  $('vc-data').value = a.vencimento || addMeses(hoje(), 1);
+  openModal('m-venc');
+}
+async function salvarVenc() {
+  const a = D.assinantes.find(x => x.id === vencEditId), v = $('vc-data').value; if (!a) return;
+  if (!v) return toast('Escolha a data.', true);
+  if (v < hoje()) return toast('A data não pode ser no passado.', true);
+  await comLoading('Salvando', async () => {
+    try {
+      await updateDoc(doc(db, 'assinantes', a.id), { vencimento: v, vencAlteradoEm: serverTimestamp() });
+      closeModal('m-venc'); toast(`Plano de ${primeiroNome(nomeCli(a.cliente))} agora vence em ${fmt(v)}.`);
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+
+/* ── Cliente: aviso de renovação (pelo chat com PIX ou pagando na barbearia) ── */
+const diasPara = ds => Math.round((deISO(ds) - deISO(hoje())) / 864e5);
+function textoVenc(as) {
+  const d = diasPara(as.vencimento);
+  return d > 1 ? `vence em <b>${fmt(as.vencimento)}</b> (faltam ${d} dias)` : d === 1 ? `vence <b>amanhã, ${fmt(as.vencimento)}</b>` : d === 0 ? `vence <b>hoje, ${fmt(as.vencimento)}</b>` : `venceu em <b>${fmt(as.vencimento)}</b>`;
+}
+function renovacaoPendente(planoId) { return D.chats.find(c => c.tipo !== 'avulso' && String(c.planoId) === String(planoId) && c.status === 'pendente'); }
+let avisoRenovMostrado = false;
+function checarAvisoRenovacao() {
+  if (S.role !== 'cliente' || avisoRenovMostrado || modalAberto || document.body.classList.contains('splash-on')) return;
+  const as = assinAtiva(S.cid); if (!as || !as.vencimento || as.cortesia || !getPlano(as.plano)) return;
+  const d = diasPara(as.vencimento), lim = Number(CONFIG.avisoPlanoDias) || 7;
+  if (d > lim || d < -15 || renovacaoPendente(as.plano)) return;
+  const chave = `${as.id}|${as.vencimento}|${hoje()}`;
+  try { if (localStorage.getItem('kj-aviso-plano') === chave) return; } catch (e) {}
+  avisoRenovMostrado = true;
+  $('m-renovar-t').textContent = d < 0 ? 'Seu plano venceu' : 'Seu plano está acabando';
+  $('rn-txt').innerHTML = `Seu <b>${esc(nomePlano(as.plano))}</b> ${textoVenc(as)}.${d < 0 ? ' Renove para voltar a agendar pelo plano.' : ' Renove para não perder os benefícios.'}`;
+  $('rn-chat').dataset.id = $('rn-loja').dataset.id = String(as.plano);
+  setTimeout(() => { if (!modalAberto) openModal('m-renovar'); }, 700);
+}
+function adiarRenovacao() {
+  const as = assinAtiva(S.cid);
+  if (as) { try { localStorage.setItem('kj-aviso-plano', `${as.id}|${as.vencimento}|${hoje()}`); } catch (e) {} }
+  closeModal('m-renovar');
+}
+function renovarPeloChat(planoId) { if (modalAberto === 'm-renovar') adiarRenovacao(); contratarPlano(planoId); }
+async function renovarNaLoja(planoId) {
+  if (modalAberto === 'm-renovar') adiarRenovacao();
+  const p = getPlano(planoId); if (!p) return toast('Plano não encontrado', true);
+  const existente = renovacaoPendente(planoId);
+  if (existente) { toast('Você já pediu essa renovação. Abrindo a conversa.'); return abrirChat(existente.id); }
+  await comLoading('Avisando a barbearia', async () => {
+    try {
+      const ref = await addDoc(collection(db, 'chats'), {
+        clienteId: S.cid, clienteNome: S.nome, tipo: 'plano', planoId: String(planoId), meses: 1, status: 'pendente', vencimento: null, pagarNoLocal: true,
+        msgs: [msgInfo('kjota', `Combinado, ${primeiroNome(S.nome)}! 💈 Você vai renovar o **${p.nome}** (${moeda(p.preco)}/mês) pagando **direto na barbearia**.\nEscolha abaixo quantos meses quer renovar. Na sua próxima visita é só pagar no balcão que a gente ativa na hora.`)],
+        naoLidasDono: 1, naoLidasCliente: 0, ultimaMsg: 'Quer renovar na barbearia', criadoEm: serverTimestamp(), atualizadoEm: serverTimestamp()
+      });
+      await esperarChat(ref.id);
+      abrirChat(ref.id);
+      toast('Pronto! A barbearia já foi avisada.');
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+
 async function cancelarAssin(id) {
   const a = D.assinantes.find(x => x.id === id); if (!a) return;
   if (!confirmar(`Cancelar a assinatura de ${nomeCli(a.cliente)}?`)) return;
@@ -2300,7 +2410,7 @@ function renderChats() {
     const temComp = c.msgs.some(m => m.lado === 'cliente' && (m.tipo === 'imagem' || m.tipo === 'pdf'));
     const nl = Number(c.naoLidasDono) || 0;
     return `<button class="row-item" style="width:100%;background:none;border-left:0;border-right:0;border-top:0;color:inherit;text-align:left;cursor:pointer;" data-act="abrir-chat" data-id="${c.id}">` +
-      `<div class="av" aria-hidden="true">${esc(iniciais(nome))}</div><div class="row-main"><div class="cn">${esc(nome)} · ${esc(titulo)}${avulso ? '<span class="chip">Avulso</span>' : ''}${temComp && c.status === 'pendente' ? '<span class="chip"><i class="ti ti-receipt"></i>Comprovante</span>' : ''}</div>` +
+      `<div class="av" aria-hidden="true">${esc(iniciais(nome))}</div><div class="row-main"><div class="cn">${esc(nome)} · ${esc(titulo)}${avulso ? '<span class="chip">Avulso</span>' : ''}${!avulso && c.pagarNoLocal && c.status === 'pendente' ? '<span class="chip"><i class="ti ti-building-store"></i>Paga na barbearia</span>' : ''}${temComp && c.status === 'pendente' ? '<span class="chip"><i class="ti ti-receipt"></i>Comprovante</span>' : ''}</div>` +
       `<div class="cm">${esc(ult ? previewMsg(ult) : 'Sem mensagens')}</div></div>` +
       `<div class="row-end"><span class="status-pill ${c.status === 'confirmado' ? 'conf' : 'pend'}">${c.status === 'confirmado' ? 'Confirmado' : 'Pendente'}</span>${nl ? `<span class="nav-badge">${nl}</span>` : ''}</div></button>`;
   }).join('');
@@ -2739,10 +2849,11 @@ function renderMinhaArea() {
     h += `<div class="minha-assin"><div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem;"><i class="ti ti-crown" style="color:var(--k-gold);font-size:20px;"></i><div class="minha-assin-nome">${esc(p ? p.nome : 'Assinatura ativa')}</div></div>` +
       `<div class="minha-assin-info">Desde ${fmt(as.inicio)} · ${as.cortesia ? '🎁 Cortesia da casa' : moeda(as.val) + '/mês'}${as.vencimento ? ` · válido até <b style="color:var(--k-cream)">${fmt(as.vencimento)}</b>` : ''}</div>` +
       (lim ? `<div class="uso"><div class="uso-top"><span>Atendimentos em ${MESES[deISO(t).getMonth()].toLowerCase()}</span><b>${usado} de ${lim}</b></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, usado / lim * 100)}%"></div></div></div>` : '') +
-      (dias !== null && dias <= 7 ? `<div class="note warn" style="margin:.8rem 0 0;"><i class="ti ti-alert-triangle"></i><div><b>Vence em ${dias} dia${dias !== 1 ? 's' : ''}.</b> Renove para não perder os benefícios.</div></div>` : '') +
+      (dias !== null && dias <= (Number(CONFIG.avisoPlanoDias) || 7) ? `<div class="note warn" style="margin:.8rem 0 0;"><i class="ti ti-alert-triangle"></i><div>Seu plano ${textoVenc(as)}. ${as.cortesia ? 'Fale com a barbearia para continuar.' : renovacaoPendente(as.plano) ? '<b>Renovação já pedida.</b> Acompanhe pelo chat.' : 'Quer renovar?'}` +
+        (as.cortesia || renovacaoPendente(as.plano) ? '' : `<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="renovar-chat" data-id="${as.plano}"><i class="ti ti-message-circle"></i>Pelo chat (PIX)</button><button class="btn btn-outline btn-sm" data-act="renovar-loja" data-id="${as.plano}"><i class="ti ti-building-store"></i>Na barbearia</button></div>`) + '</div></div>' : '') +
       `<div class="row-actions" style="justify-content:flex-start;margin-top:.8rem;"><button class="btn btn-gold btn-sm" data-act="nav" data-sec="svc-cli"><i class="ti ti-calendar-plus"></i>Agendar pelo plano</button><button class="btn btn-outline btn-sm" data-act="contratar" data-id="${as.plano}"><i class="ti ti-refresh"></i>Renovar</button></div></div>`;
   } else if (as && vencida(as)) {
-    h += `<div class="note warn"><i class="ti ti-alert-triangle"></i><div><b>Seu plano ${esc(nomePlano(as.plano))} venceu em ${fmt(as.vencimento)}.</b> Renove para voltar a agendar sem custo.<div style="margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="contratar" data-id="${as.plano}"><i class="ti ti-refresh"></i>Renovar plano</button></div></div></div>`;
+    h += `<div class="note warn"><i class="ti ti-alert-triangle"></i><div><b>Seu plano ${esc(nomePlano(as.plano))} venceu em ${fmt(as.vencimento)}.</b> Renove para voltar a agendar pelo plano.${renovacaoPendente(as.plano) ? '<div class="cm" style="margin-top:.5rem;">Renovação já pedida. Acompanhe pelo chat.</div>' : `<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="renovar-chat" data-id="${as.plano}"><i class="ti ti-message-circle"></i>Pelo chat (PIX)</button><button class="btn btn-outline btn-sm" data-act="renovar-loja" data-id="${as.plano}"><i class="ti ti-building-store"></i>Na barbearia</button></div>`}</div></div>`;
   } else {
     h += `<div class="note"><i class="ti ti-crown-off"></i><div><b>Você não tem plano ativo.</b> Agende um serviço avulso ou conheça os planos.<div class="row-actions" style="justify-content:flex-start;margin-top:.6rem;"><button class="btn btn-gold btn-sm" data-act="nav" data-sec="svc-cli"><i class="ti ti-scissors"></i>Agendar serviço</button><button class="btn btn-outline btn-sm" data-act="nav" data-sec="planos-cli"><i class="ti ti-crown"></i>Ver planos</button></div></div></div>`;
   }
@@ -2776,6 +2887,7 @@ function renderMinhaArea() {
     Object.keys(CONFIG.horarios).map(k => { const x = CONFIG.horarios[k]; return `<div class="resumo-row" style="font-size:12px;"><span>${esc(x.label || DIAS_LONGO[k])}</span><span${x.ativo ? '' : ' style="color:var(--k-red)"'}>${x.ativo ? esc(x.inicio) + ' – ' + esc(x.fim) : 'Fechado'}</span></div>`; }).join('') +
     (CONFIG.end ? `<div class="cm" style="margin-top:.7rem;"><i class="ti ti-map-pin" style="color:var(--k-gold)"></i> ${esc(CONFIG.end)}${CONFIG.cidade ? ', ' + esc(CONFIG.cidade) : ''}</div>` : '') +
     `<div class="row-actions" style="justify-content:flex-start;margin-top:.7rem;">${wa ? `<a class="btn btn-outline btn-sm" href="${wa}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>WhatsApp</a>` : ''}${CONFIG.insta ? `<a class="btn btn-ghost btn-sm" href="https://instagram.com/${esc(CONFIG.insta.replace('@', ''))}" target="_blank" rel="noopener"><i class="ti ti-brand-instagram"></i>${esc(CONFIG.insta)}</a>` : ''}</div></div></div>`;
+  setTimeout(checarAvisoRenovacao, 0);
 }
 
 function cardSvc(s, incluso) {
@@ -2923,7 +3035,7 @@ function renderChat(forcarRolagem) {
   $('chat-title').textContent = S.role === 'dono' ? (c.clienteNome || nomeCli(c.clienteId)) : (avulso ? (c.svcNome || 'Serviço') : nomePlano(c.planoId));
   $('chat-sub').textContent = S.role === 'dono'
     ? (avulso ? `${c.svcNome || 'Serviço'} · ${moeda(c.svcPreco)}${c.agData ? ' · ' + fmtCurto(c.agData) + ' ' + (c.agHora || '') : ''}` : `${nomePlano(c.planoId)} · ${Number(c.meses) || 1} mês(es) · ${moeda(totalChat(c))}`)
-    : (avulso && c.agData ? `${fmt(c.agData)} às ${c.agHora} · ${moeda(c.svcPreco)}` : 'Pagamento via PIX');
+    : (avulso && c.agData ? `${fmt(c.agData)} às ${c.agHora} · ${moeda(c.svcPreco)}` : c.pagarNoLocal ? 'Pagamento na barbearia' : 'Pagamento via PIX');
   $('chat-status').innerHTML = `<span class="status-pill ${c.status === 'confirmado' ? 'conf' : 'pend'}">${c.status === 'confirmado' ? 'Confirmado' : 'Pendente'}</span>`;
 
   const idxUltComp = c.msgs.map((m, i) => (m.lado === 'cliente' && (m.tipo === 'imagem' || m.tipo === 'pdf')) ? i : -1).filter(i => i >= 0).pop();
@@ -3106,7 +3218,7 @@ async function confirmarPagamento(chatId) {
       const b = writeBatch(db);
       D.assinantes.filter(a => String(a.cliente) === String(c.clienteId) && a.status === 'ativo').forEach(a => b.update(doc(db, 'assinantes', a.id), { status: 'cancelado', canceladoEm: serverTimestamp() }));
       b.set(doc(collection(db, 'assinantes')), { cliente: String(c.clienteId), plano: String(c.planoId), inicio: t, vencimento: venc, meses, val: p ? Number(p.preco) : 0, status: 'ativo', chatId: c.id, _createdAt: serverTimestamp() });
-      b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `PIX Assinatura ${p ? p.nome : ''} (${meses}x) — ${nome}`, val: totalChat(c), hora: agora(), data: t, origem: 'assinatura', chatId: c.id, _createdAt: serverTimestamp() });
+      b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `${c.pagarNoLocal ? 'Balcão' : 'PIX'} Assinatura ${p ? p.nome : ''} (${meses}x) — ${nome}`, val: totalChat(c), hora: agora(), data: t, origem: 'assinatura', chatId: c.id, _createdAt: serverTimestamp() });
       b.update(doc(db, 'chats', c.id), {
         status: 'confirmado', vencimento: venc, atualizadoEm: serverTimestamp(), naoLidasCliente: increment(2), ultimaMsg: 'Plano ativado',
         msgs: arrayUnion(msgInfo('kjota', `✅ Pagamento confirmado! Seu **${p ? p.nome : 'plano'}** está ativo por **${meses} ${meses > 1 ? 'meses' : 'mês'}**.\nVálido até **${fmt(venc)}**. Agende seus horários em Serviços.`), msgSistema('Plano ativado até ' + fmt(venc)))
@@ -3988,7 +4100,7 @@ function renderConfig() {
   f('cfg-pix-nome', CFG_EDIT.pixNome); f('cfg-pix-cidade', CFG_EDIT.pixCidade);
   f('cfg-google', CFG_EDIT.googleUrl);
   f('cfg-janela', String(CFG_EDIT.janelaDias)); renderLiberacoes(); temaEdit = null; renderTemaCfg();
-  f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1');
+  f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1'); f('cfg-aviso-plano', String(CFG_EDIT.avisoPlanoDias || 7));
   renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif(); renderInfoBackup();
 }
 function renderHorariosCfg() {
@@ -4023,7 +4135,7 @@ function cfgDoFormulario() {
   return { ...CFG_EDIT, nome: g('cfg-nome') || 'KJota Barbearia', tel: g('cfg-tel'), insta: g('cfg-insta'), end: g('cfg-end'), cidade: g('cfg-cidade'), cep: g('cfg-cep'),
     pixTipo: $('cfg-pix-tipo').value, pixKey: g('cfg-pix-key'), pixNome: g('cfg-pix-nome'), pixCidade: g('cfg-pix-cidade'),
     googleUrl: g('cfg-google'),
-    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0', janelaDias: Number($('cfg-janela').value) || 8 };
+    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0', avisoPlanoDias: Number($('cfg-aviso-plano').value) || 7, janelaDias: Number($('cfg-janela').value) || 8 };
 }
 function previewPix() {
   const cfg = cfgDoFormulario();
@@ -4784,7 +4896,7 @@ const ACT = {
   'modal-plano': () => abrirModalPlano(), 'editar-plano': el => abrirModalPlano(el.dataset.id), 'salvar-plano': salvarPlano, 'excluir-plano': el => excluirPlano(el.dataset.id),
   'pl-add-item': () => $('pl-itens').insertAdjacentHTML('beforeend', linhaItemPlano('')),
   'pl-rem-item': el => { if ($('pl-itens').children.length > 1) el.closest('.item-edit-row').remove(); else el.closest('.item-edit-row').querySelector('input').value = ''; },
-  'modal-assin': () => abrirModalAssin(), 'assin-cli': el => abrirModalAssin(el.dataset.id), 'as-meses': el => { $('as-meses').value = el.dataset.n; resumoAssin(); }, 'salvar-assin': salvarAssin, 'cancelar-assin': el => cancelarAssin(el.dataset.id),
+  'modal-assin': () => abrirModalAssin(), 'assin-cli': el => abrirModalAssin(el.dataset.id), 'as-meses': el => { $('as-meses').value = el.dataset.n; vencManual = false; resumoAssin(); }, 'assin-venc': el => abrirVenc(el.dataset.id), 'salvar-venc': salvarVenc, 'vc-mais': el => { $('vc-data').value = addMeses($('vc-data').value || hoje(), Number(el.dataset.n)); }, 'renovar-chat': el => renovarPeloChat(el.dataset.id), 'renovar-loja': el => renovarNaLoja(el.dataset.id), 'renovar-depois': adiarRenovacao, 'salvar-assin': salvarAssin, 'cancelar-assin': el => cancelarAssin(el.dataset.id),
   'modal-cx': () => openModal('m-cx'), 'salvar-cx': salvarCx, 'excluir-cx': el => excluirCx(el.dataset.id),
   'cx-periodo': el => { cxPeriodo = el.dataset.p; renderCaixa(); },
   'chat-filtro': el => { chatFiltro = el.dataset.f; document.querySelectorAll('[data-act="chat-filtro"]').forEach(b => b.setAttribute('aria-pressed', b === el)); renderChats(); },
@@ -4834,7 +4946,7 @@ const ACT = {
 };
 const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
-  'as-valor': preencherValorAssin, 'as-resumo': resumoAssin, 'as-cortesia': () => { aplicarCortesiaUI(); resumoAssin(); }, 'as-cli': assinPrepararCliente,
+  'as-valor': preencherValorAssin, 'as-resumo': resumoAssin, 'as-ini': () => { vencManual = false; resumoAssin(); }, 'as-meses-in': () => { vencManual = false; resumoAssin(); }, 'as-venc': () => { vencManual = !!$('as-venc').value; resumoAssin(); }, 'as-cortesia': () => { aplicarCortesiaUI(); resumoAssin(); }, 'as-cli': assinPrepararCliente,
   'vd-total': atualizarTotalVenda,
   'cfg-janela': () => renderLiberacoes(),
   'rl-campo': el => { const p = roletaEdit.premios[Number(el.dataset.i)]; p[el.dataset.k] = el.value;
