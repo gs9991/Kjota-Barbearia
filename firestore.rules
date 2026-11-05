@@ -8,6 +8,16 @@ service cloud.firestore {
     function isAdmin() { return logado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
     function meuCid()  { return get(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.clienteId; }
     function soMuda(campos) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos); }
+    function meuCredito() { return get(/databases/$(database)/documents/clientes/$(meuCid())).data.get('credito', 0); }
+    // Crédito usado não pode passar do saldo real do cliente
+    function creditoOk() { return request.resource.data.get('creditoUsado', 0) >= 0 && request.resource.data.get('creditoUsado', 0) <= meuCredito(); }
+    // Cliente só pode mexer em 1 horário por vez na tabela de ocupados (e de no máximo 5 h)
+    function itemOk(lista) { return lista.size() == 0 || (lista[0].id is string && lista[0].dur is int && lista[0].dur > 0 && lista[0].dur <= 300); }
+    function mudaUmHorario() {
+      let novo = request.resource.data.itens;
+      let velho = resource == null ? [] : resource.data.itens;
+      return novo.removeAll(velho).size() <= 1 && velho.removeAll(novo).size() <= 1 && itemOk(novo.removeAll(velho));
+    }
 
     // Quem é dono: admins/{UID}, criado no primeiro acesso do usuário kjdono
     match /admins/{uid} {
@@ -47,23 +57,36 @@ service cloud.firestore {
       allow create: if isAdmin() || (logado()
                       && request.resource.data.cliente == meuCid()
                       && request.resource.data.pago == false
+                      && request.resource.data.get('preco', 0) >= 0
+                      && creditoOk()
                       && (request.resource.data.status == 'aguardando_pag'
                           || (request.resource.data.status == 'wait'
                               && request.resource.data.tipo == 'plano-svc'
-                              && request.resource.data.preco == 0)));
+                              && request.resource.data.preco == 0)
+                          || (request.resource.data.status == 'wait'
+                              && request.resource.data.get('pagarNoLocal', false) == true)));
       // Cliente só pode cancelar ou remarcar o que é dele
       allow update: if isAdmin() || (logado()
                       && resource.data.cliente == meuCid()
-                      && resource.data.status in ['wait', 'aguardando_pag']
-                      && soMuda(['status', 'data', 'hora', 'remarcadoEm', 'canceladoEm', 'chatId'])
-                      && request.resource.data.status in ['cancel', resource.data.status]);
+                      && resource.data.status in ['wait', 'conf', 'aguardando_pag']
+                      && soMuda(['status', 'data', 'hora', 'remarcadoEm', 'canceladoEm', 'chatId', 'canceladoPor', 'remarcadoPor'])
+                      && request.resource.data.status in ['cancel', resource.data.status])
+                    // Cliente avalia (uma vez) um atendimento concluído
+                    || (logado()
+                      && resource.data.cliente == meuCid()
+                      && resource.data.status == 'done'
+                      && !('avaliacao' in resource.data)
+                      && soMuda(['avaliacao', 'avaliacaoComentario', 'avaliadoEm'])
+                      && request.resource.data.avaliacao is int
+                      && request.resource.data.avaliacao >= 1 && request.resource.data.avaliacao <= 5);
       allow delete: if isAdmin();
     }
 
     // Só horários (sem nomes): usado para mostrar o que está ocupado
     match /agenda_dias/{dia} {
       allow read: if logado();
-      allow write: if logado() && request.resource.data.keys().hasOnly(['itens']) && request.resource.data.itens is list;
+      allow write: if logado() && request.resource.data.keys().hasOnly(['itens']) && request.resource.data.itens is list
+                   && (isAdmin() || mudaUmHorario());
     }
 
     match /caixa/{id} { allow read, write: if isAdmin(); }
@@ -72,14 +95,42 @@ service cloud.firestore {
       allow read: if isAdmin() || (logado() && resource.data.clienteId == meuCid());
       allow create: if isAdmin() || (logado()
                       && request.resource.data.clienteId == meuCid()
-                      && request.resource.data.status == 'pendente');
+                      && request.resource.data.status == 'pendente'
+                      && creditoOk());
       allow update: if isAdmin() || (logado()
                       && resource.data.clienteId == meuCid()
                       && soMuda(['msgs', 'meses', 'naoLidasDono', 'naoLidasCliente', 'atualizadoEm', 'ultimaMsg']));
       allow delete: if isAdmin();
     }
 
+    // Produtos: clientes veem a vitrine; o custo fica separado e só o dono vê
+    match /produtos/{id} { allow read: if logado(); allow write: if isAdmin(); }
+    match /custos/{id}   { allow read, write: if isAdmin(); }
+
+    // Lista de espera por dia
+    match /espera/{id} {
+      allow read: if isAdmin() || (logado() && resource.data.cliente == meuCid());
+      allow create: if logado() && (isAdmin() || request.resource.data.cliente == meuCid());
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (logado() && resource.data.cliente == meuCid());
+    }
+
     // Senhas da versão antiga: só o dono (para a migração, que depois apaga tudo)
+    // Roleta: cada giro tem um ID por cliente e período, então só dá para girar uma vez.
+    // O prêmio só vale quando o dono confirma (crédito entra na conta nesse momento).
+    match /giros/{id} {
+      allow read: if isAdmin() || (logado() && resource.data.cliente == meuCid());
+      allow create: if logado()
+                    && request.resource.data.cliente == meuCid()
+                    && id.matches(meuCid() + '_[a-zA-Z0-9-]+')
+                    && request.resource.data.status in ['pendente', 'nada']
+                    && request.resource.data.criadoEm == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    // Visual de datas especiais: público para aparecer até no carregamento de quem não entrou
+    match /publico/{id} { allow read: if true; allow write: if isAdmin(); }
+
     match /usuarios/{id} { allow read, write: if isAdmin(); }
 
     match /{document=**} { allow read, write: if false; }

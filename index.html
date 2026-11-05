@@ -823,6 +823,9 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
         <div class="form-row">
           <div class="form-group"><label class="form-label" for="cfg-intervalo">Intervalo entre horários</label>
             <select class="form-input" id="cfg-intervalo"><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div>
+          <div class="form-group"><label class="form-label" for="cfg-tolerancia">Tolerância entre horários</label>
+            <select class="form-input" id="cfg-tolerancia"><option value="0">Sem tolerância</option><option value="5">Até 5 min</option><option value="10">Até 10 min</option><option value="15">Até 15 min</option></select>
+            <div class="cm" style="margin-top:.35rem;">Se um serviço passar só um pouco do horário seguinte, esse horário continua livre. Ex.: 17:30 + 32 min não bloqueia o 18:00.</div></div>
           <div class="form-group"><label class="form-label" for="cfg-antecedencia">Cliente cancela/remarca até</label>
             <select class="form-input" id="cfg-antecedencia"><option value="0">A qualquer momento</option><option value="1">1 h antes</option><option value="2">2 h antes</option><option value="3">3 h antes</option><option value="6">6 h antes</option><option value="12">12 h antes</option><option value="24">24 h antes</option></select></div>
         </div>
@@ -1341,7 +1344,7 @@ const tempoMs = v => (v && typeof v.toMillis === 'function') ? v.toMillis() : (t
 const CFG_PADRAO = {
   nome: 'KJota Barbearia', tel: '', insta: '', end: '', cidade: '', cep: '',
   pixTipo: 'Telefone', pixKey: '', pixNome: 'KJota Barbearia', pixCidade: '',
-  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true, avisoPlanoDias: 7, janelaDias: 8, liberacoes: [],
+  intervalo: 30, antecedenciaH: 2, reservaMin: 60, pagarLocal: true, avisoPlanoDias: 7, toleranciaMin: 10, janelaDias: 8, liberacoes: [],
   horarios: {
     0: { ativo: false, inicio: '08:00', fim: '18:00', label: 'Domingo' },
     1: { ativo: true, inicio: '08:00', fim: '20:00', label: 'Segunda' },
@@ -2573,9 +2576,19 @@ function itensValidos(itens) {
   const lim = Date.now() - (CONFIG.reservaMin || 60) * 60000;
   return (itens || []).filter(i => i && i.hora && (i.st !== 'p' || (i.em || 0) >= lim));
 }
+/* Tolerância: um atendimento pode passar até X min do horário seguinte sem bloquear ele
+   (ex.: 17:30 + 32 min termina 18:02 e o 18:00 continua livre). Intervalo e bloqueios não têm tolerância. */
 function conflita(itens, hora, dur, ignorarId) {
-  const ini = horaToMin(hora), fim = ini + (Number(dur) || 30);
-  return itens.some(i => i.id !== ignorarId && ini < horaToMin(i.hora) + (Number(i.dur) || 30) && fim > horaToMin(i.hora));
+  const ini = horaToMin(hora), fim = ini + (Number(dur) || 30), tol = Math.max(0, Number(CONFIG.toleranciaMin) || 0);
+  return itens.some(i => {
+    if (i.id === ignorarId) return false;
+    const iIni = horaToMin(i.hora), iFim = iIni + (Number(i.dur) || 30);
+    if (!(ini < iFim && fim > iIni)) return false;          // nem encosta
+    if (i.bloq || !tol) return true;
+    if (ini > iIni && iFim - ini <= tol) return false;      // o de antes passa só um pouquinho
+    if (iIni > ini && fim - iIni <= tol) return false;      // este passa só um pouquinho no seguinte
+    return true;
+  });
 }
 async function itensDoDia(ds) {
   let itens = [];
@@ -4100,7 +4113,7 @@ function renderConfig() {
   f('cfg-pix-nome', CFG_EDIT.pixNome); f('cfg-pix-cidade', CFG_EDIT.pixCidade);
   f('cfg-google', CFG_EDIT.googleUrl);
   f('cfg-janela', String(CFG_EDIT.janelaDias)); renderLiberacoes(); temaEdit = null; renderTemaCfg();
-  f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1'); f('cfg-aviso-plano', String(CFG_EDIT.avisoPlanoDias || 7));
+  f('cfg-intervalo', String(CFG_EDIT.intervalo)); f('cfg-antecedencia', String(CFG_EDIT.antecedenciaH)); f('cfg-reserva', String(CFG_EDIT.reservaMin)); f('cfg-pagar-local', CFG_EDIT.pagarLocal === false ? '0' : '1'); f('cfg-aviso-plano', String(CFG_EDIT.avisoPlanoDias || 7)); f('cfg-tolerancia', String(CFG_EDIT.toleranciaMin ?? 10));
   renderHorariosCfg(); renderCalCfg(); previewPix(); estadoBotaoNotif(); renderInfoBackup();
 }
 function renderHorariosCfg() {
@@ -4135,7 +4148,7 @@ function cfgDoFormulario() {
   return { ...CFG_EDIT, nome: g('cfg-nome') || 'KJota Barbearia', tel: g('cfg-tel'), insta: g('cfg-insta'), end: g('cfg-end'), cidade: g('cfg-cidade'), cep: g('cfg-cep'),
     pixTipo: $('cfg-pix-tipo').value, pixKey: g('cfg-pix-key'), pixNome: g('cfg-pix-nome'), pixCidade: g('cfg-pix-cidade'),
     googleUrl: g('cfg-google'),
-    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0', avisoPlanoDias: Number($('cfg-aviso-plano').value) || 7, janelaDias: Number($('cfg-janela').value) || 8 };
+    intervalo: Number($('cfg-intervalo').value) || 30, antecedenciaH: Number($('cfg-antecedencia').value) || 0, reservaMin: Number($('cfg-reserva').value) || 60, pagarLocal: $('cfg-pagar-local').value !== '0', avisoPlanoDias: Number($('cfg-aviso-plano').value) || 7, toleranciaMin: Number($('cfg-tolerancia').value) || 0, janelaDias: Number($('cfg-janela').value) || 8 };
 }
 function previewPix() {
   const cfg = cfgDoFormulario();
