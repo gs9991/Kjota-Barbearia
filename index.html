@@ -279,6 +279,19 @@ body.com-selbar .toast{bottom:calc(5.5rem + var(--safe-bottom));}
 body.papel-dono .so-dono,body.papel-cliente .so-cli{display:block;}
 .roleta-wrap{position:relative;width:min(88vw,380px);margin:0 auto;}
 .roleta-wrap canvas{width:100%;height:auto;display:block;filter:drop-shadow(0 8px 24px rgba(201,168,76,.18));}
+.rl-abas{margin-bottom:.8rem;}
+.rl-abas i{font-size:14px;vertical-align:-2px;}
+#rl-card.vip{border-color:var(--k-gold);box-shadow:0 0 0 1px rgba(201,168,76,.25),0 10px 30px rgba(201,168,76,.08);}
+.roleta-vip-topo{text-align:center;margin-bottom:1rem;}
+.roleta-vip-selo{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#E6C76A,#B8902F);color:#0D0D0D;font-weight:800;font-size:11px;letter-spacing:1.5px;padding:4px 12px;border-radius:20px;margin-bottom:.5rem;}
+.roleta-vip-topo h1{background:linear-gradient(90deg,#B8902F,#F5E3A3,#C9A84C,#F5E3A3,#B8902F);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:vipBrilho 4s linear infinite;}
+@keyframes vipBrilho{to{background-position:200% center;}}
+.roleta-wrap.vip canvas{filter:drop-shadow(0 0 22px rgba(230,199,106,.45)) drop-shadow(0 8px 24px rgba(0,0,0,.5));}
+.roleta-wrap.vip .roleta-ponteiro{border-top-color:#E6C76A;}
+.roleta-vip-convite{display:flex;gap:10px;align-items:center;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit;margin-top:1rem;background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:.85rem;}
+.roleta-vip-convite > i{font-size:26px;color:var(--k-gold);}
+.chip.vip{background:linear-gradient(135deg,#E6C76A,#B8902F);color:#0D0D0D;border-color:transparent;font-weight:700;}
+@media (prefers-reduced-motion: reduce){.roleta-vip-topo h1{animation:none;}}
 .roleta-ponteiro{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:34px solid var(--k-cream);z-index:2;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
 .roleta-ganhou{text-align:center;background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:14px;padding:1.2rem;margin:1rem auto 0;max-width:380px;animation:fadeIn .4s;}
 .roleta-confete{font-size:40px;}
@@ -779,7 +792,9 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
     <section class="section" id="s-roleta">
       <div class="so-dono">
         <div class="section-head"><h1 class="section-title">Roleta de prêmios</h1><span class="cm" id="rl-resumo"></span></div>
-        <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-settings"></i>Configuração</span>
+        <div class="seg rl-abas" role="group" aria-label="Qual roleta"><button data-act="rl-aba" data-q="geral" aria-pressed="true"><i class="ti ti-gift"></i> Roleta geral</button><button data-act="rl-aba" data-q="plano" aria-pressed="false"><i class="ti ti-crown"></i> Roleta do plano</button></div>
+        <div class="note" id="rl-explica"></div>
+        <div class="card" id="rl-card"><div class="card-header"><span class="card-title" id="rl-card-tit"><i class="ti ti-settings"></i>Configuração</span>
           <label class="toggle" title="Ativar roleta"><input type="checkbox" id="rl-ativa" aria-label="Roleta ativada"/><span class="toggle-slider"></span></label></div><div class="card-body">
           <div class="form-row">
             <div class="form-group"><label class="form-label" for="rl-freq">Cada cliente gira</label><select class="form-input" id="rl-freq"><option value="dia">1x por dia</option><option value="semana">1x por semana</option><option value="mes">1x por mês</option><option value="visita">1x a cada atendimento concluído</option></select></div>
@@ -797,8 +812,8 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
         <div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-gift"></i>Prêmios ganhos</span></div><div class="card-body" id="rl-ganhadores"></div></div>
       </div>
       <div class="so-cli">
-        <h1 class="section-title" style="margin-bottom:.3rem;text-align:center;">Roleta de prêmios</h1>
-        <p class="cm" style="text-align:center;margin-bottom:1rem;">Gire e ganhe desconto, crédito ou brindes da KJota!</p>
+        <div id="roleta-topo"><h1 class="section-title" style="margin-bottom:.3rem;text-align:center;">Roleta de prêmios</h1>
+        <p class="cm" style="text-align:center;margin-bottom:1rem;">Gire e ganhe desconto, crédito ou brindes da KJota!</p></div>
         <div id="roleta-area"></div>
         <div id="roleta-meus" style="margin-top:1.2rem;"></div>
       </div>
@@ -1762,6 +1777,7 @@ function agendarRender() { cancelAnimationFrame(rafRender); rafRender = requestA
 function renderAtual() {
   if (!S.role) return;
   atualizarBadges();
+  if (S.role === 'cliente' && typeof atualizarNavRoleta === 'function') atualizarNavRoleta();
   if (S.secao && S.secao !== 'config' && RENDER[S.secao]) RENDER[S.secao]();
   if (S.chatId && $('chat-screen').classList.contains('visible')) renderChat();
   if ($('plan-select-screen').classList.contains('visible')) renderEscolhaPlano();
@@ -4384,9 +4400,25 @@ const ROLETA_PADRAO = { ativa: false, frequencia: 'semana', validadeDias: 30, pr
   { id: 'p3', nome: 'Pomada grátis', tipo: 'brinde', valor: 0, chance: 5 },
   { id: 'p4', nome: 'Não foi dessa vez', tipo: 'nada', valor: 0, chance: 50 }
 ] };
+/* Roleta do plano: só quem tem plano ativo vê (e essas pessoas não veem a geral). Prêmios melhores. */
+const ROLETA_PLANO_PADRAO = { ativa: false, frequencia: 'semana', validadeDias: 30, premios: [
+  { id: 'v1', nome: 'Corte grátis', tipo: 'brinde', valor: 0, chance: 8 },
+  { id: 'v2', nome: '25% de desconto', tipo: 'desconto', valor: 25, chance: 17 },
+  { id: 'v3', nome: 'R$ 15 de crédito', tipo: 'credito', valor: 15, chance: 15 },
+  { id: 'v4', nome: 'Barba grátis', tipo: 'brinde', valor: 0, chance: 12 },
+  { id: 'v5', nome: 'Pomada premium', tipo: 'brinde', valor: 0, chance: 8 },
+  { id: 'v6', nome: 'R$ 10 de crédito', tipo: 'credito', valor: 10, chance: 15 },
+  { id: 'v7', nome: 'Não foi dessa vez', tipo: 'nada', valor: 0, chance: 25 }
+] };
+const temPlanoAtivo = (cid = S.cid) => { const a = assinAtiva(cid); return !!(a && !vencida(a)); };
+let rlAba = 'geral';   // qual roleta o dono está editando
+const rlQual = () => (S.role === 'dono' ? rlAba : temPlanoAtivo() ? 'plano' : 'geral');
 const FREQ_LBL = { dia: 'uma vez por dia', semana: 'uma vez por semana', mes: 'uma vez por mês', visita: 'uma vez a cada atendimento concluído' };
 const TIPO_LBL = { desconto: 'Desconto (%)', credito: 'Crédito (R$)', brinde: 'Brinde', nada: 'Sem prêmio' };
-const roletaCfg = () => { const r = CONFIG.roleta || {}; return { ...ROLETA_PADRAO, ...r, premios: Array.isArray(r.premios) && r.premios.length ? r.premios : ROLETA_PADRAO.premios }; };
+const roletaCfg = (q = rlQual()) => {
+  const base = q === 'plano' ? ROLETA_PLANO_PADRAO : ROLETA_PADRAO, r = (q === 'plano' ? CONFIG.roletaPlano : CONFIG.roleta) || {};
+  return { ...base, ...r, premios: Array.isArray(r.premios) && r.premios.length ? r.premios : base.premios };
+};
 function semanaISO(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dia = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dia); const ini = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return t.getUTCFullYear() + '-S' + pad(Math.ceil(((t - ini) / 864e5 + 1) / 7)); }
 function chavePeriodo() {
   const f = roletaCfg().frequencia, d = new Date();
@@ -4395,7 +4427,7 @@ function chavePeriodo() {
   if (f === 'visita') return 'v' + (Number((getCliente(S.cid) || {}).visitas) || 0);
   return 's' + semanaISO(d);
 }
-const idGiro = () => S.cid + '_' + chavePeriodo();
+const idGiro = () => S.cid + '_' + (rlQual() === 'plano' ? 'P' : '') + chavePeriodo();
 const jaGirou = () => D.giros.some(g => g.id === idGiro());
 const giroExpirado = g => g.status === 'pendente' && g.validade && g.validade < hoje();
 function descPremio(p) {
@@ -4412,7 +4444,7 @@ function proximoGiroTxt() {
 }
 
 /* ── desenho da roleta ── */
-const CORES_FATIA = ['#C9A84C', '#1A1A1A', '#8A6E2E', '#262626'];
+const CORES_FATIA = ['#C9A84C', '#1A1A1A', '#8A6E2E', '#262626'], CORES_VIP = ['#E6C76A', '#0D0D0D', '#B8902F', '#1C160A'];
 let roletaAng = 0, girando = false;
 function desenharRoleta(ang) {
   const cv = $('roleta-canvas'); if (!cv) return;
@@ -4420,13 +4452,15 @@ function desenharRoleta(ang) {
   cv.width = D2; cv.height = D2;
   const c = cv.getContext('2d'), r = D2 / 2 - 14, cx = D2 / 2, cy = D2 / 2, fatia = Math.PI * 2 / n;
   c.clearRect(0, 0, D2, D2);
-  c.beginPath(); c.arc(cx, cy, r + 10, 0, Math.PI * 2); c.fillStyle = '#8A6E2E'; c.fill();
+  if (rlQual() === 'plano') { const g = c.createLinearGradient(0, 0, D2, D2); g.addColorStop(0, '#F5E3A3'); g.addColorStop(.5, '#B8902F'); g.addColorStop(1, '#F5E3A3'); c.beginPath(); c.arc(cx, cy, r + 12, 0, Math.PI * 2); c.fillStyle = g; c.fill(); }
+  else { c.beginPath(); c.arc(cx, cy, r + 10, 0, Math.PI * 2); c.fillStyle = '#8A6E2E'; c.fill(); }
   premios.forEach((p, i) => {
-    const a0 = ang + i * fatia - Math.PI / 2, cor = (i === n - 1 && n % 2) ? '#3A3A3A' : CORES_FATIA[i % 4];
+    const cores = rlQual() === 'plano' ? CORES_VIP : CORES_FATIA;
+    const a0 = ang + i * fatia - Math.PI / 2, cor = (i === n - 1 && n % 2) ? (rlQual() === 'plano' ? '#2A2110' : '#3A3A3A') : cores[i % 4];
     c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, r, a0, a0 + fatia); c.closePath(); c.fillStyle = cor; c.fill();
     c.strokeStyle = 'rgba(13,13,13,.6)'; c.lineWidth = 2; c.stroke();
     c.save(); c.translate(cx, cy); c.rotate(a0 + fatia / 2);
-    const claro = cor === '#C9A84C' || cor === '#8A6E2E';
+    const claro = ['#C9A84C', '#8A6E2E', '#E6C76A', '#B8902F'].includes(cor);
     c.fillStyle = claro ? '#0D0D0D' : '#F5F0E8'; c.textAlign = 'right'; c.textBaseline = 'middle';
     let tam = n > 8 ? 22 : 28; c.font = `${tam}px "Bebas Neue", Impact, sans-serif`;
     const txt = String(p.nome).toUpperCase(); while (c.measureText(txt).width > r - 125 && tam > 14) { tam--; c.font = `${tam}px "Bebas Neue", Impact, sans-serif`; }
@@ -4449,6 +4483,7 @@ async function girarRoleta() {
   if (girando) return;
   const cfg = roletaCfg();
   if (!cfg.ativa) return toast('A roleta está desativada no momento.', true);
+  if (rlQual() === 'plano' && !temPlanoAtivo()) return toast('Essa roleta é só para quem tem plano ativo.', true);
   if (jaGirou()) return toast(`Você já girou. Volte ${proximoGiroTxt()}!`, true);
   if (cfg.frequencia === 'visita' && !(Number((getCliente(S.cid) || {}).visitas) > 0) && D.giros.length) return toast('Você ganha um novo giro a cada atendimento concluído.', true);
   girando = true; $('roleta-btn').disabled = true;
@@ -4472,7 +4507,7 @@ async function girarRoleta() {
     requestAnimationFrame(passo);
   });
   const ganhou = p.tipo !== 'nada';
-  const giro = { cliente: S.cid, clienteNome: S.nome, premioId: p.id, nome: p.nome, tipo: p.tipo, valor: Number(p.valor) || 0,
+  const giro = { cliente: S.cid, clienteNome: S.nome, roleta: rlQual(), premioId: p.id, nome: p.nome, tipo: p.tipo, valor: Number(p.valor) || 0,
     status: ganhou ? 'pendente' : 'nada', periodo: chavePeriodo(), validade: ganhou ? addDias(hoje(), Number(cfg.validadeDias) || 30) : null,
     codigo: ganhou ? Math.random().toString(36).slice(2, 7).toUpperCase() : null, criadoEm: serverTimestamp() };
   try {
@@ -4498,11 +4533,16 @@ function mostrarResultado(g) {
 }
 
 /* ── tela do cliente ── */
+let roletaQualDesenhada = null;
 async function renderRoletaCli() {
-  const cfg = roletaCfg();
-  if (!cfg.ativa) { $('roleta-area').innerHTML = vazio('ti-lock', 'A roleta de prêmios não está disponível no momento.'); $('roleta-meus').innerHTML = ''; return; }
+  const cfg = roletaCfg(), vip = rlQual() === 'plano';
+  $('roleta-topo').innerHTML = vip
+    ? `<div class="roleta-vip-topo"><div class="roleta-vip-selo"><i class="ti ti-crown"></i>EXCLUSIVA PARA ASSINANTES</div><h1 class="section-title" style="margin-bottom:.3rem;">Roleta VIP do Plano</h1><p class="cm">Por ter plano na KJota, você gira a roleta com os melhores prêmios. 👑</p></div>`
+    : '<h1 class="section-title" style="margin-bottom:.3rem;text-align:center;">Roleta de prêmios</h1><p class="cm" style="text-align:center;margin-bottom:1rem;">Gire e ganhe desconto, crédito ou brindes da KJota!</p>';
+  if (!cfg.ativa) { roletaQualDesenhada = null; $('roleta-area').innerHTML = vazio('ti-lock', vip ? 'A roleta VIP do plano não está disponível no momento.' : 'A roleta de prêmios não está disponível no momento.'); renderMeusPremios(); return; }
+  if (roletaQualDesenhada !== rlQual() && !girando) { $('roleta-area').innerHTML = ''; roletaQualDesenhada = rlQual(); roletaAng = 0; }
   if (!$('roleta-canvas')) {
-    $('roleta-area').innerHTML = `<div class="roleta-wrap"><div class="roleta-ponteiro" aria-hidden="true"></div><canvas id="roleta-canvas" aria-label="Roleta de prêmios"></canvas></div>
+    $('roleta-area').innerHTML = `<div class="roleta-wrap${vip ? ' vip' : ''}"><div class="roleta-ponteiro" aria-hidden="true"></div><canvas id="roleta-canvas" aria-label="${vip ? 'Roleta VIP do plano' : 'Roleta de prêmios'}"></canvas></div>
       <button class="btn btn-gold btn-block" id="roleta-btn" data-act="girar" style="max-width:320px;margin:1rem auto 0;"><i class="ti ti-rotate-clockwise"></i>Girar a roleta</button>
       <p class="cm" id="roleta-regra" style="text-align:center;margin-top:.6rem;"></p><div id="roleta-resultado" hidden></div>`;
   }
@@ -4511,17 +4551,24 @@ async function renderRoletaCli() {
   const ja = jaGirou();
   if (!girando) { $('roleta-btn').disabled = ja; $('roleta-btn').innerHTML = ja ? `<i class="ti ti-clock"></i>Volte ${proximoGiroTxt()}` : '<i class="ti ti-rotate-clockwise"></i>Girar a roleta'; }
   $('roleta-regra').textContent = `Você pode girar ${FREQ_LBL[cfg.frequencia] || FREQ_LBL.semana}. Os prêmios valem por ${Number(cfg.validadeDias) || 30} dias.`;
+  renderMeusPremios();
+}
+function renderMeusPremios() {
+  const vip = rlQual() === 'plano', pl = roletaCfg('plano');
+  const convite = !vip && pl.ativa && D.planos.length
+    ? `<button class="roleta-vip-convite" data-act="nav" data-sec="planos-cli"><i class="ti ti-crown"></i><div><b>Quem tem plano gira a Roleta VIP</b><div class="cm">Prêmios melhores, como ${esc(pl.premios.filter(x => x.tipo !== 'nada').slice(0, 2).map(descPremio).join(' e ') || 'corte grátis')}. Toque para conhecer os planos.</div></div></button>` : '';
   const ganhos = D.giros.filter(g => g.status !== 'nada').sort((a, b) => tempoMs(b.criadoEm) - tempoMs(a.criadoEm));
   $('roleta-meus').innerHTML = ganhos.length ? `<div class="card"><div class="card-header"><span class="card-title"><i class="ti ti-gift"></i>Meus prêmios</span></div><div class="card-body">` +
     ganhos.map(g => { const exp = giroExpirado(g);
-      return `<div class="row-item"><div class="row-main"><div class="cn">${esc(descPremio(g))}</div><div class="cm">${g.status === 'resgatado' ? 'Resgatado' : exp ? 'Expirou em ' + fmt(g.validade) : `Código <b style="color:var(--k-gold)">${esc(g.codigo)}</b> · válido até ${fmt(g.validade)}`}</div></div>` +
-        `<span class="badge ${g.status === 'resgatado' ? 'badge-done' : exp || g.status === 'recusado' ? 'badge-cancel' : 'badge-wait'}">${g.status === 'resgatado' ? 'Usado' : g.status === 'recusado' ? 'Recusado' : exp ? 'Expirado' : 'Disponível'}</span></div>`; }).join('') + '</div></div>' : '';
+      return `<div class="row-item"><div class="row-main"><div class="cn">${esc(descPremio(g))}${g.roleta === 'plano' ? '<span class="chip vip">👑 VIP</span>' : ''}</div><div class="cm">${g.status === 'resgatado' ? 'Resgatado' : exp ? 'Expirou em ' + fmt(g.validade) : `Código <b style="color:var(--k-gold)">${esc(g.codigo)}</b> · válido até ${fmt(g.validade)}`}</div></div>` +
+        `<span class="badge ${g.status === 'resgatado' ? 'badge-done' : exp || g.status === 'recusado' ? 'badge-cancel' : 'badge-wait'}">${g.status === 'resgatado' ? 'Usado' : g.status === 'recusado' ? 'Recusado' : exp ? 'Expirado' : 'Disponível'}</span></div>`; }).join('') + '</div></div>' + convite : convite;
 }
 function blocoRoletaCli() {
   const cfg = roletaCfg(); if (!cfg.ativa) return '';
   const ja = jaGirou(), disp = D.giros.filter(g => g.status === 'pendente' && !giroExpirado(g)).length;
   if (ja && !disp) return '';
-  return `<button class="note roleta-chamada" data-act="nav" data-sec="roleta"><i class="ti ti-gift"></i><div><b>${ja ? `Você tem ${disp} prêmio${disp > 1 ? 's' : ''} para usar!` : 'Gire a roleta e ganhe prêmios!'}</b> ${ja ? 'Mostre o código na barbearia.' : 'Desconto, crédito e brindes. Toque para girar.'}</div></button>`;
+  const vip = rlQual() === 'plano';
+  return `<button class="note roleta-chamada" data-act="nav" data-sec="roleta"><i class="ti ${vip ? 'ti-crown' : 'ti-gift'}"></i><div><b>${ja ? `Você tem ${disp} prêmio${disp > 1 ? 's' : ''} para usar!` : vip ? 'Sua Roleta VIP do plano está liberada!' : 'Gire a roleta e ganhe prêmios!'}</b> ${ja ? 'Mostre o código na barbearia.' : vip ? 'Prêmios exclusivos para assinantes. Toque para girar.' : 'Desconto, crédito e brindes. Toque para girar.'}</div></button>`;
 }
 function atualizarNavRoleta() {
   const b = document.querySelector('.nav-btn[data-sec="roleta"]');
@@ -4531,7 +4578,15 @@ function atualizarNavRoleta() {
 /* ── tela do dono ── */
 let roletaEdit = null;
 function renderRoletaDono() {
-  if (!roletaEdit) roletaEdit = structuredClone(roletaCfg());
+  if (!roletaEdit) roletaEdit = structuredClone(roletaCfg(rlAba));
+  const vip = rlAba === 'plano';
+  document.querySelectorAll('[data-act="rl-aba"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.q === rlAba)));
+  $('rl-card').classList.toggle('vip', vip);
+  $('rl-card-tit').innerHTML = vip ? '<i class="ti ti-crown"></i>Roleta do plano (VIP)' : '<i class="ti ti-settings"></i>Roleta geral';
+  const nPlano = new Set(D.assinantes.filter(a => a.status === 'ativo' && !vencida(a)).map(a => String(a.cliente))).size;
+  $('rl-explica').innerHTML = vip
+    ? `<i class="ti ti-crown"></i><div><b>Só quem tem plano ativo vê esta roleta</b> (hoje ${nPlano} cliente${nPlano !== 1 ? 's' : ''}). Quem tem plano não vê a roleta geral, só esta. Coloque prêmios melhores para valorizar o plano.</div>`
+    : '<i class="ti ti-users"></i><div><b>Clientes sem plano veem esta roleta.</b> Quem tem plano ativo gira a Roleta do plano.</div>';
   $('rl-ativa').checked = !!roletaEdit.ativa;
   $('rl-freq').value = roletaEdit.frequencia; $('rl-validade').value = roletaEdit.validadeDias;
   const total = roletaEdit.premios.reduce((t, p) => t + Math.max(0, Number(p.chance) || 0), 0) || 1;
@@ -4550,7 +4605,7 @@ function renderGanhadores() {
   $('rl-ganhadores').innerHTML = lista.length ? lista.map(g => {
     const exp = giroExpirado(g);
     const acoes = g.status === 'pendente' && !exp ? `<button class="btn btn-gold btn-sm" data-act="rl-resgatar" data-id="${g.id}"><i class="ti ti-check"></i>${g.tipo === 'credito' ? 'Dar crédito' : 'Resgatar'}</button><button class="btn btn-ghost btn-sm" data-act="rl-recusar" data-id="${g.id}" aria-label="Recusar"><i class="ti ti-x"></i></button>` : '';
-    return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(g.clienteNome))}</div><div class="row-main"><div class="cn">${esc(g.clienteNome || nomeCli(g.cliente))} · ${esc(descPremio(g))}</div>` +
+    return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(g.clienteNome))}</div><div class="row-main"><div class="cn">${esc(g.clienteNome || nomeCli(g.cliente))} · ${esc(descPremio(g))}${g.roleta === 'plano' ? '<span class="chip vip">👑 Plano</span>' : ''}</div>` +
       alertasGiro(g).map(t => `<span class="chip red"><i class="ti ti-alert-triangle"></i>${esc(t)}</span>`).join('') + `<div class="cm">Código <b style="color:var(--k-gold)">${esc(g.codigo || '')}</b> · ${g.status === 'resgatado' ? 'resgatado' : g.status === 'recusado' ? 'recusado' : exp ? 'expirou ' + fmtCurto(g.validade) : 'vale até ' + fmtCurto(g.validade)}</div></div>` +
       `<div class="row-end"><div class="row-actions">${acoes}</div></div></div>`;
   }).join('') : vazio('ti-gift-off', 'Ninguém ganhou prêmio ainda.');
@@ -4563,7 +4618,11 @@ async function salvarRoleta() {
   if (r.premios.length > 12) return toast('Máximo de 12 prêmios na roleta.', true);
   if (!r.premios.some(p => p.chance > 0)) return toast('Coloque chance em pelo menos um prêmio.', true);
   await comLoading('Salvando', async () => {
-    try { await setDoc(doc(db, 'config', 'geral'), { roleta: r }, { merge: true }); CONFIG.roleta = structuredClone(r); toast(r.ativa ? 'Roleta salva e ativada!' : 'Roleta salva (desativada).'); renderRoletaDono(); }
+    try {
+      const campo = rlAba === 'plano' ? 'roletaPlano' : 'roleta', nome = rlAba === 'plano' ? 'Roleta do plano' : 'Roleta geral';
+      await setDoc(doc(db, 'config', 'geral'), { [campo]: r }, { merge: true }); CONFIG[campo] = structuredClone(r);
+      toast(r.ativa ? `${nome} salva e ativada!` : `${nome} salva (desativada).`); renderRoletaDono();
+    }
     catch (e) { toast(erroAmigavel(e), true); }
   });
 }
@@ -4589,7 +4648,7 @@ async function recusarGiro(id) {
 let girosAntes = null;
 function tratarGiros() {
   const ids = new Set(D.giros.map(g => g.id));
-  if (girosAntes && S.role === 'dono') D.giros.filter(g => !girosAntes.has(g.id) && g.status === 'pendente').forEach(g => avisar('🎁 Prêmio na roleta', `${g.clienteNome || 'Cliente'} ganhou ${descPremio(g)} (código ${g.codigo})`, { sec: 'roleta' }));
+  if (girosAntes && S.role === 'dono') D.giros.filter(g => !girosAntes.has(g.id) && g.status === 'pendente').forEach(g => avisar(g.roleta === 'plano' ? '👑 Prêmio na Roleta do plano' : '🎁 Prêmio na roleta', `${g.clienteNome || 'Cliente'} ganhou ${descPremio(g)} (código ${g.codigo})`, { sec: 'roleta' }));
   girosAntes = ids;
 }
 
@@ -4717,7 +4776,11 @@ function chaveDe(prefixo, ms) {
   return prefixo === 'd' ? 'd' + iso : prefixo === 'm' ? 'm' + iso.slice(0, 7) : prefixo === 's' ? 's' + semanaISO(d) : null;
 }
 function alertasGiro(g) {
-  const out = [], p = roletaCfg().premios.find(x => x.id === g.premioId);
+  const out = [], p = roletaCfg(g.roleta === 'plano' ? 'plano' : 'geral').premios.find(x => x.id === g.premioId);
+  if (g.roleta === 'plano') {
+    const dia = tempoMs(g.criadoEm) ? dataISO(new Date(tempoMs(g.criadoEm))) : hoje();
+    if (!D.assinantes.some(a => String(a.cliente) === String(g.cliente) && (a.inicio || '') <= dia && (!a.vencimento || a.vencimento >= dia))) out.push('Girou a roleta do plano sem plano ativo');
+  }
   if (!p || p.tipo !== g.tipo || Number(p.valor || 0) !== Number(g.valor || 0)) out.push('Prêmio não confere com a roleta');
   const ms = tempoMs(g.criadoEm), pre = String(g.periodo || '')[0];
   if (ms && ['d', 's', 'm'].includes(pre) && chaveDe(pre, ms) !== g.periodo) out.push('Giro fora do período');
@@ -4990,6 +5053,7 @@ const ACT = {
   'rl-rem': el => { roletaEdit.premios.splice(Number(el.dataset.i), 1); renderRoletaDono(); },
   'rl-salvar': salvarRoleta,
   'rl-desfazer': () => { roletaEdit = null; renderRoletaDono(); },
+  'rl-aba': el => { if (el.dataset.q === rlAba) return; rlAba = el.dataset.q; roletaEdit = null; renderRoletaDono(); },
   'rl-resgatar': el => resgatarGiro(el.dataset.id),
   'rl-recusar': el => recusarGiro(el.dataset.id),
   'ag-pag': el => { agS.pag = el.dataset.p; escolherHoraAg(agS.hora); },
