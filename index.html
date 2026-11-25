@@ -378,6 +378,8 @@ body[data-tema="anonovo"] .spl-fill{background:linear-gradient(90deg,#8A6E2E,#FF
 .as-resumo{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:10px;padding:.75rem .9rem;margin-bottom:.9rem;font-size:13px;line-height:1.5;}
 .as-resumo b{color:var(--k-gold);}
 .as-cortesia small{display:block;}
+.as-tem{background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:.9rem;margin-bottom:1rem;}
+.as-tem .btn{width:100%;margin-top:.55rem;justify-content:center;}
 .vc-mes{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--k-card,#161616);border:1px solid var(--k-gold-dim);border-radius:10px;padding:.5rem;margin:.35rem 0 .7rem;}
 .vc-mes b{color:var(--k-gold);font-size:17px;}
 .renovar-aviso{display:flex;gap:10px;align-items:flex-start;background:linear-gradient(135deg,#1A1200,#2A1E00);border:1px solid var(--k-gold-dim);border-radius:12px;padding:.9rem;margin-bottom:1rem;font-size:14px;line-height:1.5;}
@@ -1153,37 +1155,44 @@ function kjImgs(){document.querySelectorAll('img[data-img]').forEach(function(i)
 </div></div>
 
 <div class="modal-overlay" id="m-assin" role="dialog" aria-modal="true" aria-labelledby="m-assin-t"><div class="modal">
-  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-assin-t">Adicionar assinante</div></div>
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-assin-t">Vender plano</div></div>
   <div class="form-group"><label class="form-label" for="as-cli">Cliente</label><select class="form-input" id="as-cli" data-change="as-cli"></select></div>
   <div id="as-novo" hidden>
-    <div class="form-group"><label class="form-label" for="as-novo-nome">Nome do cliente</label><input class="form-input" type="text" id="as-novo-nome" maxlength="80" placeholder="Ex: Carlos Souza"/></div>
+    <div class="form-group"><label class="form-label" for="as-novo-nome">Nome</label><input class="form-input" type="text" id="as-novo-nome" maxlength="80" placeholder="Ex: Carlos Souza"/></div>
     <div class="form-group"><label class="form-label" for="as-novo-tel">WhatsApp</label><input class="form-input" type="tel" id="as-novo-tel" maxlength="20" placeholder="(31) 99999-9999"/></div>
   </div>
-  <div id="as-atual" class="note" hidden></div>
-  <div class="form-group"><label class="form-label" for="as-plano">Plano</label><select class="form-input" id="as-plano" data-change="as-valor"></select></div>
-  <div class="form-row">
-    <div class="form-group"><label class="form-label" for="as-pago">Data do pagamento</label><input class="form-input" type="date" id="as-pago" data-change="as-ini"/></div>
-    <div class="form-group"><label class="form-label" for="as-meses">Quantos meses</label><input class="form-input" type="number" min="1" max="36" step="1" id="as-meses" data-input="as-meses-in"/></div>
+  <div id="as-atual" hidden></div>
+  <div id="as-campos">
+    <div class="form-group"><label class="form-label" for="as-plano">Plano</label><select class="form-input" id="as-plano" data-change="as-plano"></select></div>
+    <div class="form-group"><label class="form-label" for="as-venc">Vence em</label><input class="form-input" type="date" id="as-venc"/></div>
+    <div class="form-row" id="as-val-grupo">
+      <div class="form-group"><label class="form-label" for="as-val">Recebeu (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="as-val"/></div>
+      <div class="form-group"><label class="form-label" for="as-forma">Pagou com</label><select class="form-input" id="as-forma"><option>PIX</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option></select></div>
+    </div>
+    <div class="form-group"><label class="check-item"><input type="checkbox" id="as-cortesia" data-change="as-cortesia"/>🎁 Cortesia (de graça)</label></div>
   </div>
-  <div class="form-group" id="as-ini-grupo" hidden><label class="form-label" for="as-ini">Plano atual vence em</label><input class="form-input" type="date" id="as-ini" disabled/></div>
-  <div class="as-meses-rap" role="group" aria-label="Meses rápidos"><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="1">1 mês</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="3">3 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="6">6 meses</button><button type="button" class="btn btn-outline btn-sm" data-act="as-meses" data-n="12">12 meses</button></div>
-  <div class="form-group"><label class="form-label" for="as-dia">Vence todo dia</label><select class="form-input" id="as-dia" data-change="as-resumo"><option value="1">Dia 1</option><option value="2">Dia 2</option><option value="3">Dia 3</option><option value="4">Dia 4</option><option value="5">Dia 5</option><option value="6">Dia 6</option><option value="7">Dia 7</option><option value="8">Dia 8</option><option value="9">Dia 9</option><option value="10">Dia 10</option><option value="11">Dia 11</option><option value="12">Dia 12</option><option value="13">Dia 13</option><option value="14">Dia 14</option><option value="15">Dia 15</option><option value="16">Dia 16</option><option value="17">Dia 17</option><option value="18">Dia 18</option><option value="19">Dia 19</option><option value="20">Dia 20</option><option value="21">Dia 21</option><option value="22">Dia 22</option><option value="23">Dia 23</option><option value="24">Dia 24</option><option value="25">Dia 25</option><option value="26">Dia 26</option><option value="27">Dia 27</option><option value="28">Dia 28</option></select></div>
-  <div class="form-group"><label class="check-item as-cortesia"><input type="checkbox" id="as-cortesia" data-change="as-cortesia"/><span><i class="ti ti-gift"></i> Cortesia<small>Plano de presente, sem cobrança e sem lançar no caixa</small></span></label></div>
-  <div class="form-group" id="as-val-grupo"><label class="form-label" for="as-val">Valor por mês (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="as-val" data-input="as-resumo"/>
-    <label class="form-label" for="as-forma" style="margin-top:.8rem;">Forma de pagamento</label><select class="form-input" id="as-forma"><option>PIX</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option></select></div>
-  <div id="as-resumo" class="as-resumo"></div>
-  <div class="form-group" id="as-caixa-grupo"><label class="check-item" style="background:none;padding:0;"><input type="checkbox" id="as-caixa" checked/>Lançar o valor total no caixa</label></div>
-  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-assin"><i class="ti ti-check"></i>Confirmar</button></div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-assin" id="as-ok"><i class="ti ti-check"></i>Confirmar</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-pagou" role="dialog" aria-modal="true" aria-labelledby="m-pagou-t"><div class="modal">
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-pagou-t">Recebi o pagamento</div></div>
+  <div class="note" id="pg-info"></div>
+  <div class="form-row" id="pg-val-grupo">
+    <div class="form-group"><label class="form-label" for="pg-val">Recebeu (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="pg-val"/></div>
+    <div class="form-group"><label class="form-label" for="pg-forma">Pagou com</label><select class="form-input" id="pg-forma"><option>PIX</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option></select></div>
+  </div>
+  <div class="form-group"><label class="form-label" for="pg-venc">Agora vence em</label><input class="form-input" type="date" id="pg-venc"/></div>
+  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-pagou"><i class="ti ti-check"></i>Confirmar</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-venc" role="dialog" aria-modal="true" aria-labelledby="m-venc-t"><div class="modal">
-  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-venc-t">Data de vencimento</div></div>
-  <div id="vc-info" class="note"></div>
-  <div class="form-group"><label class="form-label" for="vc-dia">Vence todo dia</label><select class="form-input" id="vc-dia" data-change="vc-dia"><option value="1">Dia 1</option><option value="2">Dia 2</option><option value="3">Dia 3</option><option value="4">Dia 4</option><option value="5">Dia 5</option><option value="6">Dia 6</option><option value="7">Dia 7</option><option value="8">Dia 8</option><option value="9">Dia 9</option><option value="10">Dia 10</option><option value="11">Dia 11</option><option value="12">Dia 12</option><option value="13">Dia 13</option><option value="14">Dia 14</option><option value="15">Dia 15</option><option value="16">Dia 16</option><option value="17">Dia 17</option><option value="18">Dia 18</option><option value="19">Dia 19</option><option value="20">Dia 20</option><option value="21">Dia 21</option><option value="22">Dia 22</option><option value="23">Dia 23</option><option value="24">Dia 24</option><option value="25">Dia 25</option><option value="26">Dia 26</option><option value="27">Dia 27</option><option value="28">Dia 28</option></select></div>
-  <span class="form-label">Próximo vencimento</span>
-  <div class="vc-mes"><button type="button" class="btn btn-outline btn-sm" data-act="vc-mes" data-n="-1" aria-label="Mês anterior"><i class="ti ti-chevron-left"></i></button><b id="vc-prox"></b><button type="button" class="btn btn-outline btn-sm" data-act="vc-mes" data-n="1" aria-label="Próximo mês"><i class="ti ti-chevron-right"></i></button></div>
-  <div class="cm" style="margin-bottom:.9rem;">Só muda a data. Nada é lançado no caixa.</div>
-  <div class="modal-footer"><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-venc"><i class="ti ti-check"></i>Salvar data</button></div>
+  <div class="modal-head"><img data-img="logo" alt=""/><div class="modal-title" id="m-venc-t">Editar plano</div></div>
+  <button class="btn btn-gold" style="width:100%;margin-bottom:1rem;" data-act="ep-pagou"><i class="ti ti-cash"></i>Recebi o pagamento</button>
+  <div class="form-group"><label class="form-label" for="ep-plano">Plano</label><select class="form-input" id="ep-plano"></select></div>
+  <div class="form-group"><label class="form-label" for="ep-venc">Vence em</label><input class="form-input" type="date" id="ep-venc"/></div>
+  <div class="form-group" id="ep-val-grupo"><label class="form-label" for="ep-val">Mensalidade (R$)</label><input class="form-input" type="number" step="0.01" min="0" id="ep-val"/></div>
+  <div class="form-group"><label class="check-item"><input type="checkbox" id="ep-cortesia" data-change="ep-cortesia"/>🎁 Cortesia (de graça)</label></div>
+  <div class="modal-footer" style="flex-wrap:wrap;"><button class="btn btn-danger btn-sm" data-act="ep-encerrar" style="margin-right:auto;"><i class="ti ti-x"></i>Encerrar plano</button><button class="btn btn-ghost" data-act="close-modal">Cancelar</button><button class="btn btn-gold" data-act="salvar-venc"><i class="ti ti-check"></i>Salvar</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-renovar" role="dialog" aria-modal="true" aria-labelledby="m-renovar-t"><div class="modal">
@@ -2225,7 +2234,7 @@ function renderClientes() {
       `<div class="cm">${esc(c.tel || 'sem telefone')}${c.user ? ' · login: <b style="color:var(--k-gold)">' + esc(c.user) + '</b>' : ''}${c.uid ? '' : (c.user ? ' · <span style="color:var(--k-red)">acesso não migrado</span>' : '')}</div></div>` +
       `<div class="row-end"><span class="cm" title="Atendimentos concluídos"><i class="ti ti-scissors"></i> ${Number(c.visitas) || 0}</span><div class="row-actions">` +
       `<button class="btn btn-ghost btn-sm" data-act="editar-cli" data-id="${c.id}" aria-label="Editar ${esc(c.nome)}"><i class="ti ti-pencil"></i></button>` +
-      `<button class="btn ${as && !vencida(as) ? 'btn-ghost' : 'btn-outline'} btn-sm" data-act="assin-cli" data-id="${c.id}" title="Assinatura do cliente"><i class="ti ti-crown"></i>${as && !vencida(as) ? 'Renovar' : 'Plano'}</button>` +
+      `<button class="btn ${as && !vencida(as) ? 'btn-ghost' : 'btn-outline'} btn-sm" data-act="assin-cli" data-id="${c.id}" title="Plano do cliente"><i class="ti ti-crown"></i>Plano</button>` +
       `<button class="btn ${creditoDe(c.id) ? 'btn-gold' : 'btn-ghost'} btn-sm" data-act="ajustar-credito" data-id="${c.id}" title="Crédito do cliente"><i class="ti ti-coins"></i>${creditoDe(c.id) ? moeda(creditoDe(c.id)) : 'Crédito'}</button>`+
       `${wa ? `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp de ${esc(c.nome)}"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></div></div>`;
   }).join('');
@@ -2281,7 +2290,7 @@ function renderAssinaturas() {
   $('lista-assinantes').innerHTML = ativos.length ? ativos.map(a => {
     const venc = a.vencimento ? (vencida(a) ? `<span class="chip red">vencida em ${fmtCurto(a.vencimento)}</span>` : `<span class="chip">vence ${fmtCurto(a.vencimento)}</span>`) : '';
     return `<div class="row-item wrap-sm"><div class="av" aria-hidden="true">${esc(iniciais(nomeCli(a.cliente)))}</div><div class="row-main"><div class="cn">${esc(nomeCli(a.cliente))}${venc}</div><div class="cm">${esc(nomePlano(a.plano))} · desde ${fmt(a.inicio)}</div></div>` +
-      `<div class="row-end"><span class="fluxo-val" style="color:var(--k-gold)">${a.cortesia ? '🎁 Cortesia' : moeda(a.val) + '/mês'}</span><button class="btn btn-outline btn-sm" data-act="assin-venc" data-id="${a.id}" title="Mudar a data de vencimento"><i class="ti ti-calendar-event"></i>Vencimento</button><button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}"><i class="ti ti-x"></i>Cancelar</button></div></div>`;
+      `<div class="row-end"><span class="fluxo-val" style="color:var(--k-gold)">${a.cortesia ? '🎁 Cortesia' : moeda(a.val) + '/mês'}</span><button class="btn btn-outline btn-sm" data-act="assin-venc" data-id="${a.id}"><i class="ti ti-pencil"></i>Editar</button><button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}"><i class="ti ti-x"></i>Cancelar</button></div></div>`;
   }).join('') : vazio('ti-crown-off', 'Nenhum assinante ativo');
 }
 
@@ -2323,101 +2332,81 @@ async function excluirPlano(id) {
 function abrirModalAssin(cid) {
   if (!D.planos.length) return toast('Crie um plano primeiro em Assinaturas.', true);
   const daLista = typeof cid === 'string' && !!getCliente(cid);
-  $('as-cli').innerHTML = '<option value="__novo">➕ Cliente novo (comprou na loja)</option>' + [...D.clientes].sort((a, b) => String(a.nome).localeCompare(String(b.nome))).map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
-  if (!daLista) $('as-cli').value = cid === '__loja' || !D.clientes.length ? '__novo' : String(D.clientes[0].id);
-  $('as-dia').value = String(diaVencPadrao());
-  $('as-novo-nome').value = ''; $('as-novo-tel').value = ''; $('as-pago').value = hoje(); $('as-forma').value = 'PIX';
-  $('as-plano').innerHTML = D.planos.map(p => `<option value="${p.id}">${esc(p.nome)} — ${moeda(p.preco)}/mês</option>`).join('');
-  if (daLista) $('as-cli').value = cid;
+  $('as-cli').innerHTML = '<option value="__novo">➕ Cliente novo</option>' + [...D.clientes].sort((a, b) => String(a.nome).localeCompare(String(b.nome))).map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  $('as-cli').value = daLista ? String(cid) : '__novo';
   $('as-cli').disabled = daLista;
-  $('as-meses').value = '1'; $('as-cortesia').checked = false; aplicarCortesiaUI();
+  $('as-plano').innerHTML = D.planos.map(p => `<option value="${p.id}">${esc(p.nome)} — ${moeda(p.preco)}</option>`).join('');
+  $('as-novo-nome').value = ''; $('as-novo-tel').value = ''; $('as-forma').value = 'PIX'; $('as-cortesia').checked = false;
+  const prox = comDia(hoje(), diaVencPadrao()); $('as-venc').value = prox > hoje() ? prox : comDia(addMeses(prox, 1), diaVencPadrao());   // próximo dia do vencimento
   assinPrepararCliente();
   openModal('m-assin');
 }
-/* Mesmo plano em dia = renova (só estende o vencimento). Plano diferente = troca a partir de hoje. */
-function modoAssin() {
-  const cid = $('as-cli').value, pid = $('as-plano').value, atual = cid === '__novo' ? null : assinAtiva(cid);
-  const emDia = !!(atual && !vencida(atual)), vivo = !!(atual && atual.vencimento && planoLiberado(atual));
-  return { cid, pid, atual, emDia, mesmo: vivo && String(atual.plano) === String(pid) };
-}
-const iniAssin = () => { const m = modoAssin(); return m.mesmo ? m.atual.vencimento : ($('as-pago').value || hoje()); };
+/* cliente que já tem plano: em vez de vender de novo, mostra os 2 botões que resolvem */
 function assinPrepararCliente() {
-  const novo = $('as-cli').value === '__novo';
+  const cid = $('as-cli').value, novo = cid === '__novo', atual = novo ? null : assinAtiva(cid);
   $('as-novo').hidden = !novo;
-  const atual = novo ? null : assinAtiva($('as-cli').value);
-  if (atual && getPlano(atual.plano)) $('as-plano').value = String(atual.plano);
-  $('as-dia').value = String(atual && atual.diaVenc ? atual.diaVenc : atual && atual.vencimento && planoLiberado(atual) ? Math.min(28, Number(atual.vencimento.slice(8))) : diaVencPadrao());
-  preencherValorAssin();
+  $('as-atual').hidden = !atual; $('as-campos').hidden = !!atual; $('as-ok').hidden = !!atual;
+  $('m-assin-t').textContent = atual ? 'Plano do cliente' : 'Vender plano';
+  $('as-atual').innerHTML = atual ? `<div class="as-tem"><b>${esc(primeiroNome(nomeCli(cid)))}</b> já tem o <b style="color:var(--k-gold)">${esc(nomePlano(atual.plano))}</b>.<br>Vence em <b>${fmt(atual.vencimento)}</b>.` +
+    `<button class="btn btn-gold" data-act="ass-pagou" data-id="${atual.id}"><i class="ti ti-cash"></i>Recebi o pagamento</button>` +
+    `<button class="btn btn-outline" data-act="assin-venc" data-id="${atual.id}"><i class="ti ti-pencil"></i>Editar plano (data, valor...)</button></div>` : '';
+  precoNoCampo();
 }
-function preencherValorAssin() {
-  const p = getPlano($('as-plano').value); if (p) $('as-val').value = p.preco;
-  const m = modoAssin(), c = getCliente(m.cid), nome = esc(primeiroNome(c ? c.nome : ''));
-  $('m-assin-t').textContent = m.mesmo ? 'Renovar assinatura' : m.emDia ? 'Trocar de plano' : 'Ativar assinatura';
-  $('as-ini').value = m.mesmo ? m.atual.vencimento : '';
-  $('as-ini-grupo').hidden = !m.mesmo;
-  $('as-atual').hidden = !m.atual;
-  $('as-atual').innerHTML = !m.atual ? '' : m.mesmo
-    ? (m.emDia ? `<i class="ti ti-crown"></i><div>${nome} já tem o <b>${esc(nomePlano(m.atual.plano))}</b> até <b>${fmt(m.atual.vencimento)}</b>. Renovar <b>soma meses</b> depois dessa data.<button type="button" class="btn btn-outline btn-sm" style="margin-top:.55rem;display:flex;" data-act="assin-so-data" data-id="${m.atual.id}"><i class="ti ti-calendar-event"></i>Só quero mudar a data de vencimento</button></div>`
-      : `<i class="ti ti-crown"></i><div>O <b>${esc(nomePlano(m.atual.plano))}</b> de ${nome} venceu em <b>${fmt(m.atual.vencimento)}</b> e ele continuou agendando. A renovação conta a partir dessa data.</div>`)
-    : m.emDia
-      ? `<i class="ti ti-switch-horizontal"></i><div>${nome} tem o <b>${esc(nomePlano(m.atual.plano))}</b> até ${fmt(m.atual.vencimento)}. Ao confirmar, ele é encerrado e o plano novo começa hoje.</div>`
-      : `<i class="ti ti-crown-off"></i><div>O <b>${esc(nomePlano(m.atual.plano))}</b> de ${nome} <b style="color:var(--k-red)">venceu em ${fmt(m.atual.vencimento)}</b>. O novo período começa hoje.</div>`;
-  resumoAssin();
-}
-function aplicarCortesiaUI() {
-  const c = $('as-cortesia').checked;
-  $('as-val-grupo').hidden = c; $('as-caixa-grupo').hidden = c;
-}
-function vencEscolhido() {
-  const n = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), dia = Number($('as-dia').value) || diaVencPadrao(), m = modoAssin();
-  return m.mesmo ? comDia(addMeses(m.atual.vencimento, n), dia) : primeiroVenc($('as-pago').value || hoje(), dia, n);
-}
-function resumoAssin() {
-  const n = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), ini = iniAssin(), val = parseFloat($('as-val').value) || 0;
-  const venc = vencEscolhido(), dataTxt = ` <small>(todo dia ${Number($('as-dia').value) || diaVencPadrao()})</small>`;
-  document.querySelectorAll('[data-act="as-meses"]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.n) === n)));
-  const m = modoAssin();
-  $('as-resumo').innerHTML = `<b>${esc(nomePlano(m.pid))}</b> por ${m.mesmo ? 'mais ' : ''}${n} ${n === 1 ? 'mês' : 'meses'}<br>` +
-    (m.mesmo ? `Vencimento: ${fmt(m.atual.vencimento)} → <b>${fmt(venc)}</b>${dataTxt}` : `Vale de <b>${fmt(ini)}</b> até <b>${fmt(venc)}</b>${dataTxt}`) +
-    ($('as-cortesia').checked ? '<br>🎁 <b>Cortesia</b>: sem cobrança' : `<br>Total: <b>${moeda(val * n)}</b>${n > 1 ? ` (${moeda(val)}/mês)` : ''}`);
-}
+function precoNoCampo() { const p = getPlano($('as-plano').value); if (p) $('as-val').value = p.preco; $('as-val-grupo').hidden = $('as-cortesia').checked; }
 async function salvarAssin() {
-  const m = modoAssin(), ini = iniAssin(), pago = $('as-pago').value || hoje();
-  const cortesia = $('as-cortesia').checked, forma = cortesia ? 'Cortesia' : $('as-forma').value;
-  const meses = Math.min(36, Math.max(1, parseInt($('as-meses').value) || 1)), val = cortesia ? 0 : (parseFloat($('as-val').value) || 0);
-  if (!m.cid || !m.pid) return toast('Escolha cliente e plano', true);
-  if (pago > hoje()) return toast('A data do pagamento não pode ser no futuro.', true);
+  let cid = $('as-cli').value; const pid = $('as-plano').value, venc = $('as-venc').value, cortesia = $('as-cortesia').checked;
+  const recebido = cortesia ? 0 : (parseFloat($('as-val').value) || 0), forma = cortesia ? 'Cortesia' : $('as-forma').value, p = getPlano(pid);
+  if (!pid) return toast('Escolha o plano.', true);
+  if (!venc) return toast('Coloque a data de vencimento.', true);
   let novoCli = null;
-  if (m.cid === '__novo') {
+  if (cid === '__novo') {
     const nome = $('as-novo-nome').value.trim(), tel = $('as-novo-tel').value.trim();
-    if (nome.length < 2) return toast('Informe o nome do cliente.', true);
+    if (nome.length < 2) return toast('Coloque o nome do cliente.', true);
     const igual = soDigitos(tel).length >= 10 && D.clientes.find(c => soDigitos(c.tel).slice(-9) === soDigitos(tel).slice(-9));
     if (igual) {
-      if (!confirmar(`Já existe um cliente com esse WhatsApp: ${igual.nome}.\n\nOK = usar esse cadastro\nCancelar = voltar e conferir`)) return;
-      $('as-cli').value = String(igual.id); assinPrepararCliente(); return salvarAssin();
+      if (!confirmar(`Esse WhatsApp já é do cliente ${igual.nome}. Usar o cadastro dele?`)) return;
+      $('as-cli').value = String(igual.id); assinPrepararCliente(); if (assinAtiva(igual.id)) return; return salvarAssin();
     }
     novoCli = { nome, tel };
   }
-  if (val < 0) return toast('Valor inválido.', true);
-  const venc = vencEscolhido(), diaVenc = Number($('as-dia').value) || diaVencPadrao();
-  if (venc < hoje()) return toast(`Com ${meses} ${meses === 1 ? 'mês' : 'meses'} o plano ainda ficaria vencido (${fmt(venc)}). Aumente a quantidade de meses.`, true);
-  await comLoading(m.mesmo ? 'Renovando assinatura' : 'Ativando assinatura', async () => {
+  await comLoading('Salvando', async () => {
     try {
       const b = writeBatch(db);
-      let cid = m.cid;
       if (novoCli) { const ref = doc(collection(db, 'clientes')); cid = ref.id; b.set(ref, { ...novoCli, nasc: '', obs: '', visitas: 0, origem: 'loja', criadoEm: serverTimestamp() }); }
       const nome = novoCli ? novoCli.nome : nomeCli(cid);
-      const pagto = { ultimoPagamento: pago, formaPag: forma, origem: 'loja' };
-      if (m.mesmo) {
-        b.update(doc(db, 'assinantes', m.atual.id), { vencimento: venc, diaVenc, meses: (Number(m.atual.meses) || 1) + meses, val, cortesia, renovadoEm: serverTimestamp(), ...pagto });
-      } else {
-        D.assinantes.filter(a => String(a.cliente) === String(cid) && a.status === 'ativo').forEach(a => b.update(doc(db, 'assinantes', a.id), { status: 'cancelado', canceladoEm: serverTimestamp() }));
-        b.set(doc(collection(db, 'assinantes')), { cliente: String(cid), plano: String(m.pid), inicio: ini, vencimento: venc, diaVenc, meses, val, cortesia, status: 'ativo', ativadoPeloDono: true, ...pagto, _createdAt: serverTimestamp() });
-      }
-      if (!cortesia && $('as-caixa').checked && val > 0)
-        b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Assinatura ${nomePlano(m.pid)} (${meses}x) — ${nome} · ${forma}`, val: Math.round(val * meses * 100) / 100, hora: agora(), data: pago, origem: 'assinatura', _createdAt: serverTimestamp() });
+      D.assinantes.filter(a => String(a.cliente) === String(cid) && a.status === 'ativo').forEach(a => b.update(doc(db, 'assinantes', a.id), { status: 'cancelado', canceladoEm: serverTimestamp() }));
+      b.set(doc(collection(db, 'assinantes')), { cliente: String(cid), plano: String(pid), inicio: hoje(), vencimento: venc, diaVenc: Math.min(28, Number(venc.slice(8))), meses: 1,
+        val: cortesia ? 0 : Number(p ? p.preco : recebido) || 0, cortesia, status: 'ativo', ativadoPeloDono: true, ultimoPagamento: hoje(), formaPag: forma, origem: 'loja', _createdAt: serverTimestamp() });
+      if (recebido > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `${nomePlano(pid)} — ${nome} · ${forma}`, val: Math.round(recebido * 100) / 100, hora: agora(), data: hoje(), origem: 'assinatura', _createdAt: serverTimestamp() });
       await b.commit(); closeModal('m-assin');
-      toast(`${cortesia ? '🎁 Cortesia ' + (m.mesmo ? 'renovada' : 'ativada') : m.mesmo ? 'Assinatura renovada' : 'Assinatura ativada'} para ${primeiroNome(nome)} até ${fmt(venc)}.${novoCli ? ' Cliente cadastrado!' : (getCliente(cid) || {}).user || (getCliente(cid) || {}).uid ? ' Já aparece na conta do cliente!' : ''}`);
+      toast(`Pronto! ${primeiroNome(nome)} está com o ${nomePlano(pid)} até ${fmt(venc)}.`);
+    } catch (e) { toast(erroAmigavel(e), true); }
+  });
+}
+/* ── Recebi o pagamento: soma 1 mês na data (dá para mudar) e lança no caixa ── */
+let pagouId = null;
+function abrirPagou(id) {
+  const a = D.assinantes.find(x => x.id === id); if (!a) return;
+  pagouId = id; closeModal('m-assin'); closeModal('m-venc');
+  const dia = a.diaVenc || (a.vencimento ? Math.min(28, Number(a.vencimento.slice(8))) : diaVencPadrao());
+  const base = a.vencimento && planoLiberado(a) ? a.vencimento : null;
+  $('pg-info').innerHTML = `<i class="ti ti-crown"></i><div><b>${esc(nomeCli(a.cliente))}</b> · ${esc(nomePlano(a.plano))}<br>Vencia em <b>${a.vencimento ? fmt(a.vencimento) : '—'}</b></div>`;
+  $('pg-val').value = a.cortesia ? 0 : (Number(a.val) || Number((getPlano(a.plano) || {}).preco) || 0);
+  $('pg-forma').value = 'PIX'; $('pg-val-grupo').hidden = !!a.cortesia;
+  $('pg-venc').value = base ? comDia(addMeses(base, 1), dia) : primeiroVenc(hoje(), dia, 1);
+  openModal('m-pagou');
+}
+async function salvarPagou() {
+  const a = D.assinantes.find(x => x.id === pagouId); if (!a) return;
+  const venc = $('pg-venc').value, recebido = a.cortesia ? 0 : (parseFloat($('pg-val').value) || 0), forma = a.cortesia ? 'Cortesia' : $('pg-forma').value;
+  if (!venc) return toast('Coloque a data de vencimento.', true);
+  await comLoading('Salvando', async () => {
+    try {
+      const b = writeBatch(db);
+      b.update(doc(db, 'assinantes', a.id), { vencimento: venc, diaVenc: Math.min(28, Number(venc.slice(8))), meses: (Number(a.meses) || 1) + 1, ultimoPagamento: hoje(), formaPag: forma, renovadoEm: serverTimestamp() });
+      if (recebido > 0) b.set(doc(collection(db, 'caixa')), { tipo: 'entrada', desc: `Mensalidade ${nomePlano(a.plano)} — ${nomeCli(a.cliente)} · ${forma}`, val: Math.round(recebido * 100) / 100, hora: agora(), data: hoje(), origem: 'assinatura', _createdAt: serverTimestamp() });
+      await b.commit(); closeModal('m-pagou');
+      toast(`Pagamento registrado! ${primeiroNome(nomeCli(a.cliente))} agora vence em ${fmt(venc)}.`);
     } catch (e) { toast(erroAmigavel(e), true); }
   });
 }
@@ -2470,33 +2459,34 @@ function renderControle() {
       `<div class="ctl-sit ${s.k}"><i class="ti ${s.ic}"></i>${s.txt}</div></div>` +
       `<div class="row-end"><div class="row-actions">` +
       (wa ? `<a class="btn ${s.k === 'ok' ? 'btn-ghost' : 'btn-gold'} btn-sm" href="${wa}?text=${encodeURIComponent(msgLembretePlano(a))}" target="_blank" rel="noopener" data-act="lembrou-plano" data-id="${a.id}"><i class="ti ti-brand-whatsapp"></i>Lembrar</a>` : `<button class="btn btn-ghost btn-sm" data-act="editar-cli" data-id="${a.cliente}" title="Cadastre o WhatsApp para poder lembrar"><i class="ti ti-phone-plus"></i>Sem WhatsApp</button>`) +
-      `<button class="btn btn-outline btn-sm" data-act="assin-cli" data-id="${a.cliente}" title="Registrar pagamento / renovar"><i class="ti ti-cash"></i>Pagou</button>` +
-      `<button class="btn btn-ghost btn-sm" data-act="assin-venc" data-id="${a.id}" title="Mudar a data do próximo pagamento"><i class="ti ti-calendar-event"></i>Data</button>` +
-      `<button class="btn btn-danger btn-sm" data-act="cancelar-assin" data-id="${a.id}" aria-label="Encerrar plano" title="Encerrar plano"><i class="ti ti-x"></i></button>` +
+      `<button class="btn btn-outline btn-sm" data-act="ass-pagou" data-id="${a.id}"><i class="ti ti-cash"></i>Pagou</button>` +
+      `<button class="btn btn-ghost btn-sm" data-act="assin-venc" data-id="${a.id}"><i class="ti ti-pencil"></i>Editar</button>` +
       `</div></div></div>`;
   }).join('') : vazio('ti-mood-happy', ctlSit === 'atencao' ? 'Nenhum plano precisa de atenção agora. Tudo em dia!' : 'Nenhum plano nesta lista.');
 }
 function marcarLembrado(id) { updateDoc(doc(db, 'assinantes', id), { lembradoEm: hoje() }).catch(() => {}); }
 
-/* ── Dono: mudar só a data de vencimento ── */
+/* ── Editar plano: tudo à mão (plano, data, mensalidade, cortesia) ── */
 let vencEditId = null;
 function abrirVenc(id) {
   const a = D.assinantes.find(x => x.id === id); if (!a) return;
-  vencEditId = id;
-  $('vc-info').innerHTML = `<i class="ti ti-crown"></i><div><b>${esc(nomeCli(a.cliente))}</b> · ${esc(nomePlano(a.plano))}${a.cortesia ? ' · cortesia' : ''}<br>Vence hoje em: <b>${a.vencimento ? fmt(a.vencimento) : 'sem data'}</b></div>`;
-  const dia = a.diaVenc || (a.vencimento ? Math.min(28, Number(a.vencimento.slice(8))) : diaVencPadrao());
-  $('vc-dia').value = String(dia); vcData = a.vencimento ? comDia(a.vencimento, dia) : primeiroVenc(hoje(), dia);
-  mostrarVc(); openModal('m-venc');
+  vencEditId = id; closeModal('m-assin');
+  $('m-venc-t').textContent = 'Plano de ' + primeiroNome(nomeCli(a.cliente));
+  $('ep-plano').innerHTML = D.planos.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+  $('ep-plano').value = String(a.plano);
+  $('ep-venc').value = a.vencimento || '';
+  $('ep-val').value = Number(a.val) || 0;
+  $('ep-cortesia').checked = !!a.cortesia; $('ep-val-grupo').hidden = !!a.cortesia;
+  openModal('m-venc');
 }
-let vcData = '';
-function mostrarVc() { $('vc-prox').textContent = vcData ? `${fmt(vcData)} (${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][deISO(vcData).getDay()]})` : '—'; }
 async function salvarVenc() {
-  const a = D.assinantes.find(x => x.id === vencEditId), v = vcData, diaVenc = Number($('vc-dia').value) || diaVencPadrao(); if (!a) return;
-  if (!v) return toast('Escolha a data.', true);
+  const a = D.assinantes.find(x => x.id === vencEditId); if (!a) return;
+  const venc = $('ep-venc').value, cortesia = $('ep-cortesia').checked;
+  if (!venc) return toast('Coloque a data de vencimento.', true);
   await comLoading('Salvando', async () => {
     try {
-      await updateDoc(doc(db, 'assinantes', a.id), { vencimento: v, diaVenc, vencAlteradoEm: serverTimestamp() });
-      closeModal('m-venc'); toast(`Plano de ${primeiroNome(nomeCli(a.cliente))} agora vence todo dia ${diaVenc}. Próximo: ${fmt(v)}.`);
+      await updateDoc(doc(db, 'assinantes', a.id), { plano: String($('ep-plano').value), vencimento: venc, diaVenc: Math.min(28, Number(venc.slice(8))), val: cortesia ? 0 : (parseFloat($('ep-val').value) || 0), cortesia, editadoEm: serverTimestamp() });
+      closeModal('m-venc'); toast(`Salvo! Vence em ${fmt(venc)}.`);
     } catch (e) { toast(erroAmigavel(e), true); }
   });
 }
@@ -2549,8 +2539,8 @@ async function renovarNaLoja(planoId) {
 
 async function cancelarAssin(id) {
   const a = D.assinantes.find(x => x.id === id); if (!a) return;
-  if (!confirmar(`Cancelar a assinatura de ${nomeCli(a.cliente)}?`)) return;
-  await comLoading('Cancelando', async () => { try { await updateDoc(doc(db, 'assinantes', id), { status: 'cancelado', canceladoEm: serverTimestamp() }); toast('Assinatura cancelada.'); } catch (e) { toast(erroAmigavel(e), true); } });
+  if (!confirmar(`Encerrar o plano de ${nomeCli(a.cliente)}?`)) return;
+  await comLoading('Cancelando', async () => { try { await updateDoc(doc(db, 'assinantes', id), { status: 'cancelado', canceladoEm: serverTimestamp() }); toast('Plano encerrado.'); } catch (e) { toast(erroAmigavel(e), true); } });
 }
 
 /* ════════ CHATS (DONO) ════════ */
@@ -5123,7 +5113,7 @@ const ACT = {
   'modal-plano': () => abrirModalPlano(), 'editar-plano': el => abrirModalPlano(el.dataset.id), 'salvar-plano': salvarPlano, 'excluir-plano': el => excluirPlano(el.dataset.id),
   'pl-add-item': () => $('pl-itens').insertAdjacentHTML('beforeend', linhaItemPlano('')),
   'pl-rem-item': el => { if ($('pl-itens').children.length > 1) el.closest('.item-edit-row').remove(); else el.closest('.item-edit-row').querySelector('input').value = ''; },
-  'modal-assin': () => abrirModalAssin(), 'assin-cli': el => abrirModalAssin(el.dataset.id), 'as-meses': el => { $('as-meses').value = el.dataset.n; resumoAssin(); }, 'assin-venc': el => abrirVenc(el.dataset.id), 'assin-so-data': el => { closeModal('m-assin'); abrirVenc(el.dataset.id); }, 'venda-loja': () => abrirModalAssin('__loja'), 'ctl-sit': el => { ctlSit = el.dataset.f; renderControle(); }, 'ctl-ori': el => { ctlOri = el.dataset.f; renderControle(); }, 'lembrou-plano': el => marcarLembrado(el.dataset.id), 'ir-controle': () => { ctlSit = 'atencao'; goTo('controle'); }, 'salvar-venc': salvarVenc, 'vc-mes': el => { vcData = comDia(addMeses(vcData || hoje(), Number(el.dataset.n)), $('vc-dia').value); mostrarVc(); }, 'renovar-chat': el => renovarPeloChat(el.dataset.id), 'renovar-loja': el => renovarNaLoja(el.dataset.id), 'renovar-depois': adiarRenovacao, 'salvar-assin': salvarAssin, 'cancelar-assin': el => cancelarAssin(el.dataset.id),
+  'modal-assin': () => abrirModalAssin(), 'assin-cli': el => abrirModalAssin(el.dataset.id), 'assin-venc': el => abrirVenc(el.dataset.id), 'ass-pagou': el => abrirPagou(el.dataset.id), 'ep-pagou': () => abrirPagou(vencEditId), 'salvar-pagou': salvarPagou, 'ep-encerrar': () => { closeModal('m-venc'); cancelarAssin(vencEditId); }, 'venda-loja': () => abrirModalAssin('__loja'), 'ctl-sit': el => { ctlSit = el.dataset.f; renderControle(); }, 'ctl-ori': el => { ctlOri = el.dataset.f; renderControle(); }, 'lembrou-plano': el => marcarLembrado(el.dataset.id), 'ir-controle': () => { ctlSit = 'atencao'; goTo('controle'); }, 'salvar-venc': salvarVenc, 'renovar-chat': el => renovarPeloChat(el.dataset.id), 'renovar-loja': el => renovarNaLoja(el.dataset.id), 'renovar-depois': adiarRenovacao, 'salvar-assin': salvarAssin, 'cancelar-assin': el => cancelarAssin(el.dataset.id),
   'modal-cx': () => openModal('m-cx'), 'salvar-cx': salvarCx, 'excluir-cx': el => excluirCx(el.dataset.id),
   'cx-periodo': el => { cxPeriodo = el.dataset.p; renderCaixa(); },
   'chat-filtro': el => { chatFiltro = el.dataset.f; document.querySelectorAll('[data-act="chat-filtro"]').forEach(b => b.setAttribute('aria-pressed', b === el)); renderChats(); },
@@ -5173,7 +5163,7 @@ const ACT = {
 };
 const CHANGE = {
   'ag-modal': el => atualizarModalAg(el.id === 'ag-svc' || el.id === 'ag-tipo'),
-  'as-valor': preencherValorAssin, 'as-resumo': resumoAssin, 'vc-dia': el => { vcData = comDia(vcData || hoje(), el.value); mostrarVc(); }, 'ctl-busca': () => renderControle(), 'as-ini': resumoAssin, 'as-meses-in': resumoAssin, 'as-cortesia': () => { aplicarCortesiaUI(); resumoAssin(); }, 'as-cli': assinPrepararCliente,
+  'as-plano': precoNoCampo, 'ep-cortesia': () => { $('ep-val-grupo').hidden = $('ep-cortesia').checked; }, 'ctl-busca': () => renderControle(), 'as-cortesia': precoNoCampo, 'as-cli': assinPrepararCliente,
   'vd-total': atualizarTotalVenda,
   'cfg-janela': () => renderLiberacoes(),
   'rl-campo': el => { const p = roletaEdit.premios[Number(el.dataset.i)]; p[el.dataset.k] = el.value;
